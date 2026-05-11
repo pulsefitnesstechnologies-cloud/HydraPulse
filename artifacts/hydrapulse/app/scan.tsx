@@ -28,13 +28,13 @@ const SCAN_DURATION = 12;
 
 /**
  * Produces stable, realistic PPG estimates within a 30-minute window.
- * Scores don't jump wildly between back-to-back scans; they vary slightly
- * as they would with a real sensor.
+ * Scores stay consistent across back-to-back scans, shifting gradually
+ * as they would with a real sensor throughout the day.
  *
  * NOTE: This is a simulation. True on-device PPG processing requires a
  * native frame processor (e.g. react-native-vision-camera + C++ plugin)
- * which is beyond Expo Go's sandbox. The camera mode activates the torch
- * and shows the camera feed — actual pixel analysis is not yet implemented.
+ * beyond Expo Go's sandbox. Camera mode activates the torch — pixel
+ * analysis is not yet implemented.
  */
 function stablePPGEstimate(): {
   score: HydrationScore;
@@ -42,26 +42,20 @@ function stablePPGEstimate(): {
   hrv: number;
   confidence: number;
 } {
-  // Bucket time into 30-minute windows so repeated scans stay consistent
   const now = new Date();
   const bucket = Math.floor((now.getHours() * 60 + now.getMinutes()) / 30);
-
-  // Simple deterministic seed from the bucket (changes every 30 min)
   const seed = (bucket * 1013 + 7919) % 100;
 
-  // Score distribution: weighted toward Good/Excellent
   let baseScore: HydrationScore;
   if (seed < 8) baseScore = 1;
   else if (seed < 25) baseScore = 2;
   else if (seed < 62) baseScore = 3;
   else baseScore = 4;
 
-  // Small noise (±0–1 heart rate points, no score jumps)
   const hrNoise = Math.round((Math.random() - 0.5) * 4);
   const hrvNoise = Math.round((Math.random() - 0.5) * 6);
   const confNoise = Math.round((Math.random() - 0.5) * 4);
 
-  // Base vitals correlated with score
   const baseHR: Record<HydrationScore, number> = { 1: 88, 2: 78, 3: 68, 4: 64 };
   const baseHRV: Record<HydrationScore, number> = { 1: 28, 2: 38, 3: 52, 4: 64 };
   const baseConf: Record<HydrationScore, number> = { 1: 79, 2: 83, 3: 88, 4: 91 };
@@ -75,6 +69,13 @@ function stablePPGEstimate(): {
 }
 
 type ScanState = "idle" | "requesting" | "scanning" | "done";
+
+const SCORE_COLORS: Record<HydrationScore, string> = {
+  1: "#EF4444",
+  2: "#F97316",
+  3: "#0EA5E9",
+  4: "#10B981",
+};
 
 export default function ScanScreen() {
   const colors = useColors();
@@ -117,10 +118,14 @@ export default function ScanScreen() {
   }, [stopPulse]);
 
   const beginScanning = useCallback(() => {
+    // Turn torch on BEFORE changing state so the single CameraView
+    // receives enableTorch=true without ever unmounting/remounting.
+    if (scanMode === "phone" && Platform.OS !== "web") {
+      setTorchOn(true);
+    }
     setState("scanning");
     setTimeLeft(SCAN_DURATION);
     setResult(null);
-    if (scanMode === "phone") setTorchOn(true);
     startPulse();
 
     Animated.timing(progressAnim, {
@@ -148,9 +153,9 @@ export default function ScanScreen() {
     if (scanMode === "phone" && Platform.OS !== "web") {
       if (!cameraPermission?.granted) {
         setState("requesting");
-        const result = await requestCameraPermission();
+        const res = await requestCameraPermission();
         setState("idle");
-        if (!result.granted) return;
+        if (!res.granted) return;
       }
     }
     beginScanning();
@@ -197,17 +202,13 @@ export default function ScanScreen() {
     outputRange: ["0%", "100%"],
   });
 
-  const scoreColors: Record<HydrationScore, string> = {
-    1: "#EF4444",
-    2: "#F97316",
-    3: "#0EA5E9",
-    4: "#10B981",
-  };
-  const resultColor = result ? scoreColors[result.score] : colors.primary;
-
   const isCameraMode = scanMode === "phone" && Platform.OS !== "web";
-  const showCamera = isCameraMode && (state === "scanning" || state === "idle");
   const cameraGranted = cameraPermission?.granted ?? false;
+  // Show camera once permission is granted — keep it mounted for the entire
+  // screen lifetime so the torch state is never reset by a remount.
+  const showPersistentCamera = isCameraMode && cameraGranted;
+
+  const resultColor = result ? SCORE_COLORS[result.score] : colors.primary;
 
   return (
     <View
@@ -220,6 +221,7 @@ export default function ScanScreen() {
         },
       ]}
     >
+      {/* ── Header ── */}
       <View style={styles.header}>
         <Pressable
           onPress={() => { cancelScan(); router.back(); }}
@@ -233,16 +235,14 @@ export default function ScanScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* ── Mode toggle ── */}
       <View style={styles.modeToggle}>
         {(["simulation", "phone"] as ScanMethod[]).map((m) => (
           <Pressable
             key={m}
             style={[
               styles.modeBtn,
-              {
-                backgroundColor:
-                  scanMode === m ? colors.primary : colors.secondary,
-              },
+              { backgroundColor: scanMode === m ? colors.primary : colors.secondary },
             ]}
             onPress={() => { if (state !== "scanning") setScanMode(m); }}
             disabled={state === "scanning"}
@@ -255,11 +255,7 @@ export default function ScanScreen() {
             <Text
               style={[
                 styles.modeBtnText,
-                {
-                  color: scanMode === m
-                    ? colors.primaryForeground
-                    : colors.mutedForeground,
-                },
+                { color: scanMode === m ? colors.primaryForeground : colors.mutedForeground },
               ]}
             >
               {m === "phone" ? "Camera + Torch" : "Simulation"}
@@ -268,167 +264,186 @@ export default function ScanScreen() {
         ))}
       </View>
 
+      {/* ── Scan area ── */}
       <View style={styles.scanArea}>
-        {/* IDLE STATE */}
-        {state === "idle" && (
-          <View style={styles.idleContent}>
-            {isCameraMode && cameraGranted ? (
-              <View style={styles.cameraPreviewWrapper}>
-                <CameraView
-                  style={styles.cameraPreview}
-                  facing="back"
-                  enableTorch={false}
-                />
-                <View style={styles.cameraOverlay}>
-                  <View style={[styles.fingerRing, { borderColor: colors.primary }]} />
-                </View>
-              </View>
-            ) : (
-              <Animated.View
-                style={[
-                  styles.fingerTarget,
-                  { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
-                ]}
-              >
-                <Ionicons
-                  name={isCameraMode ? "camera-outline" : "finger-print-outline"}
-                  size={64}
-                  color={colors.primary}
-                />
-              </Animated.View>
-            )}
 
-            <Text style={[styles.instruction, { color: colors.foreground }]}>
-              {isCameraMode
-                ? "Cover the rear camera tightly with your fingertip"
-                : "Ready to run a simulated PPG scan"}
-            </Text>
-            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-              {isCameraMode
-                ? "The torch activates when you tap Start. Press firmly and hold completely still."
-                : "Uses a time-seeded algorithm — scores are consistent within 30-minute windows."}
-            </Text>
+        {/* ─────────────────────────────────────────────────────────────────
+            PERSISTENT CAMERA VIEW
+            Rendered once when permission is granted and never unmounted.
+            Torch state updates in-place — no remount, no reset.
+        ───────────────────────────────────────────────────────────────── */}
+        {showPersistentCamera && (
+          <View style={styles.cameraBlock}>
+            <View style={styles.cameraCircle}>
+              <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                enableTorch={torchOn}
+              />
 
-            {isCameraMode && (
-              <View style={[styles.noticeBanner, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                <Ionicons name="bulb-outline" size={14} color={colors.mutedForeground} />
-                <Text style={[styles.noticeText, { color: colors.mutedForeground }]}>
-                  Signal processing is simulated. Camera mode activates the torch and confirms fingertip placement. Native PPG analysis requires a future app store build.
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* REQUESTING PERMISSION */}
-        {state === "requesting" && (
-          <View style={styles.idleContent}>
-            <Ionicons name="camera-outline" size={64} color={colors.primary} />
-            <Text style={[styles.instruction, { color: colors.foreground }]}>
-              Camera access needed
-            </Text>
-            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-              Requesting camera permission to activate torch for fingertip scanning...
-            </Text>
-          </View>
-        )}
-
-        {/* SCANNING STATE */}
-        {state === "scanning" && (
-          <View style={styles.scanningContent}>
-            {isCameraMode ? (
-              <View style={styles.cameraPreviewWrapper}>
-                <CameraView
-                  style={styles.cameraPreview}
-                  facing="back"
-                  enableTorch={torchOn}
-                />
-                <View style={styles.cameraOverlay}>
-                  <View style={[styles.fingerRing, { borderColor: colors.primary }]}>
-                    <Text style={[styles.timerOverlay, { color: "#fff" }]}>
-                      {timeLeft}
-                    </Text>
+              {/* Overlay changes based on state — camera stays mounted */}
+              <View style={styles.cameraOverlay}>
+                {(state === "idle" || state === "scanning") && (
+                  <View style={[
+                    styles.fingerRing,
+                    {
+                      borderColor: state === "scanning" ? colors.primary : colors.primary + "80",
+                      borderStyle: state === "scanning" ? "solid" : "dashed",
+                    },
+                  ]}>
+                    {state === "scanning" && (
+                      <Text style={styles.timerOverlay}>{timeLeft}</Text>
+                    )}
                   </View>
-                </View>
-                {torchOn && (
-                  <View style={[styles.torchBadge, { backgroundColor: "#F59E0B" }]}>
-                    <Ionicons name="flashlight" size={12} color="#fff" />
-                    <Text style={styles.torchBadgeText}>Torch on</Text>
+                )}
+                {state === "done" && result && (
+                  <View style={[styles.doneOverlay, { backgroundColor: resultColor + "30" }]}>
+                    <Ionicons name="checkmark-circle" size={52} color={resultColor} />
                   </View>
                 )}
               </View>
-            ) : (
-              <View style={styles.timerCircle}>
-                <View style={[styles.timerInner, { borderColor: colors.primary + "30" }]}>
-                  <Text style={[styles.timerNumber, { color: colors.primary }]}>
-                    {timeLeft}
-                  </Text>
-                  <Text style={[styles.timerLabel, { color: colors.mutedForeground }]}>
-                    seconds
+
+              {torchOn && (
+                <View style={[styles.torchBadge, { backgroundColor: "#F59E0B" }]}>
+                  <Ionicons name="flashlight" size={11} color="#fff" />
+                  <Text style={styles.torchBadgeText}>Torch on</Text>
+                </View>
+              )}
+            </View>
+
+            {/* State-specific text below the camera circle */}
+            {state === "idle" && (
+              <View style={styles.cameraIdleText}>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  Cover the rear camera with your fingertip
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  Press firmly and hold still. Torch activates when you tap Start.
+                </Text>
+                <View style={[styles.noticeBanner, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                  <Ionicons name="bulb-outline" size={13} color={colors.mutedForeground} />
+                  <Text style={[styles.noticeText, { color: colors.mutedForeground }]}>
+                    Signal processing is simulated. Torch + camera placement confirmed. Native PPG analysis requires a future app store build.
                   </Text>
                 </View>
               </View>
             )}
 
-            <View style={styles.waveformContainer}>
-              <WaveformPreview isActive={true} width={280} height={70} color={colors.primary} />
-            </View>
+            {state === "scanning" && (
+              <View style={styles.cameraIdleText}>
+                <WaveformPreview isActive={true} width={260} height={60} color={colors.primary} />
+                <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
+                  Hold still — torch active, reading pulse signal...
+                </Text>
+                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                  <Animated.View
+                    style={[styles.progressFill, { backgroundColor: colors.primary, width: progressWidth }]}
+                  />
+                </View>
+              </View>
+            )}
 
-            <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
-              {isCameraMode
-                ? "Hold still — torch active, reading pulse signal..."
-                : "Processing simulated PPG waveform..."}
-            </Text>
-
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  { backgroundColor: colors.primary, width: progressWidth },
-                ]}
-              />
-            </View>
+            {state === "done" && result && (
+              <View style={styles.metricsRow}>
+                {[
+                  { value: result.heartRate, label: "BPM" },
+                  { value: result.hrv, label: "HRV" },
+                  { value: `${result.confidence}%`, label: "Confidence" },
+                ].map((m) => (
+                  <View key={m.label} style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Text style={[styles.metricValue, { color: colors.foreground }]}>{m.value}</Text>
+                    <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>{m.label}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
-        {/* DONE STATE */}
-        {state === "done" && result && (
-          <View style={styles.doneContent}>
-            <View style={[styles.resultCircle, { borderColor: resultColor + "40", backgroundColor: resultColor + "15" }]}>
-              <Ionicons name="checkmark-circle" size={60} color={resultColor} />
-              <Text style={[styles.resultScore, { color: resultColor }]}>
-                {result.score}/4
-              </Text>
-              <Text style={[styles.resultLabel, { color: resultColor }]}>
-                {getScoreLabel(result.score)}
-              </Text>
-            </View>
+        {/* ─────────────────────────────────────────────────────────────────
+            NON-CAMERA / PERMISSION-NOT-YET-GRANTED STATES
+        ───────────────────────────────────────────────────────────────── */}
+        {!showPersistentCamera && (
+          <>
+            {(state === "idle" || state === "requesting") && (
+              <View style={styles.idleContent}>
+                <Animated.View
+                  style={[
+                    styles.fingerTarget,
+                    { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
+                  ]}
+                >
+                  <Ionicons
+                    name={isCameraMode ? "camera-outline" : "finger-print-outline"}
+                    size={64}
+                    color={colors.primary}
+                  />
+                </Animated.View>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  {state === "requesting"
+                    ? "Requesting camera access..."
+                    : isCameraMode
+                    ? "Camera access needed to activate torch"
+                    : "Ready to run a simulated PPG scan"}
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  {state === "requesting"
+                    ? "Please allow camera permission in the system prompt."
+                    : isCameraMode
+                    ? "Tap Start Scan to request camera permission."
+                    : "Uses a time-seeded algorithm — scores are consistent within 30-minute windows."}
+                </Text>
+              </View>
+            )}
 
-            <View style={styles.metrics}>
-              <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.metricValue, { color: colors.foreground }]}>
-                  {result.heartRate}
+            {state === "scanning" && (
+              <View style={styles.scanningContent}>
+                <View style={styles.timerCircle}>
+                  <View style={[styles.timerInner, { borderColor: colors.primary + "30" }]}>
+                    <Text style={[styles.timerNumber, { color: colors.primary }]}>{timeLeft}</Text>
+                    <Text style={[styles.timerLabel, { color: colors.mutedForeground }]}>seconds</Text>
+                  </View>
+                </View>
+                <WaveformPreview isActive={true} width={280} height={70} color={colors.primary} />
+                <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
+                  Processing simulated PPG waveform...
                 </Text>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>BPM</Text>
+                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                  <Animated.View
+                    style={[styles.progressFill, { backgroundColor: colors.primary, width: progressWidth }]}
+                  />
+                </View>
               </View>
-              <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.metricValue, { color: colors.foreground }]}>
-                  {result.hrv}
-                </Text>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>HRV</Text>
+            )}
+
+            {state === "done" && result && (
+              <View style={styles.doneContent}>
+                <View style={[styles.resultCircle, { borderColor: resultColor + "40", backgroundColor: resultColor + "15" }]}>
+                  <Ionicons name="checkmark-circle" size={60} color={resultColor} />
+                  <Text style={[styles.resultScore, { color: resultColor }]}>{result.score}/4</Text>
+                  <Text style={[styles.resultLabel, { color: resultColor }]}>
+                    {getScoreLabel(result.score)}
+                  </Text>
+                </View>
+                <View style={styles.metricsRow}>
+                  {[
+                    { value: result.heartRate, label: "BPM" },
+                    { value: result.hrv, label: "HRV" },
+                    { value: `${result.confidence}%`, label: "Confidence" },
+                  ].map((m) => (
+                    <View key={m.label} style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <Text style={[styles.metricValue, { color: colors.foreground }]}>{m.value}</Text>
+                      <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>{m.label}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-              <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.metricValue, { color: colors.foreground }]}>
-                  {result.confidence}%
-                </Text>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>Confidence</Text>
-              </View>
-            </View>
-          </View>
+            )}
+          </>
         )}
       </View>
 
-      {/* BOTTOM CONTROLS */}
+      {/* ── Bottom controls ── */}
       <View style={styles.bottomArea}>
         <DisclaimerBanner />
 
@@ -456,9 +471,7 @@ export default function ScanScreen() {
             ]}
             onPress={cancelScan}
           >
-            <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>
-              Cancel
-            </Text>
+            <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>Cancel</Text>
           </Pressable>
         )}
 
@@ -503,58 +516,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-  },
-  modeToggle: {
-    flexDirection: "row",
-    marginHorizontal: 20,
-    marginBottom: 12,
-    gap: 8,
-  },
+  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  modeToggle: { flexDirection: "row", marginHorizontal: 20, marginBottom: 12, gap: 8 },
   modeBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    paddingVertical: 10, borderRadius: 10, gap: 6,
   },
-  modeBtnText: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
+  modeBtnText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   scanArea: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    overflow: "hidden",
   },
-  idleContent: {
-    alignItems: "center",
-    gap: 18,
-    width: "100%",
-  },
-  cameraPreviewWrapper: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+
+  // Camera layout
+  cameraBlock: { width: "100%", alignItems: "center", gap: 20 },
+  cameraCircle: {
+    width: 210,
+    height: 210,
+    borderRadius: 105,
     overflow: "hidden",
     position: "relative",
-  },
-  cameraPreview: {
-    width: "100%",
-    height: "100%",
+    backgroundColor: "#000",
   },
   cameraOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -562,21 +548,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fingerRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     borderWidth: 2.5,
-    borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
   },
   timerOverlay: {
-    fontSize: 42,
+    fontSize: 44,
     fontFamily: "Inter_700Bold",
     fontWeight: "700" as const,
-    textShadowColor: "rgba(0,0,0,0.6)",
+    color: "#ffffff",
+    textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  doneOverlay: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    alignItems: "center",
+    justifyContent: "center",
   },
   torchBadge: {
     position: "absolute",
@@ -590,201 +583,83 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   torchBadgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
+    color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const,
   },
+  cameraIdleText: { width: "100%", alignItems: "center", gap: 12 },
+
+  // Non-camera idle
+  idleContent: { alignItems: "center", gap: 18, width: "100%" },
   fingerTarget: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderStyle: "dashed",
+    width: 140, height: 140, borderRadius: 70, borderWidth: 2,
+    alignItems: "center", justifyContent: "center", borderStyle: "dashed",
   },
   instruction: {
-    fontSize: 19,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-    textAlign: "center",
-    lineHeight: 26,
+    fontSize: 19, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const,
+    textAlign: "center", lineHeight: 26,
   },
   subInstruction: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 19,
+    fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 19,
   },
   noticeBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 4,
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1,
   },
-  noticeText: {
-    flex: 1,
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 16,
-  },
-  scanningContent: {
-    alignItems: "center",
-    gap: 20,
-    width: "100%",
-  },
-  timerCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  noticeText: { flex: 1, fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
+
+  // Simulation scanning
+  scanningContent: { alignItems: "center", gap: 20, width: "100%" },
+  timerCircle: { width: 140, height: 140, borderRadius: 70, alignItems: "center", justifyContent: "center" },
   timerInner: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 120, height: 120, borderRadius: 60, borderWidth: 2,
+    alignItems: "center", justifyContent: "center",
   },
-  timerNumber: {
-    fontSize: 48,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700" as const,
-  },
-  timerLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: -4,
-  },
-  waveformContainer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  scanningHint: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-  },
-  progressBar: {
-    width: "100%",
-    height: 4,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
-  },
-  doneContent: {
-    alignItems: "center",
-    gap: 24,
-    width: "100%",
-  },
+  timerNumber: { fontSize: 48, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  timerLabel: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -4 },
+  scanningHint: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  progressBar: { width: "100%", height: 4, borderRadius: 2, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 2 },
+
+  // Simulation done
+  doneContent: { alignItems: "center", gap: 24, width: "100%" },
   resultCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
+    width: 160, height: 160, borderRadius: 80, borderWidth: 2,
+    alignItems: "center", justifyContent: "center", gap: 4,
   },
-  resultScore: {
-    fontSize: 24,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700" as const,
-  },
+  resultScore: { fontSize: 24, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   resultLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const,
+    textTransform: "uppercase", letterSpacing: 1,
   },
-  metrics: {
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-  },
+
+  // Shared metrics
+  metricsRow: { flexDirection: "row", gap: 10, width: "100%" },
   metricCard: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 4,
+    flex: 1, alignItems: "center", paddingVertical: 14,
+    borderRadius: 14, borderWidth: 1, gap: 4,
   },
-  metricValue: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700" as const,
-  },
+  metricValue: { fontSize: 20, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   metricLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const,
+    textTransform: "uppercase", letterSpacing: 0.5,
   },
-  bottomArea: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    gap: 12,
-  },
+
+  // Bottom
+  bottomArea: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
   startBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 18,
-    borderRadius: 16,
-    gap: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    paddingVertical: 18, borderRadius: 16, gap: 10,
   },
-  startBtnText: {
-    fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-  },
+  startBtnText: { fontSize: 17, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   cancelBtn: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    alignItems: "center", justifyContent: "center",
+    paddingVertical: 16, borderRadius: 14, borderWidth: 1,
   },
-  cancelBtnText: {
-    fontSize: 16,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
-  doneButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
+  cancelBtnText: { fontSize: 16, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  doneButtons: { flexDirection: "row", gap: 12 },
   retryBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 56, height: 56, borderRadius: 14, borderWidth: 1,
+    alignItems: "center", justifyContent: "center",
   },
-  saveBtn: {
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveBtnText: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-    color: "#FFFFFF",
-  },
+  saveBtn: { paddingVertical: 16, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  saveBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const, color: "#FFFFFF" },
 });

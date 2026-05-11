@@ -20,6 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "com.hydrapulse.app",
+    buildNumber: "1",
 
     // ── HealthKit capability ──────────────────────────────────────────────
     // Enables the com.apple.developer.healthkit entitlement so the app can

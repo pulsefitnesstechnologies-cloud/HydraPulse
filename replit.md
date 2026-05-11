@@ -1,44 +1,64 @@
-# [Project name]
+# HydraPulse
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A smart hydration tracker that estimates hydration status using photoplethysmography (PPG) — available on iOS and Android via Expo Go.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/hydrapulse run dev` — run the Expo dev server
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Scan QR code from Replit URL bar to test on physical device via Expo Go
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Mobile: Expo SDK 54, React Native, Expo Router (file-based)
+- State: React Context + AsyncStorage (local persistence, no backend required)
+- API: Express 5 (shared backend, currently unused by app)
+- Charts: react-native-svg
+- Icons: @expo/vector-icons (Ionicons)
+- Fonts: Inter (400/500/600/700)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/hydrapulse/` — the Expo mobile app
+  - `app/_layout.tsx` — root layout with providers, onboarding guard
+  - `app/(tabs)/` — main tabs: Home, History, Settings
+  - `app/onboarding.tsx` — 4-step onboarding flow
+  - `app/scan.tsx` — PPG scan screen (camera + simulation modes)
+  - `app/results.tsx` — scan results with tips and metrics
+  - `context/HydrationContext.tsx` — shared hydration state + AsyncStorage
+  - `constants/colors.ts` — HydraPulse dark-mode brand tokens
+  - `components/` — ScoreGauge, TrendChart, WaveformPreview, DisclaimerBanner, PremiumModal
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Frontend-only: all data persisted in AsyncStorage — no backend or database needed for v1
+- Simulation mode first: real camera PPG available in camera mode (expo-camera installed)
+- Freemium stub: Premium modal and weekly scan limit (5 scans) built in but not enforced by a real payment provider
+- Dark mode: full light/dark theme via `constants/colors.ts` and `useColors()` hook
+- Safety-first: DisclaimerBanner on every scan and result screen
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- 4-step onboarding (welcome, PPG explainer, phone mode, privacy)
+- Home dashboard: hydration score gauge, 7-day trend chart, recent scans, quick scan CTA
+- Scan screen: phone camera mode + simulation mode, 12-second countdown, live waveform animation, haptic feedback
+- Results screen: animated score reveal, personalized tips, heart rate / HRV / confidence metrics
+- History screen: stats summary (total, avg, best), 7-day trend chart, full scan log
+- Settings: premium upgrade (stubbed), scan mode toggle, Watch/Health stubs, clear history, disclaimers
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Dark-mode friendly UI with soft blues and greens (medical/wellness aesthetic)
+- Prominent safety disclaimers on scan and result screens
+- No emojis in UI
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- expo-camera and expo-av are installed but camera PPG is simulated — real camera processing requires custom native code beyond Expo Go
+- `useNativeDriver` warnings appear in web preview only — these do not affect native device behavior
+- NativeTabs (liquid glass) auto-activates on iOS 26+, falls back to classic tabs on older iOS/Android
 
 ## Pointers
 

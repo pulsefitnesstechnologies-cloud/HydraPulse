@@ -1,0 +1,44 @@
+Build a native iOS and Android app called "HydraPulse" using Expo (React Native managed workflow).
+App Concept
+A smart, non-invasive hydration tracker that estimates hydration status using photoplethysmography (PPG). It works in two modes:
+
+Phone-only mode — Uses the rear camera + flash (fingertip scan).
+Apple Watch mode — Pulls PPG/heart-rate waveform data from Apple HealthKit for continuous/background insights (with manual spot checks as fallback).
+
+Core Features
+
+Quick 10–15 second PPG scan (phone camera + flash or Apple Watch data).
+Simple on-device signal processing to calculate a Hydration Score (1–4 scale: Critical / Low / Good / Excellent).
+Supporting signals: voice timbre check (microphone) and manual symptom input.
+Dashboard with today’s score, 7-day trend chart, and history.
+Smart haptic + push reminders based on score, time of day, activity, and weather.
+Apple Watch companion support (read heart rate, HRV, and PPG-derived data via HealthKit).
+Full functionality without any wearable — phone flashlight mode is always available.
+Privacy-first: all PPG processing done on-device when possible.
+
+Technical Requirements
+
+Use expo-camera, expo-flash, expo-haptics, expo-av (microphone), and expo-health-connect / react-native-health for Apple HealthKit.
+Support both iOS and Android (graceful fallback on Android for Watch features).
+Dark-mode friendly, clean, medical/wellness UI style (soft blues and greens, minimal cards, large tap targets).
+Include prominent safety disclaimers on every scan/result screen: “Not a medical device. For wellness purposes only. Consult a doctor for medical concerns.”
+Freemium structure: Free tier = 5 scans/week + basic logging. Premium unlocks unlimited scans, Watch integration, advanced trends, and smart reminders (stub the paywall UI).
+
+Screens to Build
+
+Onboarding — Welcome, permissions request (camera, mic, health, notifications), quick tutorial.
+Home/Dashboard — Current hydration score, trend graph, quick-scan button, Watch connection status.
+Scan Screen — Guided fingertip placement (phone mode) or “Using Apple Watch” mode. Real-time waveform preview + progress.
+Results Screen — Score, explanation, tips, save to history.
+History & Trends — Calendar view + charts.
+Settings — Permissions, reminders, Apple Watch pairing, disclaimers, privacy policy.
+
+Additional Details
+
+Use Expo Router for navigation.
+Clean, modern typography and spacing (follow Apple Human Interface Guidelines where possible).
+Gentle haptics on scan completion and reminders.
+Local storage for history (or Supabase if you want backend later).
+Include a simple PPG simulation mode for testing without real hardware.
+
+Make the app production-ready, well-commented, and easy to iterate on. Start with a polished first version that includes the phone flashlight PPG scan and Apple HealthKit integration.

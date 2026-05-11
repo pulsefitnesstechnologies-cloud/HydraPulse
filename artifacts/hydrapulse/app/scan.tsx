@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { WaveformPreview } from "@/components/WaveformPreview";
 import {
-  FREE_SCANS_PER_WEEK,
   HydrationScore,
   ScanMethod,
   ScanRecord,
@@ -57,8 +56,6 @@ export default function ScanScreen() {
   const {
     scanMode,
     setScanMode,
-    scansThisWeek,
-    isPremium,
     addScanResult,
   } = useHydration();
 
@@ -70,7 +67,7 @@ export default function ScanScreen() {
   const fingerAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  const canScan = isPremium || scansThisWeek < FREE_SCANS_PER_WEEK;
+  const canScan = true;
 
   const startPulse = useCallback(() => {
     Animated.loop(

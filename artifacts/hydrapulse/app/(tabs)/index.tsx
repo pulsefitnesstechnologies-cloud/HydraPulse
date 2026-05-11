@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { TrendChart } from "@/components/TrendChart";
 import {
-  FREE_SCANS_PER_WEEK,
   HydrationScore,
   getScoreColor,
   getScoreLabel,
@@ -45,14 +44,13 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { latestScan, history, scansThisWeek, isPremium } = useHydration();
+  const { latestScan, history } = useHydration();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
   }, []);
 
-  const scansLeft = Math.max(0, FREE_SCANS_PER_WEEK - scansThisWeek);
   const scoreColor = latestScan ? getScoreColor(latestScan.score) : colors.primary;
 
   const handleScan = () => {
@@ -89,14 +87,6 @@ export default function HomeScreen() {
               HydraPulse
             </Text>
           </View>
-          {!isPremium && (
-            <View style={[styles.scanBadge, { backgroundColor: colors.secondary }]}>
-              <Ionicons name="scan-outline" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.scanBadgeText, { color: colors.mutedForeground }]}>
-                {scansLeft} left
-              </Text>
-            </View>
-          )}
         </View>
 
         <Animated.View style={{ opacity: fadeAnim }}>
@@ -231,32 +221,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {!isPremium && (
-            <Pressable
-              style={({ pressed }) => [
-                styles.premiumCard,
-                {
-                  backgroundColor: colors.primary + "12",
-                  borderColor: colors.primary + "40",
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-              onPress={() => router.push("/(tabs)/settings")}
-            >
-              <View style={styles.premiumLeft}>
-                <Ionicons name="diamond-outline" size={24} color={colors.primary} />
-                <View>
-                  <Text style={[styles.premiumTitle, { color: colors.foreground }]}>
-                    Upgrade to Premium
-                  </Text>
-                  <Text style={[styles.premiumSub, { color: colors.mutedForeground }]}>
-                    Unlimited scans · Watch support · Smart reminders
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-            </Pressable>
-          )}
 
           {history.length === 0 && (
             <View style={styles.emptyState}>

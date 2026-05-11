@@ -37,7 +37,9 @@ interface HydrationContextType {
   setScanMode: (mode: ScanMethod) => void;
 }
 
-const FREE_SCANS_PER_WEEK = 5;
+// TESTING MODE: all features unlocked, no scan limits
+const TESTING_MODE = true;
+const FREE_SCANS_PER_WEEK = TESTING_MODE ? Infinity : 5;
 
 const STORAGE_KEYS = {
   HISTORY: "@hydrapulse:history",
@@ -82,7 +84,7 @@ const HydrationContext = createContext<HydrationContextType | undefined>(
 
 export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<ScanRecord[]>([]);
-  const [isPremium, setIsPremiumState] = useState(false);
+  const [isPremium, setIsPremiumState] = useState(TESTING_MODE);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
   const [scanMode, setScanModeState] = useState<ScanMethod>("simulation");
 

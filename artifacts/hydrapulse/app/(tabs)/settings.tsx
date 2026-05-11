@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React from "react";
 import {
   Alert,
   Platform,
@@ -14,9 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
-import { PremiumModal } from "@/components/PremiumModal";
 import {
-  FREE_SCANS_PER_WEEK,
   ScanMethod,
   useHydration,
 } from "@/context/HydrationContext";
@@ -101,16 +99,12 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    isPremium,
-    setIsPremium,
     scanMode,
     setScanMode,
     scansThisWeek,
     history,
     clearHistory,
   } = useHydration();
-
-  const [showPremium, setShowPremium] = useState(false);
 
   const handleClearHistory = () => {
     if (Platform.OS === "web") {
@@ -136,14 +130,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleUpgrade = async () => {
-    await setIsPremium(true);
-    setShowPremium(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-      () => {}
-    );
-  };
-
   return (
     <View
       style={[
@@ -164,50 +150,17 @@ export default function SettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {!isPremium && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.premiumBanner,
-              {
-                backgroundColor: colors.primary + "15",
-                borderColor: colors.primary + "40",
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-            onPress={() => setShowPremium(true)}
-          >
-            <View style={styles.premiumBannerLeft}>
-              <Ionicons name="diamond-outline" size={28} color={colors.primary} />
-              <View>
-                <Text style={[styles.premiumBannerTitle, { color: colors.foreground }]}>
-                  Upgrade to Premium
-                </Text>
-                <Text style={[styles.premiumBannerSub, { color: colors.mutedForeground }]}>
-                  {`${scansThisWeek}/${FREE_SCANS_PER_WEEK} free scans used this week`}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.upgradeTag, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.upgradeTagText, { color: colors.primaryForeground }]}>
-                Upgrade
-              </Text>
-            </View>
-          </Pressable>
-        )}
-
-        {isPremium && (
-          <View
-            style={[
-              styles.premiumActive,
-              { backgroundColor: colors.accent + "15", borderColor: colors.accent + "40" },
-            ]}
-          >
-            <Ionicons name="diamond" size={20} color={colors.accent} />
-            <Text style={[styles.premiumActiveText, { color: colors.accent }]}>
-              Premium Active
-            </Text>
-          </View>
-        )}
+        <View
+          style={[
+            styles.premiumActive,
+            { backgroundColor: colors.accent + "15", borderColor: colors.accent + "40" },
+          ]}
+        >
+          <Ionicons name="flask-outline" size={20} color={colors.accent} />
+          <Text style={[styles.premiumActiveText, { color: colors.accent }]}>
+            Testing Mode — All Features Unlocked
+          </Text>
+        </View>
 
         <SectionHeader title="Scan Settings" />
         <View style={styles.group}>
@@ -245,19 +198,11 @@ export default function SettingsScreen() {
 
         <SectionHeader title="Account" />
         <View style={styles.group}>
-          {!isPremium ? (
-            <SettingsRow
-              icon="diamond-outline"
-              label="Upgrade to Premium"
-              onPress={() => setShowPremium(true)}
-            />
-          ) : (
-            <SettingsRow
-              icon="diamond"
-              label="Premium Plan"
-              value="Active"
-            />
-          )}
+          <SettingsRow
+            icon="diamond"
+            label="Premium Plan"
+            value="Unlocked"
+          />
           <SettingsRow
             icon="bar-chart-outline"
             label="Total Scans"
@@ -266,7 +211,7 @@ export default function SettingsScreen() {
           <SettingsRow
             icon="scan-outline"
             label="Scans This Week"
-            value={`${scansThisWeek} / ${isPremium ? "∞" : FREE_SCANS_PER_WEEK}`}
+            value={`${scansThisWeek} / ∞`}
           />
         </View>
 
@@ -275,20 +220,20 @@ export default function SettingsScreen() {
           <SettingsRow
             icon="watch-outline"
             label="Apple Watch"
-            value={isPremium ? "Connect" : "Premium"}
-            onPress={isPremium ? () => {} : () => setShowPremium(true)}
+            value="Connect"
+            onPress={() => {}}
           />
           <SettingsRow
             icon="heart-outline"
             label="Apple Health"
-            value={isPremium ? "Connect" : "Premium"}
-            onPress={isPremium ? () => {} : () => setShowPremium(true)}
+            value="Connect"
+            onPress={() => {}}
           />
           <SettingsRow
             icon="notifications-outline"
             label="Smart Reminders"
-            value={isPremium ? "Configure" : "Premium"}
-            onPress={isPremium ? () => {} : () => setShowPremium(true)}
+            value="Configure"
+            onPress={() => {}}
           />
         </View>
 
@@ -323,11 +268,6 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      <PremiumModal
-        visible={showPremium}
-        onClose={() => setShowPremium(false)}
-        onUpgrade={handleUpgrade}
-      />
     </View>
   );
 }

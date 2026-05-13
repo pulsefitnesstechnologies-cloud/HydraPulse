@@ -59,6 +59,11 @@
   "dependencies": {
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
-    "expo-dev-client": "^55.0.32"
+    "expo-dev-client": "^55.0.32",
+    "react-native-nitro-image": "^0.14.0",
+    "react-native-nitro-modules": "^0.35.6",
+    "react-native-vision-camera": "^4.6.4",
+    "react-native-worklets-core": "^1.6.3",
+    "vision-camera-resize-plugin": "^3.2.0"
   }
 }

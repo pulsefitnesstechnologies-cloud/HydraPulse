@@ -77,15 +77,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
 
-    // ── Camera — rear-facing + torch ─────────────────────────────────────
+    // ── Camera — VisionCamera v5 with frame processor support ────────────
+    // Replaces expo-camera; enables real per-frame pixel access for PPG.
     [
-      "expo-camera",
+      "react-native-vision-camera",
       {
-        cameraPermission:
+        cameraPermissionText:
           "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",
-        microphonePermission:
-          "HydraPulse may use the microphone for voice-timbre hydration analysis in a future update.",
-        recordAudioAndroid: false,
+        enableMicrophonePermission: false,
       },
     ],
 

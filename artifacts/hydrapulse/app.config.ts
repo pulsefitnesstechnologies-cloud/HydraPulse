@@ -31,6 +31,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
 
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+
       // ── Camera + torch ──────────────────────────────────────────────────
       NSCameraUsageDescription:
         "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",

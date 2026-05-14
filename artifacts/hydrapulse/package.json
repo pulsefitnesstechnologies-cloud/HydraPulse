@@ -59,7 +59,6 @@
   "dependencies": {
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
-    "expo-dev-client": "^55.0.32",
     "expo-notifications": "^55.0.23",
     "react-native-health": "^1.19.0",
     "react-native-nitro-image": "^0.14.0",

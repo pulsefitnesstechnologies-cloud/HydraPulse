@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Platform,
   Pressable,
@@ -15,8 +16,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { TrendChart } from "@/components/TrendChart";
+import { useHealth } from "@/context/HealthContext";
 import {
-  HydrationScore,
   getScoreColor,
   getScoreLabel,
   useHydration,
@@ -45,6 +46,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { latestScan, history } = useHydration();
+  const { healthKitEnabled, healthSnapshot, healthLoading, connectHealthKit } = useHealth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -57,6 +59,13 @@ export default function HomeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     router.push("/scan");
   };
+
+  const handleConnectHealth = async () => {
+    await connectHealthKit();
+  };
+
+  const hasHealthData =
+    healthKitEnabled && (healthSnapshot.heartRate !== null || healthSnapshot.hrv !== null);
 
   return (
     <View
@@ -71,10 +80,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          {
-            paddingBottom:
-              insets.bottom + 100 + (Platform.OS === "web" ? 34 : 0),
-          },
+          { paddingBottom: insets.bottom + 100 + (Platform.OS === "web" ? 34 : 0) },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -89,7 +95,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
           <View
             style={[
               styles.scoreCard,
@@ -105,10 +111,7 @@ export default function HomeScreen() {
                 {latestScan ? (
                   <>
                     <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: scoreColor + "20" },
-                      ]}
+                      style={[styles.statusBadge, { backgroundColor: scoreColor + "20" }]}
                     >
                       <Text style={[styles.statusText, { color: scoreColor }]}>
                         {getScoreLabel(latestScan.score)}
@@ -136,11 +139,7 @@ export default function HomeScreen() {
                   </>
                 ) : (
                   <View style={styles.noScanHint}>
-                    <Ionicons
-                      name="water-outline"
-                      size={28}
-                      color={colors.mutedForeground}
-                    />
+                    <Ionicons name="water-outline" size={28} color={colors.mutedForeground} />
                     <Text style={[styles.noScanText, { color: colors.mutedForeground }]}>
                       Tap scan to check your hydration
                     </Text>
@@ -163,13 +162,92 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {history.length > 0 && (
+          {/* Apple Health / Watch Card */}
+          {Platform.OS === "ios" && (
             <View
               style={[
                 styles.card,
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardHeaderLeft}>
+                  <Ionicons name="heart-outline" size={16} color={colors.destructive} />
+                  <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+                    Apple Health
+                  </Text>
+                </View>
+                {healthKitEnabled && (
+                  <View style={[styles.connectedBadge, { backgroundColor: "#10B981" + "20" }]}>
+                    <Text style={[styles.connectedText, { color: "#10B981" }]}>Connected</Text>
+                  </View>
+                )}
+              </View>
+
+              {!healthKitEnabled ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.connectBtn,
+                    {
+                      backgroundColor: colors.primary + "15",
+                      borderColor: colors.primary + "40",
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                  onPress={handleConnectHealth}
+                >
+                  <Ionicons name="link-outline" size={16} color={colors.primary} />
+                  <Text style={[styles.connectBtnText, { color: colors.primary }]}>
+                    Connect Apple Health
+                  </Text>
+                </Pressable>
+              ) : healthLoading ? (
+                <View style={styles.healthLoadingRow}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={[styles.healthLoadingText, { color: colors.mutedForeground }]}>
+                    Reading from Apple Watch...
+                  </Text>
+                </View>
+              ) : hasHealthData ? (
+                <View style={styles.healthMetricsRow}>
+                  {healthSnapshot.heartRate !== null && (
+                    <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
+                      <Ionicons name="heart" size={18} color={colors.destructive} />
+                      <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
+                        {healthSnapshot.heartRate}
+                      </Text>
+                      <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
+                        BPM
+                      </Text>
+                    </View>
+                  )}
+                  {healthSnapshot.hrv !== null && (
+                    <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
+                      <Ionicons name="pulse" size={18} color={colors.accent} />
+                      <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
+                        {healthSnapshot.hrv}
+                      </Text>
+                      <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
+                        HRV ms
+                      </Text>
+                    </View>
+                  )}
+                  {healthSnapshot.lastUpdated && (
+                    <Text style={[styles.healthUpdated, { color: colors.mutedForeground }]}>
+                      {timeAgo(healthSnapshot.lastUpdated)}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <Text style={[styles.healthEmpty, { color: colors.mutedForeground }]}>
+                  No heart rate data in the last 24 hours. Wear your Apple Watch to collect readings.
+                </Text>
+              )}
+            </View>
+          )}
+
+          {history.length > 0 && (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
                 7-Day Trend
               </Text>
@@ -178,12 +256,7 @@ export default function HomeScreen() {
           )}
 
           {history.length > 0 && (
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
                   Recent Scans
@@ -221,13 +294,10 @@ export default function HomeScreen() {
             </View>
           )}
 
-
           {history.length === 0 && (
             <View style={styles.emptyState}>
               <Ionicons name="water-outline" size={48} color={colors.border} />
-              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-                No scans yet
-              </Text>
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
               <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
                 Run your first scan to see your hydration score and trends here.
               </Text>
@@ -248,42 +318,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 4,
   },
-  greeting: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 2,
-  },
-  appName: {
-    fontSize: 28,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700" as const,
-  },
-  scanBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 4,
-  },
-  scanBadgeText: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
-  scoreCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
-    gap: 16,
-  },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
-    gap: 14,
-  },
+  greeting: { fontSize: 14, fontFamily: "Inter_400Regular", marginBottom: 2 },
+  appName: { fontSize: 28, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  scoreCard: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 16 },
+  card: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 14 },
   sectionLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
@@ -291,21 +329,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  gaugeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  gaugeInfo: {
-    flex: 1,
-    gap: 10,
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
+  gaugeRow: { flexDirection: "row", alignItems: "center", gap: 16 },
+  gaugeInfo: { flex: 1, gap: 10 },
+  statusBadge: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
   statusText: {
     fontSize: 14,
     fontFamily: "Inter_700Bold",
@@ -313,30 +339,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  lastScanTime: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-  },
-  metricMini: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  metricMiniText: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
-  noScanHint: {
-    alignItems: "center",
-    gap: 8,
-  },
-  noScanText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 18,
-  },
+  lastScanTime: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  metricMini: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metricMiniText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  noScanHint: { alignItems: "center", gap: 8 },
+  noScanText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 18 },
   scanBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -345,21 +352,37 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     gap: 8,
   },
-  scanBtnText: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-  },
-  cardHeaderRow: {
+  scanBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cardHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  connectedBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  connectedText: { fontSize: 12, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  connectBtn: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  seeAll: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
+  connectBtnText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  healthLoadingRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 },
+  healthLoadingText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  healthMetricsRow: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  healthMetric: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
+  healthMetricValue: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  healthMetricUnit: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  healthUpdated: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, width: "100%" },
+  healthEmpty: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 19 },
+  seeAll: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   historyRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -374,66 +397,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  scoreChipText: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700" as const,
-  },
+  scoreChipText: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   historyInfo: { flex: 1, gap: 3 },
-  historyLabel: {
-    fontSize: 15,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
+  historyLabel: { fontSize: 15, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   historyTime: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     textTransform: "capitalize",
   },
-  confidenceBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  confidenceText: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500" as const,
-  },
-  premiumCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  premiumLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    flex: 1,
-  },
-  premiumTitle: {
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-  },
-  premiumSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
-  emptyState: {
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600" as const,
-  },
+  confidenceBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  confidenceText: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  emptyState: { alignItems: "center", gap: 12, paddingVertical: 40 },
+  emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",

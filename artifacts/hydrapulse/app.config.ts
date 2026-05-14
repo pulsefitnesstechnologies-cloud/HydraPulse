@@ -89,6 +89,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
     "expo-font",
     "expo-web-browser",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/icon.png",
+        color: "#0EA5E9",
+        sounds: [],
+      },
+    ],
   ],
 
   experiments: {

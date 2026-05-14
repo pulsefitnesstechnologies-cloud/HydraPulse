@@ -1,7 +1,5 @@
 import { ConfigContext, ExpoConfig } from "expo/config";
 
-const isDevelopment = process.env.EXPO_PUBLIC_ENV === "development";
-
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "HydraPulse",
@@ -71,9 +69,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
-    // ── expo-dev-client — only for development builds ────────────────────
-    ...(isDevelopment ? ["expo-dev-client"] : []),
-
     [
       "expo-router",
       {

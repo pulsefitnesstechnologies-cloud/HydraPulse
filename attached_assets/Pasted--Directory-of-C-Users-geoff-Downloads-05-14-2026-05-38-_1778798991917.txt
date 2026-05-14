@@ -1,0 +1,90 @@
+ Directory of C:\Users\geoff\Downloads
+
+05/14/2026  05:38 PM    <DIR>          .
+05/13/2026  07:34 AM    <DIR>          ..
+09/30/2025  04:55 PM        80,953,280 -B-Cyberpunk-Exteriors-02-Slums-FREE--00948592500.zip
+09/30/2025  04:55 PM        17,802,456 -B-Modern-Interiors-09-Home-FREE--00945395500.zip
+05/11/2026  12:39 PM           312,700 8f0395bc-e9e7-47fe-ba3c-391e1ff1d822.jpg
+04/13/2026  01:47 PM           323,211 98fvs.jpg
+10/13/2025  03:59 PM           215,271 ATTBill_1144_Sep2025.pdf
+04/29/2026  06:22 PM         4,896,464 Battle.net-Setup (1).exe
+04/21/2026  05:39 PM         4,896,464 Battle.net-Setup.exe
+09/30/2025  07:38 PM       219,883,712 BingWallpaperInstaller.exe
+02/01/2026  08:44 AM         1,277,280 BraveBrowserSetup-BRV010.exe
+04/13/2026  01:50 PM           300,940 BYqoY.jpg
+08/13/2025  04:40 PM        11,065,272 ChromeSetup (1).exe
+04/27/2025  05:43 AM        11,497,856 ChromeSetup.exe
+01/27/2026  06:27 PM            17,404 Confidential Tax Document AB268081 - W-2 2025 Page 1 - State AL.pdf
+10/03/2025  04:52 PM       120,276,920 DiscordCanarySetup (1).exe
+10/03/2025  04:52 PM       120,276,920 DiscordCanarySetup.exe
+04/29/2025  06:17 PM       107,226,856 DiscordSetup (1).exe
+06/06/2025  07:15 PM       120,219,512 DiscordSetup (2).exe
+04/27/2025  06:06 PM       107,226,856 DiscordSetup.exe
+10/29/2025  05:09 AM       111,206,600 expressvpn_windows_12.104.0.128_release.exe
+08/30/2025  05:14 PM        28,198,952 ffxivsetup.exe
+12/04/2025  10:07 AM           188,851 FIDO Invoice.pdf
+05/14/2026  03:37 PM        65,175,776 Git-2.54.0-64-bit.exe
+04/20/2026  02:28 PM            41,354 Grand-Mage-Tower-Base-Observatory.webp
+04/20/2026  02:30 PM           403,387 grok-image-0c813e14-b84a-484b-b88a-f1e2a8616d9f.png
+04/19/2026  05:53 PM           269,945 grok-image-3618e2c3-58e0-4a35-b26b-1db8d4871107.png
+04/20/2026  01:34 PM           337,021 grok-image-5251ea24-c5b0-4c3b-a9fa-377b7a2458ef.png
+05/03/2026  07:11 PM           369,133 grok-image-69787acb-1c24-41b9-853e-6cad6b1e36f1.png
+04/19/2026  04:22 PM           295,988 grok-image-838b668b-b680-4dca-a031-a25013060ffc.png
+04/19/2026  05:49 PM           252,020 grok-image-900042a9-8b41-45a0-9ff7-b3d2608e254c.png
+04/20/2026  01:26 PM           346,638 grok-image-955e0895-79cf-4e34-b293-4ae58a60fdf6.png
+04/20/2026  02:06 PM           441,500 grok-image-cb2eff89-1bf9-467f-beea-4de47294fa77.png
+05/11/2026  03:31 PM           340,727 grok-image-d059377a-b4ba-4d08-8a12-5b76d0e0e4f5.png
+04/20/2026  01:25 PM           381,385 grok-image-d6bd1007-80c4-4361-9a7d-09f3c4d99097.png
+04/19/2026  05:48 PM           250,776 grok-image-dc758aac-11f9-4b4e-b3d3-7efae71fbefb (1).png
+04/19/2026  05:45 PM           250,776 grok-image-dc758aac-11f9-4b4e-b3d3-7efae71fbefb.png
+04/19/2026  05:41 PM           261,636 grok-image-e1b33024-c937-4f25-9fe1-e161c4215cda.png
+04/20/2026  01:36 PM           297,822 grok-image-e4a6fd22-1a62-4340-ab53-179b78e0b499.png
+12/21/2025  10:38 AM            81,987 GSAP - Proposal Form  Red Lobster Restaurants LLC 2024.pdf
+03/22/2026  09:28 AM           429,420 Haunted Mansion Foyer.dungeondraft_map
+05/04/2026  04:11 PM           255,691 Haunted Mansion_Hotel.pdf
+05/14/2026  05:38 PM    <DIR>          Hydra-Pulse
+05/14/2026  05:37 PM       202,854,970 Hydra-Pulse.zip
+04/27/2025  05:07 PM       158,701,696 IntrepidInstaller-0.3.288.61318 (1).exe
+04/27/2025  05:03 PM       158,701,696 IntrepidInstaller-0.3.288.61318.exe
+06/14/2025  06:02 AM       158,713,632 IntrepidInstaller-0.3.295.14113 (1).exe
+06/14/2025  06:05 AM       158,713,632 IntrepidInstaller-0.3.295.14113 (2).exe
+06/14/2025  06:09 PM       158,713,632 IntrepidInstaller-0.3.295.14113 (3).exe
+06/12/2025  03:52 PM       158,713,632 IntrepidInstaller-0.3.295.14113.exe
+07/27/2025  06:38 AM       158,717,896 IntrepidInstaller-0.3.299.37331 (1).exe
+07/23/2025  05:12 PM       158,717,896 IntrepidInstaller-0.3.299.37331.exe
+04/29/2025  06:25 PM        58,976,136 lghub_installer.exe
+04/27/2025  04:39 PM        46,110,600 lotrolive.exe
+02/01/2026  07:46 AM        46,429,960 lotropreview.exe
+09/21/2025  10:25 AM       150,597,157 Moulks-AI-Fantasy-Cartography-Megapack-1.zip
+05/11/2026  07:43 PM        32,497,664 node-v24.15.0-x64.msi
+12/11/2025  04:34 PM            38,704 PAYOFF AUTHORIZATION (BLANK).pdf
+12/11/2025  04:34 PM           254,279 Payoff-clear - Signed.pdf
+05/04/2026  04:11 PM            72,808 Player Info.pdf
+03/07/2026  08:28 PM         2,374,938 PluginCompendiumSetup-1.0.4.0.zip
+01/18/2026  01:19 PM         1,185,152 print.pdf
+01/18/2026  01:27 PM           383,806 print1.pdf
+01/04/2026  11:24 AM           142,401 result.jpeg
+04/27/2025  04:59 PM         2,380,800 SteamSetup.exe
+04/20/2026  01:51 PM            81,370 test map.jpg
+05/11/2026  01:11 PM           420,889 The Cold Shadows_  Creeping Cold (1).pdf
+05/04/2026  07:15 AM           385,184 The Cold Shadows_  Creeping Cold.pdf
+01/18/2026  08:25 AM           289,720 The Veiled World (1).docx
+01/18/2026  09:02 AM         3,296,966 The Veiled World (1).pdf
+04/06/2026  06:32 PM           654,495 The Veiled World (2).docx
+01/18/2026  09:02 AM         3,296,966 The Veiled World (2).pdf
+04/12/2026  02:22 PM           662,585 The Veiled World (3).docx
+01/18/2026  11:15 AM         3,296,966 The Veiled World (3).pdf
+04/06/2026  06:15 PM         3,850,158 The Veiled World (4).pdf
+04/12/2026  02:23 PM         3,914,279 The Veiled World (5).pdf
+04/12/2026  07:11 PM         3,963,617 The Veiled World (6).pdf
+04/13/2026  08:00 PM         5,677,325 The Veiled World (7).pdf
+04/22/2026  06:52 PM         6,064,840 The Veiled World (8).pdf
+05/04/2026  04:10 PM         6,251,365 The Veiled World (9).pdf
+10/27/2025  06:31 PM           286,289 The Veiled World.docx
+11/09/2025  08:23 AM                 0 The Veiled World.pdf
+04/20/2026  01:23 PM           489,657 The_Veiled_World_Character_Sheet_p1.jpg
+11/09/2025  08:22 AM        45,909,512 Veiled Handbook V1.pdf
+04/13/2026  01:14 PM             7,452 Veiled Quick Sheet - Character Creation.xlsx
+06/22/2025  01:50 PM           140,815 W9.pdf
+              83 File(s)  3,041,680,296 bytes
+               3 Dir(s)  376,985,382,912 bytes free

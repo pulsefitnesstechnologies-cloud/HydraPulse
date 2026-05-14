@@ -32,7 +32,10 @@ const HealthContext = createContext<HealthContextType | undefined>(undefined);
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const hk = useHealthKit();
   const notif = useNotifications();
-  const monitor = useWatchMonitor();
+  const monitor = useWatchMonitor({
+    getLatestHR: () => hk.snapshot.heartRate,
+    getLatestHRV: () => hk.snapshot.hrv,
+  });
 
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
   const [reminderSchedule, setReminderSchedule] = useState<ReminderSchedule>(DEFAULT_SCHEDULE);

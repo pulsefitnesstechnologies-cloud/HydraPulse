@@ -18,9 +18,6 @@ import { HealthProvider } from "@/context/HealthContext";
 import { HydrationProvider, useHydration } from "@/context/HydrationContext";
 import { WorkoutProvider } from "@/context/WorkoutContext";
 
-// Ensure background task definition is registered at startup
-import "@/hooks/useWatchMonitor";
-
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();

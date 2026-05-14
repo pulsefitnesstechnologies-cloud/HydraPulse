@@ -72,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   plugins: [
     // ── expo-dev-client — only for development builds ────────────────────
-    ...(isDevelopment ? (["expo-dev-client"] as const) : []),
+    ...(isDevelopment ? ["expo-dev-client"] : []),
 
     [
       "expo-router",

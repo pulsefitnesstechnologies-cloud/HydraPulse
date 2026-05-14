@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
-import AppleHealthKit, { HealthKitPermissions } from "react-native-health";
 
 export interface HealthSnapshot {
   heartRate: number | null;
@@ -8,15 +7,16 @@ export interface HealthSnapshot {
   lastUpdated: string | null;
 }
 
-const PERMISSIONS: HealthKitPermissions = {
-  permissions: {
-    read: [
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.HeartRateVariability,
-    ],
-    write: [],
-  },
-};
+// Lazy-require so a missing native module never crashes the JS bundle
+function getHK() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require("react-native-health");
+    return (mod.default ?? mod) as typeof import("react-native-health").default;
+  } catch {
+    return null;
+  }
+}
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -32,27 +32,47 @@ export function useHealthKit() {
 
   useEffect(() => {
     if (Platform.OS !== "ios") return;
-    AppleHealthKit.isAvailable((err, available) => {
-      if (!err && available) setIsAvailable(true);
-    });
+    const hk = getHK();
+    if (!hk) return;
+    try {
+      hk.isAvailable((err: unknown, available: boolean) => {
+        if (!err && available) setIsAvailable(true);
+      });
+    } catch {}
   }, []);
 
   const requestAuthorization = useCallback((): Promise<boolean> => {
     if (Platform.OS !== "ios" || !isAvailable) return Promise.resolve(false);
+    const hk = getHK();
+    if (!hk) return Promise.resolve(false);
+    const permissions = {
+      permissions: {
+        read: [
+          hk.Constants.Permissions.HeartRate,
+          hk.Constants.Permissions.HeartRateVariability,
+        ],
+        write: [] as import("react-native-health").HealthPermission[],
+      },
+    };
     return new Promise((resolve) => {
-      AppleHealthKit.initHealthKit(PERMISSIONS, (err) => {
-        if (err) {
-          resolve(false);
-        } else {
-          setIsAuthorized(true);
-          resolve(true);
-        }
-      });
+      try {
+        hk.initHealthKit(permissions, (err: unknown) => {
+          if (err) resolve(false);
+          else {
+            setIsAuthorized(true);
+            resolve(true);
+          }
+        });
+      } catch {
+        resolve(false);
+      }
     });
   }, [isAvailable]);
 
   const fetchLatest = useCallback(async () => {
     if (!isAuthorized || Platform.OS !== "ios") return;
+    const hk = getHK();
+    if (!hk) return;
     setIsLoading(true);
 
     const options = {
@@ -63,17 +83,28 @@ export function useHealthKit() {
     };
 
     const hrPromise = new Promise<number | null>((resolve) => {
-      AppleHealthKit.getHeartRateSamples(options, (err, results) => {
-        if (err || !results || results.length === 0) resolve(null);
-        else resolve(Math.round(results[0].value));
-      });
+      try {
+        hk.getHeartRateSamples(options, (err: unknown, results: Array<{ value: number }>) => {
+          if (err || !results?.length) resolve(null);
+          else resolve(Math.round(results[0].value));
+        });
+      } catch {
+        resolve(null);
+      }
     });
 
     const hrvPromise = new Promise<number | null>((resolve) => {
-      AppleHealthKit.getHeartRateVariabilitySamples(options, (err, results) => {
-        if (err || !results || results.length === 0) resolve(null);
-        else resolve(Math.round(results[0].value));
-      });
+      try {
+        hk.getHeartRateVariabilitySamples(
+          options,
+          (err: unknown, results: Array<{ value: number }>) => {
+            if (err || !results?.length) resolve(null);
+            else resolve(Math.round(results[0].value));
+          }
+        );
+      } catch {
+        resolve(null);
+      }
     });
 
     const [heartRate, hrv] = await Promise.all([hrPromise, hrvPromise]);

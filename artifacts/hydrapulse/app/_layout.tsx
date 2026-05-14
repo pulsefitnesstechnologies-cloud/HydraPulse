@@ -16,6 +16,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HealthProvider } from "@/context/HealthContext";
 import { HydrationProvider, useHydration } from "@/context/HydrationContext";
+import { WorkoutProvider } from "@/context/WorkoutContext";
+
+// Ensure background task definition is registered at startup
+import "@/hooks/useWatchMonitor";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -53,6 +57,10 @@ function RootLayoutNav() {
           name="results"
           options={{ headerShown: false, presentation: "fullScreenModal" }}
         />
+        <Stack.Screen
+          name="workout"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
       </Stack>
     </>
   );
@@ -80,11 +88,13 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <HydrationProvider>
             <HealthProvider>
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
+              <WorkoutProvider>
+                <GestureHandlerRootView>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </WorkoutProvider>
             </HealthProvider>
           </HydrationProvider>
         </QueryClientProvider>

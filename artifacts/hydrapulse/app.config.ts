@@ -46,6 +46,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
       NSHealthUpdateUsageDescription:
         "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
+
+      // ── Background fetch (Watch monitoring) ─────────────────────────────
+      UIBackgroundModes: ["fetch"],
     },
   },
 

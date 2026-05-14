@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 
 import { HealthSnapshot, useHealthKit } from "@/hooks/useHealthKit";
 import { DEFAULT_SCHEDULE, ReminderSchedule, useNotifications } from "@/hooks/useNotifications";
+import { WatchInterval, useWatchMonitor } from "@/hooks/useWatchMonitor";
 
 const STORAGE_KEYS = {
   HEALTH_ENABLED: "@hydrapulse:healthEnabled",
@@ -16,12 +17,14 @@ interface HealthContextType {
   healthLoading: boolean;
   notificationsEnabled: boolean;
   reminderSchedule: ReminderSchedule;
+  watchInterval: WatchInterval;
   connectHealthKit: () => Promise<boolean>;
   refreshHealthData: () => void;
   notificationPermission: boolean;
   requestNotificationPermission: () => Promise<boolean>;
   updateReminderSchedule: (schedule: ReminderSchedule) => Promise<void>;
   disableNotifications: () => Promise<void>;
+  setWatchInterval: (hours: WatchInterval) => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextType | undefined>(undefined);
@@ -29,6 +32,7 @@ const HealthContext = createContext<HealthContextType | undefined>(undefined);
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const hk = useHealthKit();
   const notif = useNotifications();
+  const monitor = useWatchMonitor();
 
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
   const [reminderSchedule, setReminderSchedule] = useState<ReminderSchedule>(DEFAULT_SCHEDULE);
@@ -49,6 +53,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const connectHealthKit = useCallback(async (): Promise<boolean> => {
@@ -97,12 +102,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         healthLoading: hk.isLoading,
         notificationsEnabled,
         reminderSchedule,
+        watchInterval: monitor.watchInterval,
         connectHealthKit,
         refreshHealthData: hk.fetchLatest,
         notificationPermission: notif.hasPermission,
         requestNotificationPermission: notif.requestPermission,
         updateReminderSchedule,
         disableNotifications,
+        setWatchInterval: monitor.setWatchInterval,
       }}
     >
       {children}

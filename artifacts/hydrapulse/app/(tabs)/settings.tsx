@@ -1,14 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +20,7 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { useHealth } from "@/context/HealthContext";
 import { useHydration } from "@/context/HydrationContext";
 import { useColors } from "@/hooks/useColors";
+import { WATCH_INTERVALS, WatchInterval } from "@/hooks/useWatchMonitor";
 
 function SettingsRow({
   icon,
@@ -166,19 +170,96 @@ function ReminderToggles() {
   );
 }
 
+function WatchIntervalPicker({
+  visible,
+  current,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  current: WatchInterval;
+  onSelect: (v: WatchInterval) => void;
+  onClose: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  const label = (h: WatchInterval) => (h === 0 ? "Off" : `Every ${h}h`);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose} />
+      <View
+        style={[
+          styles.modalSheet,
+          {
+            backgroundColor: colors.card,
+            paddingBottom: insets.bottom + 20,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+        <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+          Watch Monitoring Interval
+        </Text>
+        <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
+          HydraPulse will read Apple Watch heart rate and HRV at this interval
+          and alert you if hydration appears low.
+        </Text>
+        {WATCH_INTERVALS.map((h) => (
+          <TouchableOpacity
+            key={h}
+            style={[
+              styles.intervalOption,
+              {
+                backgroundColor:
+                  current === h ? colors.primary + "15" : colors.background,
+                borderColor: current === h ? colors.primary + "60" : colors.border,
+              },
+            ]}
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              onSelect(h);
+              onClose();
+            }}
+          >
+            <Text
+              style={[
+                styles.intervalOptionText,
+                { color: current === h ? colors.primary : colors.foreground },
+              ]}
+            >
+              {label(h)}
+            </Text>
+            {current === h && (
+              <Ionicons name="checkmark" size={18} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </Modal>
+  );
+}
+
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { scanMode, setScanMode, scansThisWeek, history, clearHistory } = useHydration();
   const {
     healthKitAvailable,
     healthKitEnabled,
     notificationsEnabled,
+    watchInterval,
     connectHealthKit,
     refreshHealthData,
+    setWatchInterval,
+    requestNotificationPermission,
   } = useHealth();
 
   const [showReminders, setShowReminders] = useState(false);
+  const [showIntervalPicker, setShowIntervalPicker] = useState(false);
 
   const handleClearHistory = () => {
     if (Platform.OS === "web") {
@@ -215,14 +296,35 @@ export default function SettingsScreen() {
     const ok = await connectHealthKit();
     if (ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Alert.alert("Connected", "HydraPulse can now read your heart rate and HRV from Apple Health.");
+      Alert.alert(
+        "Connected",
+        "HydraPulse can now read your heart rate and HRV from Apple Health."
+      );
     } else {
       Alert.alert(
         "Permission Required",
-        "Please allow HydraPulse to access Health data in Settings > Privacy > Health."
+        "Please allow HydraPulse to access Health data in Settings > Privacy > Health.",
+        [{ text: "OK" }]
       );
     }
   };
+
+  const handleWatchInterval = async (h: WatchInterval) => {
+    if (h > 0) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          "Notifications Required",
+          "Enable notifications in iPhone Settings so HydraPulse can alert you about low hydration.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+    }
+    await setWatchInterval(h);
+  };
+
+  const intervalLabel = (h: WatchInterval) => (h === 0 ? "Off" : `Every ${h}h`);
 
   return (
     <View
@@ -251,6 +353,16 @@ export default function SettingsScreen() {
           <Text style={[styles.premiumActiveText, { color: colors.accent }]}>
             Testing Mode — All Features Unlocked
           </Text>
+        </View>
+
+        <SectionHeader title="Workout" />
+        <View style={styles.group}>
+          <SettingsRow
+            icon="barbell-outline"
+            label="Sweat Loss Tracker"
+            value="Start / End Workout"
+            onPress={() => router.push("/workout")}
+          />
         </View>
 
         <SectionHeader title="Scan Settings" />
@@ -285,7 +397,7 @@ export default function SettingsScreen() {
         <View style={styles.group}>
           <SettingsRow icon="diamond" label="Premium Plan" value="Unlocked" />
           <SettingsRow icon="bar-chart-outline" label="Total Scans" value={String(history.length)} />
-          <SettingsRow icon="scan-outline" label="Scans This Week" value={`${scansThisWeek} / ∞`} />
+          <SettingsRow icon="scan-outline" label="Scans This Week" value={`${scansThisWeek} / \u221e`} />
         </View>
 
         <SectionHeader title="Integrations" />
@@ -306,8 +418,26 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="watch-outline"
-            label="Apple Watch"
-            value={healthKitEnabled ? "Via Health" : "Requires Health"}
+            label="Watch Monitoring"
+            value={
+              Platform.OS !== "ios"
+                ? "iOS only"
+                : !healthKitEnabled
+                ? "Requires Health"
+                : intervalLabel(watchInterval)
+            }
+            onPress={
+              Platform.OS === "ios" && healthKitEnabled
+                ? () => setShowIntervalPicker(true)
+                : Platform.OS === "ios" && !healthKitEnabled
+                ? () =>
+                    Alert.alert(
+                      "Connect Apple Health First",
+                      "Tap Apple Health above to grant permission, then set your monitoring interval.",
+                      [{ text: "OK" }]
+                    )
+                : undefined
+            }
           />
           <SettingsRow
             icon="notifications-outline"
@@ -348,6 +478,13 @@ export default function SettingsScreen() {
           <DisclaimerBanner />
         </View>
       </ScrollView>
+
+      <WatchIntervalPicker
+        visible={showIntervalPicker}
+        current={watchInterval}
+        onSelect={handleWatchInterval}
+        onClose={() => setShowIntervalPicker(false)}
+      />
     </View>
   );
 }
@@ -412,4 +549,34 @@ const styles = StyleSheet.create({
   },
   slotLabel: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   slotTime: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    padding: 24,
+    gap: 12,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  modalTitle: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  modalSub: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  intervalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  intervalOptionText: { fontSize: 16, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 });

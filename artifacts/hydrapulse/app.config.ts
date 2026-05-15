@@ -63,7 +63,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
-    // expo-dev-client must be first — it sets up the custom native launcher
+    // ── Folly coroutines fix ───────────────────────────────────────────────
+    // Injects FOLLY_CFG_NO_COROUTINES=1 globally via a Podfile post_install
+    // hook to prevent 'folly/coro/Coroutine.h' file not found build errors.
+    // Must be first so it runs before any other plugin modifies the Podfile.
+    "./plugins/withFollyNoCoroutines",
+
+    // expo-dev-client must be early — it sets up the custom native launcher
     // that lets you run development builds with custom native modules.
     "expo-dev-client",
 

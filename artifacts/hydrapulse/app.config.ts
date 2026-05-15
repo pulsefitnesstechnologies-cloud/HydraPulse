@@ -63,6 +63,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    // expo-dev-client must be first — it sets up the custom native launcher
+    // that lets you run development builds with custom native modules.
+    "expo-dev-client",
+
     [
       "expo-router",
       {

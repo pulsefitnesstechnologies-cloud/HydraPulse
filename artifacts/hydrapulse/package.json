@@ -58,6 +58,7 @@
     "@kingstinct/react-native-healthkit": "14.0.1",
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
+    "expo-dev-client": "^56.0.10",
     "expo-notifications": "^55.0.23",
     "react-native-nitro-modules": "0.35.6",
     "react-native-reanimated": "~3.16.7",

@@ -7,22 +7,20 @@ export interface HealthSnapshot {
   lastUpdated: string | null;
 }
 
-// Lazy-require so a missing native module never crashes the JS bundle
-function getHK() {
+const WINDOW_MS = 24 * 60 * 60 * 1000;
+
+// Lazy-require keeps the JS bundle from crashing on Android/web where the
+// native module is absent. All calls are guarded by Platform.OS === "ios".
+function hk() {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require("react-native-health");
-    return (mod.default ?? mod) as typeof import("react-native-health").default;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("@kingstinct/react-native-healthkit") as typeof import("@kingstinct/react-native-healthkit");
   } catch {
     return null;
   }
 }
 
-const WINDOW_MS = 24 * 60 * 60 * 1000;
-
 export function useHealthKit() {
-  // Assume available on real iOS devices (all modern iPhones support HealthKit).
-  // Only explicitly mark unavailable if the native callback says so.
   const [isAvailable, setIsAvailable] = useState(Platform.OS === "ios");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [snapshot, setSnapshot] = useState<HealthSnapshot>({
@@ -32,100 +30,78 @@ export function useHealthKit() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check device-level HealthKit availability (simulator returns false)
   useEffect(() => {
     if (Platform.OS !== "ios") return;
-    const hk = getHK();
-    if (!hk) {
-      setIsAvailable(false);
-      return;
-    }
+    const mod = hk();
+    if (!mod) { setIsAvailable(false); return; }
     try {
-      hk.isAvailable((err: unknown, available: boolean) => {
-        // Only set false if the device explicitly reports unavailable
-        if (!err && !available) setIsAvailable(false);
-      });
+      if (!mod.isHealthDataAvailable()) setIsAvailable(false);
     } catch {}
   }, []);
 
-  // Try to request authorization. We no longer gate on isAvailable so the
-  // HealthKit permission sheet appears on first tap even before the async
-  // isAvailable callback fires.
+  // Show the system HealthKit permission sheet.
+  // NOTE: HealthKit always resolves the promise even when the user denies —
+  // this is enforced by Apple to prevent apps detecting denial. We treat
+  // a successful resolve as "authorization requested" and set isAuthorized.
   const requestAuthorization = useCallback((): Promise<boolean> => {
     if (Platform.OS !== "ios") return Promise.resolve(false);
-    const hk = getHK();
-    if (!hk) return Promise.resolve(false);
+    const mod = hk();
+    if (!mod) return Promise.resolve(false);
 
-    const permissions = {
-      permissions: {
-        read: [
-          hk.Constants.Permissions.HeartRate,
-          hk.Constants.Permissions.HeartRateVariability,
-          hk.Constants.Permissions.Weight,
+    return mod
+      .requestAuthorization({
+        toRead: [
+          "HKQuantityTypeIdentifierHeartRate",
+          "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
         ],
-        write: [] as import("react-native-health").HealthPermission[],
-      },
-    };
-
-    return new Promise((resolve) => {
-      try {
-        hk.initHealthKit(permissions, (err: unknown) => {
-          if (err) {
-            resolve(false);
-          } else {
-            setIsAuthorized(true);
-            setIsAvailable(true);
-            resolve(true);
-          }
-        });
-      } catch {
-        resolve(false);
-      }
-    });
+        toShare: [],
+      })
+      .then((ok) => {
+        // ok is always true unless there was a native-level error
+        if (ok) {
+          setIsAuthorized(true);
+          setIsAvailable(true);
+        }
+        return ok;
+      })
+      .catch(() => false);
   }, []);
 
+  // Read the most recent HR and HRV samples from the last 24 hours.
   const fetchLatest = useCallback(async () => {
     if (!isAuthorized || Platform.OS !== "ios") return;
-    const hk = getHK();
-    if (!hk) return;
+    const mod = hk();
+    if (!mod) return;
     setIsLoading(true);
 
-    const options = {
-      startDate: new Date(Date.now() - WINDOW_MS).toISOString(),
-      endDate: new Date().toISOString(),
-      ascending: false,
+    const opts = {
+      startDate: new Date(Date.now() - WINDOW_MS),
+      endDate: new Date(),
       limit: 1,
+      ascending: false,
     };
 
-    const hrPromise = new Promise<number | null>((resolve) => {
-      try {
-        hk.getHeartRateSamples(
-          options,
-          (err: unknown, results: Array<{ value: number }>) => {
-            if (err || !results?.length) resolve(null);
-            else resolve(Math.round(results[0].value));
-          }
-        );
-      } catch {
-        resolve(null);
-      }
-    });
+    try {
+      const [hrSamples, hrvSamples] = await Promise.all([
+        mod.queryQuantitySamples("HKQuantityTypeIdentifierHeartRate", opts).catch(() => []),
+        mod.queryQuantitySamples("HKQuantityTypeIdentifierHeartRateVariabilitySDNN", opts).catch(() => []),
+      ]);
 
-    const hrvPromise = new Promise<number | null>((resolve) => {
-      try {
-        hk.getHeartRateVariabilitySamples(
-          options,
-          (err: unknown, results: Array<{ value: number }>) => {
-            if (err || !results?.length) resolve(null);
-            else resolve(Math.round(results[0].value));
-          }
-        );
-      } catch {
-        resolve(null);
-      }
-    });
+      // quantity is already in the native HealthKit unit:
+      //   HeartRate             → count/min  (BPM)
+      //   HeartRateVariabilitySDNN → ms
+      setSnapshot({
+        heartRate: hrSamples[0]?.quantity != null
+          ? Math.round(hrSamples[0].quantity)
+          : null,
+        hrv: hrvSamples[0]?.quantity != null
+          ? Math.round(hrvSamples[0].quantity)
+          : null,
+        lastUpdated: new Date().toISOString(),
+      });
+    } catch {}
 
-    const [heartRate, hrv] = await Promise.all([hrPromise, hrvPromise]);
-    setSnapshot({ heartRate, hrv, lastUpdated: new Date().toISOString() });
     setIsLoading(false);
   }, [isAuthorized]);
 
@@ -133,5 +109,12 @@ export function useHealthKit() {
     if (isAuthorized) fetchLatest();
   }, [isAuthorized, fetchLatest]);
 
-  return { isAvailable, isAuthorized, snapshot, isLoading, requestAuthorization, fetchLatest };
+  return {
+    isAvailable,
+    isAuthorized,
+    snapshot,
+    isLoading,
+    requestAuthorization,
+    fetchLatest,
+  };
 }

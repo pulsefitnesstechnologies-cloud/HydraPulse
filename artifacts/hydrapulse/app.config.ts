@@ -9,10 +9,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/images/icon.png",
   scheme: "hydrapulse",
   userInterfaceStyle: "automatic",
-  // react-native-health uses the legacy bridge (pre-TurboModules).
-  // New architecture causes initHealthKit to error immediately without ever
-  // showing the iOS permission sheet. Disabled until rn-health ships a JSI module.
-  newArchEnabled: false,
+  // New architecture enabled — all native packages in this project support
+  // JSI / Fabric. react-native-health was replaced with
+  // @kingstinct/react-native-healthkit which is built on NitroModules (new arch).
+  newArchEnabled: true,
 
   splash: {
     image: "./assets/images/icon.png",
@@ -25,14 +25,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: "com.hydrapulse.app",
     buildNumber: "1",
 
-    // ── HealthKit capability ──────────────────────────────────────────────
-    // Enables the com.apple.developer.healthkit entitlement so the app can
-    // read heart rate / HRV from HealthKit and write hydration scores back.
-    entitlements: {
-      "com.apple.developer.healthkit": true,
-      "com.apple.developer.healthkit.access": [],
-    },
-
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
 
@@ -44,15 +36,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSMicrophoneUsageDescription:
         "HydraPulse may use the microphone for voice-timbre hydration analysis in a future update.",
 
-      // ── HealthKit ───────────────────────────────────────────────────────
-      NSHealthShareUsageDescription:
-        "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
-      NSHealthUpdateUsageDescription:
-        "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
-
       // ── Background notifications (Watch monitoring reminders) ────────────
       UIBackgroundModes: ["remote-notification"],
     },
+    // NOTE: HealthKit entitlement + NSHealth* descriptions are injected by
+    // the @kingstinct/react-native-healthkit config plugin below.
   },
 
   android: {
@@ -93,17 +81,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
 
-    // ── HealthKit — config plugin required for EAS managed builds ─────────
-    // Without this entry EAS skips native HealthKit project setup and pod
-    // install fails. The plugin wires entitlements + infoPlist descriptions.
+    // ── HealthKit — @kingstinct/react-native-healthkit config plugin ───────
+    // Adds the com.apple.developer.healthkit entitlement and injects
+    // NSHealth* usage descriptions. background:false means we don't need
+    // the background-delivery entitlement (we read on foreground only).
     [
-      "react-native-health",
+      "@kingstinct/react-native-healthkit",
       {
-        healthSharePermission:
+        NSHealthShareUsageDescription:
           "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
-        healthUpdatePermission:
+        NSHealthUpdateUsageDescription:
           "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
-        isClinicalDataEnabled: false,
+        background: false,
       },
     ],
 

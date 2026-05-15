@@ -153,38 +153,49 @@ function analyzeSignal(samples: number[]): {
   return { score, heartRate, hrv, confidence, source: "ppg" };
 }
 
-/** Per-scan simulation fallback with a realistic distribution.
- *
- *  Previous version used a 30-minute time bucket as the seed, which caused
- *  everyone scanning within the same window to receive the identical score.
- *  This version uses per-scan randomness with a distribution calibrated to
- *  reflect a general adult population:
- *    Critical (1) — 12 %   very dehydrated
- *    Low     (2) — 38 %   mildly dehydrated (most common)
- *    Good    (3) — 38 %   well hydrated
- *    Excellent(4) — 12 %   peak hydration (uncommon)
- *
- *  HR and HRV baselines match the corrected camera PPG thresholds so that
- *  the simulated vitals are consistent with what the real analyzeSignal()
- *  function would derive from the same population.
- */
-function simulateFallback(): Omit<ReturnType<typeof analyzeSignal>, "source"> {
-  const rand = Math.random() * 100;
-  // 12 % Critical | 38 % Low | 38 % Good | 12 % Excellent
-  const base: HydrationScore = rand < 12 ? 1 : rand < 50 ? 2 : rand < 88 ? 3 : 4;
+// ─── Session-stable simulation state ─────────────────────────────────────────
+// Initialised once per app launch so multiple scans in quick succession return
+// consistent results for the same device/user.  The score, HR, and HRV baselines
+// are chosen randomly on first call and then held for the lifetime of the JS
+// runtime.  This prevents the 65→76→89 BPM jumps seen when every simulation
+// call rolled a completely independent random score.
+//
+// Distribution across devices matches a realistic general adult population:
+//   Critical (1) — 12 %   very dehydrated
+//   Low     (2) — 38 %   mildly dehydrated (most common)
+//   Good    (3) — 38 %   well hydrated
+//   Excellent(4) — 12 %   peak hydration (uncommon)
+let _simBase: HydrationScore | null = null;
+let _simHR = 0;
+let _simHRV = 0;
 
-  // Baselines chosen so the simulated HR/HRV sit squarely within each
-  // scoring band (after the +10 BPM camera calibration offset).
+function initSimSession() {
+  if (_simBase !== null) return;
+  const rand = Math.random() * 100;
+  _simBase = rand < 12 ? 1 : rand < 50 ? 2 : rand < 88 ? 3 : 4;
   const HR: Record<HydrationScore, number> = { 1: 97, 2: 86, 3: 74, 4: 62 };
   const HRV: Record<HydrationScore, number> = { 1: 18, 2: 30, 3: 48, 4: 66 };
+  _simHR = HR[_simBase];
+  _simHRV = HRV[_simBase];
+}
+
+/** Session-stable simulation fallback.
+ *
+ *  Returns values anchored to a single baseline established on first call,
+ *  with ±2 BPM / ±2 ms HRV jitter to simulate natural breath-to-breath
+ *  variation — not large enough to cross a scoring boundary.
+ */
+function simulateFallback(): Omit<ReturnType<typeof analyzeSignal>, "source"> {
+  initSimSession();
   const CONF: Record<HydrationScore, number> = { 1: 76, 2: 82, 3: 87, 4: 90 };
-  const jitter = () => Math.round((Math.random() - 0.5) * 8);
+  // Tiny jitter — ±2 units — so repeated scans feel alive but stay consistent
+  const jitter = () => Math.round((Math.random() - 0.5) * 4);
 
   return {
-    score: base,
-    heartRate: Math.max(50, Math.min(115, HR[base] + jitter())),
-    hrv: Math.max(12, Math.min(90, HRV[base] + jitter())),
-    confidence: Math.max(70, Math.min(96, CONF[base] + Math.round(jitter() / 2))),
+    score: _simBase!,
+    heartRate: Math.max(50, Math.min(115, _simHR + jitter())),
+    hrv: Math.max(12, Math.min(90, _simHRV + jitter())),
+    confidence: Math.max(70, Math.min(96, CONF[_simBase!] + jitter())),
   };
 }
 

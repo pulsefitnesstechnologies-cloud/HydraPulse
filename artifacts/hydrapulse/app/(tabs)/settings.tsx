@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -303,8 +304,14 @@ export default function SettingsScreen() {
     } else {
       Alert.alert(
         "Permission Required",
-        "Please allow HydraPulse to access Health data in Settings > Privacy > Health.",
-        [{ text: "OK" }]
+        "HydraPulse needs access to Apple Health. If the permission dialog did not appear, it was previously denied — tap Open Settings to grant access manually.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open Settings",
+            onPress: () => Linking.openSettings(),
+          },
+        ]
       );
     }
   };

@@ -9,7 +9,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/images/icon.png",
   scheme: "hydrapulse",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
+  // react-native-health uses the legacy bridge (pre-TurboModules).
+  // New architecture causes initHealthKit to error immediately without ever
+  // showing the iOS permission sheet. Disabled until rn-health ships a JSI module.
+  newArchEnabled: false,
 
   splash: {
     image: "./assets/images/icon.png",

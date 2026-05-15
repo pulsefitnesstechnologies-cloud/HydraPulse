@@ -247,7 +247,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { scanMode, setScanMode, scansThisWeek, history, clearHistory } = useHydration();
+  const { scansThisWeek, history, clearHistory } = useHydration();
   const {
     healthKitAvailable,
     healthKitEnabled,
@@ -372,34 +372,6 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <SectionHeader title="Scan Settings" />
-        <View style={styles.group}>
-          <SettingsRow
-            icon="flask-outline"
-            label="Simulation Mode"
-            right={
-              <Switch
-                value={scanMode === "simulation"}
-                onValueChange={(v) => setScanMode(v ? "simulation" : "phone")}
-                trackColor={{ false: colors.border, true: colors.primary + "80" }}
-                thumbColor={scanMode === "simulation" ? colors.primary : colors.mutedForeground}
-              />
-            }
-          />
-          <SettingsRow
-            icon="camera-outline"
-            label="Camera Mode"
-            right={
-              <Switch
-                value={scanMode === "phone"}
-                onValueChange={(v) => setScanMode(v ? "phone" : "simulation")}
-                trackColor={{ false: colors.border, true: colors.primary + "80" }}
-                thumbColor={scanMode === "phone" ? colors.primary : colors.mutedForeground}
-              />
-            }
-          />
-        </View>
-
         <SectionHeader title="Account" />
         <View style={styles.group}>
           <SettingsRow icon="diamond" label="Premium Plan" value="Unlocked" />
@@ -477,7 +449,7 @@ export default function SettingsScreen() {
           <SettingsRow
             icon="code-slash-outline"
             label="Mode"
-            value={scanMode === "phone" ? "Camera PPG" : "Simulation"}
+            value="Camera PPG"
           />
         </View>
 

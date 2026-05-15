@@ -9,6 +9,7 @@ import React, {
 
 export type HydrationScore = 1 | 2 | 3 | 4;
 export type ScoreLabel = "Critical" | "Low" | "Good" | "Excellent";
+// "simulation" retained for backwards compatibility with stored scan records
 export type ScanMethod = "phone" | "simulation";
 
 export interface ScanRecord {
@@ -29,12 +30,10 @@ interface HydrationContextType {
   scansThisWeek: number;
   isPremium: boolean;
   hasOnboarded: boolean;
-  scanMode: ScanMethod;
   addScanResult: (record: ScanRecord) => void;
   clearHistory: () => void;
   setIsPremium: (val: boolean) => void;
   setHasOnboarded: (val: boolean) => void;
-  setScanMode: (mode: ScanMethod) => void;
 }
 
 // TESTING MODE: all features unlocked, no scan limits
@@ -45,7 +44,6 @@ const STORAGE_KEYS = {
   HISTORY: "@hydrapulse:history",
   PREMIUM: "@hydrapulse:premium",
   ONBOARDED: "@hydrapulse:onboarded",
-  SCAN_MODE: "@hydrapulse:scanMode",
 };
 
 export function getScoreLabel(score: HydrationScore): ScoreLabel {
@@ -86,23 +84,18 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<ScanRecord[]>([]);
   const [isPremium, setIsPremiumState] = useState(TESTING_MODE);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
-  const [scanMode, setScanModeState] = useState<ScanMethod>("simulation");
 
   useEffect(() => {
     (async () => {
       try {
-        const [historyRaw, premiumRaw, onboardedRaw, modeRaw] =
-          await Promise.all([
-            AsyncStorage.getItem(STORAGE_KEYS.HISTORY),
-            AsyncStorage.getItem(STORAGE_KEYS.PREMIUM),
-            AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
-            AsyncStorage.getItem(STORAGE_KEYS.SCAN_MODE),
-          ]);
+        const [historyRaw, premiumRaw, onboardedRaw] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.HISTORY),
+          AsyncStorage.getItem(STORAGE_KEYS.PREMIUM),
+          AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
+        ]);
         if (historyRaw) setHistory(JSON.parse(historyRaw));
         if (premiumRaw === "true") setIsPremiumState(true);
         if (onboardedRaw === "true") setHasOnboardedState(true);
-        if (modeRaw === "phone" || modeRaw === "simulation")
-          setScanModeState(modeRaw);
       } catch {}
     })();
   }, []);
@@ -140,11 +133,6 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
     ).catch(() => {});
   }, []);
 
-  const setScanMode = useCallback(async (mode: ScanMethod) => {
-    setScanModeState(mode);
-    await AsyncStorage.setItem(STORAGE_KEYS.SCAN_MODE, mode).catch(() => {});
-  }, []);
-
   const weekStart = getStartOfWeek();
   const scansThisWeek = history.filter(
     (r) => new Date(r.date) >= weekStart
@@ -160,12 +148,10 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
         scansThisWeek,
         isPremium,
         hasOnboarded,
-        scanMode,
         addScanResult,
         clearHistory,
         setIsPremium,
         setHasOnboarded,
-        setScanMode,
       }}
     >
       {children}

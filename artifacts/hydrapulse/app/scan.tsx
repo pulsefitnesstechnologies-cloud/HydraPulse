@@ -25,7 +25,6 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { WaveformPreview } from "@/components/WaveformPreview";
 import {
   HydrationScore,
-  ScanMethod,
   ScanRecord,
   getScoreLabel,
   useHydration,
@@ -52,31 +51,25 @@ function sdnn(vals: number[]): number {
  * collected over the scan window and extracts heart rate, HRV, and a
  * confidence score using peak detection on the PPG waveform.
  *
- * Falls back to the time-seeded simulation if signal quality is too low
- * (finger not covering lens, motion artefacts, etc.).
+ * Returns null when signal quality is too low (finger not covering lens,
+ * motion artefacts, etc.) so the UI can prompt the user to retry.
  */
 function analyzeSignal(samples: number[]): {
   score: HydrationScore;
   heartRate: number;
   hrv: number;
   confidence: number;
-  source: "ppg" | "simulation";
-} {
+} | null {
   // Need at least 5 s of data to attempt real analysis
-  if (samples.length < SAMPLE_RATE * 5) {
-    return { ...simulateFallback(), source: "simulation" };
-  }
+  if (samples.length < SAMPLE_RATE * 5) return null;
 
   // 1. Mean-centre (remove DC — slow drift from finger pressure)
   const mean = samples.reduce((a, b) => a + b) / samples.length;
   const centered = samples.map((v) => v - mean);
 
   // Amplitude sanity check — finger probably not covering lens
-  const amplitude =
-    Math.max(...centered) - Math.min(...centered);
-  if (amplitude < 2) {
-    return { ...simulateFallback(), confidence: 60, source: "simulation" };
-  }
+  const amplitude = Math.max(...centered) - Math.min(...centered);
+  if (amplitude < 2) return null;
 
   // 2. Short moving-average smooth (~0.1 s window)
   const w = Math.max(1, Math.round(SAMPLE_RATE * 0.1));
@@ -104,9 +97,7 @@ function analyzeSignal(samples: number[]): {
     if (isPeak) peaks.push(i);
   }
 
-  if (peaks.length < 3) {
-    return { ...simulateFallback(), confidence: 65, source: "simulation" };
-  }
+  if (peaks.length < 3) return null;
 
   // 4. RR intervals in seconds; filter physiologically impossible ones
   const intervals = peaks
@@ -114,9 +105,7 @@ function analyzeSignal(samples: number[]): {
     .map((p, i) => (p - peaks[i]) / SAMPLE_RATE)
     .filter((t) => t >= 0.3 && t <= 1.8); // 33–200 bpm
 
-  if (intervals.length < 2) {
-    return { ...simulateFallback(), confidence: 65, source: "simulation" };
-  }
+  if (intervals.length < 2) return null;
 
   // 5. Heart rate — median interval (robust against outliers)
   const sorted = [...intervals].sort((a, b) => a - b);
@@ -150,58 +139,12 @@ function analyzeSignal(samples: number[]): {
       ? 2 // Low: mild dehydration markers
       : 1; // Critical
 
-  return { score, heartRate, hrv, confidence, source: "ppg" };
-}
-
-// ─── Session-stable simulation state ─────────────────────────────────────────
-// Initialised once per app launch so multiple scans in quick succession return
-// consistent results for the same device/user.  The score, HR, and HRV baselines
-// are chosen randomly on first call and then held for the lifetime of the JS
-// runtime.  This prevents the 65→76→89 BPM jumps seen when every simulation
-// call rolled a completely independent random score.
-//
-// Distribution across devices matches a realistic general adult population:
-//   Critical (1) — 12 %   very dehydrated
-//   Low     (2) — 38 %   mildly dehydrated (most common)
-//   Good    (3) — 38 %   well hydrated
-//   Excellent(4) — 12 %   peak hydration (uncommon)
-let _simBase: HydrationScore | null = null;
-let _simHR = 0;
-let _simHRV = 0;
-
-function initSimSession() {
-  if (_simBase !== null) return;
-  const rand = Math.random() * 100;
-  _simBase = rand < 12 ? 1 : rand < 50 ? 2 : rand < 88 ? 3 : 4;
-  const HR: Record<HydrationScore, number> = { 1: 97, 2: 86, 3: 74, 4: 62 };
-  const HRV: Record<HydrationScore, number> = { 1: 18, 2: 30, 3: 48, 4: 66 };
-  _simHR = HR[_simBase];
-  _simHRV = HRV[_simBase];
-}
-
-/** Session-stable simulation fallback.
- *
- *  Returns values anchored to a single baseline established on first call,
- *  with ±2 BPM / ±2 ms HRV jitter to simulate natural breath-to-breath
- *  variation — not large enough to cross a scoring boundary.
- */
-function simulateFallback(): Omit<ReturnType<typeof analyzeSignal>, "source"> {
-  initSimSession();
-  const CONF: Record<HydrationScore, number> = { 1: 76, 2: 82, 3: 87, 4: 90 };
-  // Tiny jitter — ±2 units — so repeated scans feel alive but stay consistent
-  const jitter = () => Math.round((Math.random() - 0.5) * 4);
-
-  return {
-    score: _simBase!,
-    heartRate: Math.max(50, Math.min(115, _simHR + jitter())),
-    hrv: Math.max(12, Math.min(90, _simHRV + jitter())),
-    confidence: Math.max(70, Math.min(96, CONF[_simBase!] + jitter())),
-  };
+  return { score, heartRate, hrv, confidence };
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ScanState = "idle" | "requesting" | "scanning" | "done";
+type ScanState = "idle" | "requesting" | "scanning" | "done" | "failed";
 type SignalQuality = "none" | "weak" | "good";
 
 const SCORE_COLORS: Record<HydrationScore, string> = {
@@ -217,7 +160,7 @@ export default function ScanScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { scanMode, setScanMode, addScanResult } = useHydration();
+  const { addScanResult } = useHydration();
 
   // VisionCamera v4 hooks
   const device = useCameraDevice("back");
@@ -228,7 +171,8 @@ export default function ScanScreen() {
   const [timeLeft, setTimeLeft] = useState(SCAN_DURATION);
   const [torchOn, setTorchOn] = useState(false);
   const [signalQuality, setSignalQuality] = useState<SignalQuality>("none");
-  const [result, setResult] = useState<ReturnType<typeof analyzeSignal> | null>(null);
+  const [result, setResult] = useState<ReturnType<typeof analyzeSignal>>(null);
+  const [failReason, setFailReason] = useState<string>("");
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sampleBuffer = useRef<number[]>([]);
@@ -238,9 +182,8 @@ export default function ScanScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Camera is available only on native with permission granted + device found
-  const isCameraMode = scanMode === "phone" && Platform.OS !== "web";
-  const cameraReady = isCameraMode && !!device && hasPermission;
+  // Camera is always required — no simulation fallback
+  const cameraReady = Platform.OS !== "web" && !!device && hasPermission;
   const resultColor = result ? SCORE_COLORS[result.score] : colors.primary;
 
   // ── Frame processor sample collection ─────────────────────────────────────
@@ -312,9 +255,17 @@ export default function ScanScreen() {
     const analyzed = analyzeSignal(sampleBuffer.current);
     sampleBuffer.current = [];
     setSignalQuality("none");
-    setResult(analyzed);
-    setState("done");
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    if (analyzed) {
+      setResult(analyzed);
+      setState("done");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } else {
+      setFailReason(
+        "Signal too weak — your fingertip may not have been fully covering the lens, or there was too much movement."
+      );
+      setState("failed");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    }
   }, [stopPulse]);
 
   const beginScanning = useCallback(() => {
@@ -322,8 +273,9 @@ export default function ScanScreen() {
     scanningRef.current = true;
     setSignalQuality("none");
     setResult(null);
+    setFailReason("");
     setTimeLeft(SCAN_DURATION);
-    if (isCameraMode) setTorchOn(true);
+    setTorchOn(true);
     setState("scanning");
     startPulse();
 
@@ -345,17 +297,17 @@ export default function ScanScreen() {
         return prev - 1;
       });
     }, 1000);
-  }, [isCameraMode, startPulse, progressAnim, finishScan]);
+  }, [startPulse, progressAnim, finishScan]);
 
   const startScan = useCallback(async () => {
-    if (isCameraMode && !hasPermission) {
+    if (!hasPermission) {
       setState("requesting");
       const granted = await requestPermission();
       setState("idle");
       if (!granted) return;
     }
     beginScanning();
-  }, [isCameraMode, hasPermission, requestPermission, beginScanning]);
+  }, [hasPermission, requestPermission, beginScanning]);
 
   const cancelScan = useCallback(() => {
     clearInterval(timerRef.current!);
@@ -366,6 +318,7 @@ export default function ScanScreen() {
     progressAnim.stopAnimation();
     progressAnim.setValue(0);
     setSignalQuality("none");
+    setFailReason("");
     setState("idle");
     setTimeLeft(SCAN_DURATION);
   }, [stopPulse, progressAnim]);
@@ -377,7 +330,7 @@ export default function ScanScreen() {
       date: new Date().toISOString(),
       score: result.score,
       label: getScoreLabel(result.score),
-      method: scanMode,
+      method: "phone",
       confidence: result.confidence,
       heartRate: result.heartRate,
       hrv: result.hrv,
@@ -387,7 +340,7 @@ export default function ScanScreen() {
       pathname: "/results",
       params: { recordId: record.id, score: record.score, label: record.label },
     });
-  }, [result, scanMode, addScanResult, router]);
+  }, [result, addScanResult, router]);
 
   useEffect(() => {
     return () => {
@@ -429,37 +382,6 @@ export default function ScanScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* ── Mode toggle ── */}
-      <View style={styles.modeToggle}>
-        {(["simulation", "phone"] as ScanMethod[]).map((m) => (
-          <Pressable
-            key={m}
-            style={[
-              styles.modeBtn,
-              { backgroundColor: scanMode === m ? colors.primary : colors.secondary },
-            ]}
-            onPress={() => { if (state !== "scanning") setScanMode(m); }}
-            disabled={state === "scanning"}
-          >
-            <Ionicons
-              name={m === "phone" ? "camera-outline" : "flask-outline"}
-              size={16}
-              color={scanMode === m ? colors.primaryForeground : colors.mutedForeground}
-            />
-            <Text
-              style={[
-                styles.modeBtnText,
-                {
-                  color:
-                    scanMode === m ? colors.primaryForeground : colors.mutedForeground,
-                },
-              ]}
-            >
-              {m === "phone" ? "Camera + Torch" : "Simulation"}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
 
       {/* ── Scan area ── */}
       <View style={styles.scanArea}>
@@ -579,19 +501,17 @@ export default function ScanScreen() {
 
             {state === "done" && result && (
               <>
-                {result.source === "ppg" && (
-                  <View
-                    style={[
-                      styles.sourceBadge,
-                      { backgroundColor: "#10B98120", borderColor: "#10B98140" },
-                    ]}
-                  >
-                    <Ionicons name="pulse-outline" size={13} color="#10B981" />
-                    <Text style={[styles.sourceText, { color: "#10B981" }]}>
-                      Real PPG measurement
-                    </Text>
-                  </View>
-                )}
+                <View
+                  style={[
+                    styles.sourceBadge,
+                    { backgroundColor: "#10B98120", borderColor: "#10B98140" },
+                  ]}
+                >
+                  <Ionicons name="pulse-outline" size={13} color="#10B981" />
+                  <Text style={[styles.sourceText, { color: "#10B981" }]}>
+                    Live PPG measurement
+                  </Text>
+                </View>
                 <View style={styles.metricsRow}>
                   {[
                     { value: result.heartRate, label: "BPM" },
@@ -620,111 +540,51 @@ export default function ScanScreen() {
         )}
 
         {/* ─────────────────────────────────────────────────────────────────
-            SIMULATION / PERMISSION-NOT-YET-GRANTED PATH
+            PERMISSION-NOT-YET-GRANTED / NO DEVICE
         ───────────────────────────────────────────────────────────────── */}
         {!cameraReady && (
-          <>
-            {(state === "idle" || state === "requesting") && (
-              <View style={styles.idleContent}>
-                <Animated.View
-                  style={[
-                    styles.fingerTarget,
-                    { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
-                  ]}
-                >
-                  <Ionicons
-                    name={isCameraMode ? "camera-outline" : "finger-print-outline"}
-                    size={64}
-                    color={colors.primary}
-                  />
-                </Animated.View>
-                <Text style={[styles.instruction, { color: colors.foreground }]}>
-                  {state === "requesting"
-                    ? "Requesting camera access..."
-                    : isCameraMode
-                    ? "Camera access needed to activate torch"
-                    : "Ready to run a simulated PPG scan"}
-                </Text>
-                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-                  {state === "requesting"
-                    ? "Please allow camera permission in the system prompt."
-                    : isCameraMode
-                    ? "Tap Start Scan to grant permission."
-                    : "Uses a time-seeded algorithm — scores are consistent within 30-minute windows."}
-                </Text>
-              </View>
-            )}
+          <View style={styles.idleContent}>
+            <Animated.View
+              style={[
+                styles.fingerTarget,
+                { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
+              ]}
+            >
+              <Ionicons name="camera-outline" size={64} color={colors.primary} />
+            </Animated.View>
+            <Text style={[styles.instruction, { color: colors.foreground }]}>
+              {state === "requesting"
+                ? "Requesting camera access..."
+                : "Camera access needed"}
+            </Text>
+            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+              {state === "requesting"
+                ? "Please allow camera permission in the system prompt."
+                : "HydraPulse needs camera access to activate the torch and read your pulse. Tap Start Scan to grant permission."}
+            </Text>
+          </View>
+        )}
 
-            {state === "scanning" && (
-              <View style={styles.scanningContent}>
-                <View style={styles.timerCircle}>
-                  <View
-                    style={[styles.timerInner, { borderColor: colors.primary + "30" }]}
-                  >
-                    <Text style={[styles.timerNumber, { color: colors.primary }]}>
-                      {timeLeft}
-                    </Text>
-                    <Text style={[styles.timerLabel, { color: colors.mutedForeground }]}>
-                      seconds
-                    </Text>
-                  </View>
-                </View>
-                <WaveformPreview isActive width={280} height={70} color={colors.primary} />
-                <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
-                  Processing simulated PPG waveform...
-                </Text>
-                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-                  <Animated.View
-                    style={[
-                      styles.progressFill,
-                      { backgroundColor: colors.primary, width: progressWidth },
-                    ]}
-                  />
-                </View>
-              </View>
-            )}
-
-            {state === "done" && result && (
-              <View style={styles.doneContent}>
-                <View
-                  style={[
-                    styles.resultCircle,
-                    { borderColor: resultColor + "40", backgroundColor: resultColor + "15" },
-                  ]}
-                >
-                  <Ionicons name="checkmark-circle" size={60} color={resultColor} />
-                  <Text style={[styles.resultScore, { color: resultColor }]}>
-                    {result.score}/4
-                  </Text>
-                  <Text style={[styles.resultLabel, { color: resultColor }]}>
-                    {getScoreLabel(result.score)}
-                  </Text>
-                </View>
-                <View style={styles.metricsRow}>
-                  {[
-                    { value: result.heartRate, label: "BPM" },
-                    { value: result.hrv, label: "HRV ms" },
-                    { value: `${result.confidence}%`, label: "Confidence" },
-                  ].map((m) => (
-                    <View
-                      key={m.label}
-                      style={[
-                        styles.metricCard,
-                        { backgroundColor: colors.card, borderColor: colors.border },
-                      ]}
-                    >
-                      <Text style={[styles.metricValue, { color: colors.foreground }]}>
-                        {m.value}
-                      </Text>
-                      <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
-                        {m.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </>
+        {/* ─────────────────────────────────────────────────────────────────
+            FAILED STATE
+        ───────────────────────────────────────────────────────────────── */}
+        {state === "failed" && (
+          <View style={styles.idleContent}>
+            <View
+              style={[
+                styles.fingerTarget,
+                { borderColor: "#EF4444" },
+              ]}
+            >
+              <Ionicons name="warning-outline" size={64} color="#EF4444" />
+            </View>
+            <Text style={[styles.instruction, { color: colors.foreground }]}>
+              Reading unsuccessful
+            </Text>
+            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+              {failReason}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -788,6 +648,26 @@ export default function ScanScreen() {
               <Text style={styles.saveBtnText}>Save & View Results</Text>
             </Pressable>
           </View>
+        )}
+
+        {state === "failed" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.startBtn,
+              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+            ]}
+            onPress={() => {
+              setState("idle");
+              setTimeLeft(SCAN_DURATION);
+              setFailReason("");
+              progressAnim.setValue(0);
+            }}
+          >
+            <Ionicons name="refresh-outline" size={22} color={colors.primaryForeground} />
+            <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+              Try Again
+            </Text>
+          </Pressable>
         )}
       </View>
     </View>

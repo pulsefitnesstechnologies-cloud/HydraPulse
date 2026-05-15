@@ -50,8 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSHealthUpdateUsageDescription:
         "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
 
-      // ── Background fetch (Watch monitoring) ─────────────────────────────
-      UIBackgroundModes: ["fetch"],
+      // ── Background notifications (Watch monitoring reminders) ────────────
+      UIBackgroundModes: ["remote-notification"],
     },
   },
 
@@ -82,14 +82,28 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
 
-    // ── Camera — VisionCamera v5 with frame processor support ────────────
-    // Replaces expo-camera; enables real per-frame pixel access for PPG.
+    // ── Camera — VisionCamera v4 with frame processor support ────────────
+    // Enables real per-frame pixel access for PPG heart rate detection.
     [
       "react-native-vision-camera",
       {
         cameraPermissionText:
           "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",
         enableMicrophonePermission: false,
+      },
+    ],
+
+    // ── HealthKit — config plugin required for EAS managed builds ─────────
+    // Without this entry EAS skips native HealthKit project setup and pod
+    // install fails. The plugin wires entitlements + infoPlist descriptions.
+    [
+      "react-native-health",
+      {
+        healthSharePermission:
+          "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
+        healthUpdatePermission:
+          "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
+        isClinicalDataEnabled: false,
       },
     ],
 

@@ -7,7 +7,6 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Debug",
         "simulator": false,
@@ -25,7 +24,6 @@
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
-      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Debug",
         "simulator": true,
@@ -50,7 +48,6 @@
       }
     },
     "production": {
-      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"

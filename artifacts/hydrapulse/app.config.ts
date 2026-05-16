@@ -25,23 +25,38 @@ import * as fs from "fs";
 // String (not an Array) when read from xcconfig. We must handle both types.
 const FOLLY_INJECTION = `
   # ── HydraPulse: Folly coroutine + deprecation fixes ─────────────────────
-  folly_defs   = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
-  folly_cxx    = folly_defs.map { |d| "-D#{d}" }.join(' ')
+  # Two-layer defence for folly/coro/Coroutine.h:
+  #   Layer 1 — stub header at ios/FollyStubs/folly/coro/Coroutine.h
+  #             prepended to HEADER_SEARCH_PATHS so an unconditional
+  #             #include <folly/coro/Coroutine.h> resolves to the stub
+  #             instead of failing with "file not found".
+  #   Layer 2 — preprocessor flags via GCC_PREPROCESSOR_DEFINITIONS and
+  #             OTHER_CPLUSPLUSFLAGS so any guarded code paths skip
+  #             coroutine features entirely.
+  folly_defs = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
+  folly_cxx  = folly_defs.map { |d| "-D#{d}" }.join(' ')
+  # $(PODS_ROOT) = ios/Pods/ ; $(PODS_ROOT)/.. = ios/ ; ../FollyStubs = ios/FollyStubs
+  folly_stub_path = '"$(PODS_ROOT)/../FollyStubs"'
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
-      # --- GCC_PREPROCESSOR_DEFINITIONS (String or Array) ---
+      # --- HEADER_SEARCH_PATHS: prepend stub dir so it wins over prebuilt Folly ---
+      existing_hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
+      unless existing_hsp.include?('FollyStubs')
+        config.build_settings['HEADER_SEARCH_PATHS'] = folly_stub_path + ' ' + (existing_hsp.empty? ? '$(inherited)' : existing_hsp)
+      end
+      # --- GCC_PREPROCESSOR_DEFINITIONS (may be String or Array in CocoaPods) ---
       existing_pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
       if existing_pp.is_a?(Array)
         config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp | folly_defs)
       elsif !(existing_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
         config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp || '$(inherited)').to_s + ' ' + folly_defs.join(' ')
       end
-      # --- OTHER_CPLUSPLUSFLAGS (belt-and-suspenders for C++ TUs) ---
+      # --- OTHER_CPLUSPLUSFLAGS: belt-and-suspenders -D flags for C++ TUs ---
       existing_cxx = config.build_settings['OTHER_CPLUSPLUSFLAGS'].to_s
       unless existing_cxx.include?('FOLLY_CFG_NO_COROUTINES')
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (existing_cxx.empty? ? '$(inherited)' : existing_cxx) + ' ' + folly_cxx
       end
-      # --- Suppress deprecated HealthKit API warnings in react-native-health ---
+      # --- Suppress deprecated HealthKit API warnings from react-native-health ---
       if target.name == 'RNAppleHealthKit'
         existing_cflags = config.build_settings['OTHER_CFLAGS'].to_s
         unless existing_cflags.include?('Wno-deprecated')
@@ -131,19 +146,46 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
       // ── patch 2: react-native-vision-camera FrameProcessors subspec ───
       // VisionCamera v4's FrameProcessors subspec has fp.dependency "React"
       // which is the same dead pod. Replace with React-Core.
-      // Uses respond_to? guard pattern (same as vision-camera-resize-plugin)
-      // so the spec is safe whether or not the helper is in scope.
       const vcPath = path.join(
         root, "node_modules", "react-native-vision-camera", "VisionCamera.podspec"
       );
       if (fs.existsSync(vcPath)) {
         let vc = fs.readFileSync(vcPath, "utf-8");
-        // Only patch the FrameProcessors subspec line — leave the
-        // 's.subspec "React"' block name untouched.
         if (vc.includes('fp.dependency "React"')) {
           vc = vc.replace('fp.dependency "React"', 'fp.dependency "React-Core"');
           fs.writeFileSync(vcPath, vc);
         }
+      }
+
+      // ── patch 3: folly/coro/Coroutine.h stub ──────────────────────────
+      // RN 0.81's prebuilt Maven tarball (ReactNativeDependencies) ships the
+      // compiled Folly library but OMITS folly/coro/Coroutine.h and the rest
+      // of the coro/ header directory. Third-party pods (reanimated, worklets-
+      // core, VisionCamera) sometimes include folly/coro/Coroutine.h without
+      // checking FOLLY_HAS_COROUTINES first, causing a hard "file not found"
+      // compile error that no preprocessor flag can prevent.
+      //
+      // Solution: create a minimal stub at ios/FollyStubs/folly/coro/Coroutine.h
+      // and prepend ios/FollyStubs to HEADER_SEARCH_PATHS (done in the Podfile
+      // post_install injection in withFollyNoCoroutines). The stub satisfies the
+      // raw #include. FOLLY_CFG_NO_COROUTINES=1 / FOLLY_HAS_COROUTINES=0 then
+      // ensure no actual coroutine code paths are compiled.
+      const iosDir = modConfig.modRequest.platformProjectRoot;
+      const stubCoroDir = path.join(iosDir, "FollyStubs", "folly", "coro");
+      const stubCoroFile = path.join(stubCoroDir, "Coroutine.h");
+      if (!fs.existsSync(stubCoroFile)) {
+        fs.mkdirSync(stubCoroDir, { recursive: true });
+        fs.writeFileSync(
+          stubCoroFile,
+          [
+            "// HydraPulse: folly/coro/Coroutine.h stub",
+            "// RN 0.81 prebuilt Folly omits coro/ headers. This stub satisfies",
+            "// unconditional #include <folly/coro/Coroutine.h> directives in",
+            "// third-party pods. Actual coroutine usage is disabled via",
+            "// FOLLY_CFG_NO_COROUTINES=1 and FOLLY_HAS_COROUTINES=0.",
+            "#pragma once",
+          ].join("\n") + "\n"
+        );
       }
 
       return modConfig;

@@ -128,18 +128,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
 
-      // ── HealthKit — @kingstinct/react-native-healthkit config plugin ──────
-      // Adds the com.apple.developer.healthkit entitlement and injects
-      // NSHealth* usage descriptions. background:false means we don't need
-      // the background-delivery entitlement (we read on foreground only).
+      // ── HealthKit — react-native-health config plugin ────────────────────
+      // Wires the HealthKit entitlement and NSHealth* usage strings.
+      // react-native-health uses the legacy bridge; the new-arch interop layer
+      // in RN 0.76+ lets it work alongside newArchEnabled: true.
       [
-        "@kingstinct/react-native-healthkit",
+        "react-native-health",
         {
-          NSHealthShareUsageDescription:
+          healthSharePermission:
             "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
-          NSHealthUpdateUsageDescription:
+          healthUpdatePermission:
             "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
-          background: false,
+          isClinicalDataEnabled: false,
         },
       ],
 

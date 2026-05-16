@@ -56,12 +56,11 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "@kingstinct/react-native-healthkit": "14.0.1",
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
     "expo-dev-client": "^56.0.10",
     "expo-notifications": "^55.0.23",
-    "react-native-nitro-modules": "0.35.6",
+    "react-native-health": "1.19.0",
     "react-native-reanimated": "~3.16.7",
     "react-native-vision-camera": "^4.6.4",
     "react-native-worklets-core": "^1.6.3",

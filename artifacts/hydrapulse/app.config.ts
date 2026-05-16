@@ -41,48 +41,64 @@ function withFollyNoCoroutines(config: ExpoConfig): ExpoConfig {
   ]);
 }
 
-// ── react-native-health podspec patch ───────────────────────────────────────
-// react-native-health@1.19 ships a podspec written for RN 0.59 era:
-//   1. swift_version = '4.2'  — Xcode 14+ dropped Swift 4.2 entirely; pod
-//      install fails when CocoaPods validates the swift version constraint.
-//   2. s.dependency 'React'   — The 'React' umbrella pod was removed in
-//      RN 0.60. It no longer exists, so pod install immediately errors with
-//      "Unable to find a specification for 'React'". Modern packages use
-//      install_modules_dependencies(s) instead.
-// This plugin patches the file in node_modules during expo prebuild, before
-// CocoaPods ever sees it.
-function withHealthKitPodspecPatch(config: ExpoConfig): ExpoConfig {
+// ── Native module podspec patches ───────────────────────────────────────────
+// Several third-party packages ship podspecs written for old React Native
+// versions. Running pod install with modern RN (0.76+) fails immediately
+// because the referenced pods no longer exist.
+//
+// Packages patched here:
+//
+//   react-native-health@1.19 (RN 0.59 era podspec)
+//     • swift_version = '4.2'  — Xcode 14+ dropped Swift 4.2; raises
+//       "Specifications for Swift 4.2 are no longer supported."
+//     • s.dependency 'React'   — The 'React' umbrella pod was removed in
+//       RN 0.60. CocoaPods errors "Unable to find a specification for 'React'".
+//
+//   react-native-vision-camera@4.6.4 FrameProcessors subspec
+//     • fp.dependency "React"  — Same dead pod in the FrameProcessors subspec.
+//       Since fp.dependency "React-Core" is already added by the outer spec,
+//       replacing with "React-Core" is safe and correct.
+//
+// These patches run during expo prebuild (before CocoaPods sees any podspec).
+function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
   return withDangerousMod(config, [
     "ios",
     (modConfig) => {
-      const podspecPath = path.join(
-        modConfig.modRequest.projectRoot,
-        "node_modules",
-        "react-native-health",
-        "RNAppleHealthKit.podspec"
+      const root = modConfig.modRequest.projectRoot;
+
+      // ── patch 1: react-native-health ──────────────────────────────────
+      const hkPath = path.join(
+        root, "node_modules", "react-native-health", "RNAppleHealthKit.podspec"
       );
-      if (!fs.existsSync(podspecPath)) return modConfig;
+      if (fs.existsSync(hkPath)) {
+        let hk = fs.readFileSync(hkPath, "utf-8");
+        if (!hk.includes("install_modules_dependencies")) {
+          hk = hk.replace(
+            /s\.swift_version\s*=\s*['"]4\.2['"]/,
+            "s.swift_version = '5.0'"
+          );
+          hk = hk.replace(
+            /s\.dependency\s+['"]React['"]/,
+            "install_modules_dependencies(s)"
+          );
+          fs.writeFileSync(hkPath, hk);
+        }
+      }
 
-      let contents = fs.readFileSync(podspecPath, "utf-8");
-
-      // Already patched (idempotent)
-      if (contents.includes("install_modules_dependencies")) return modConfig;
-
-      // Fix 1: Swift 4.2 → 5.0 (Xcode 14+ requirement)
-      contents = contents.replace(
-        /s\.swift_version\s*=\s*['"]4\.2['"]/,
-        "s.swift_version = '5.0'"
+      // ── patch 2: react-native-vision-camera FrameProcessors subspec ───
+      const vcPath = path.join(
+        root, "node_modules", "react-native-vision-camera", "VisionCamera.podspec"
       );
+      if (fs.existsSync(vcPath)) {
+        let vc = fs.readFileSync(vcPath, "utf-8");
+        // Target only the FrameProcessors subspec line (fp.dependency "React")
+        // leaving the unrelated 's.subspec 'React'' block untouched.
+        if (vc.includes('fp.dependency "React"')) {
+          vc = vc.replace('fp.dependency "React"', 'fp.dependency "React-Core"');
+          fs.writeFileSync(vcPath, vc);
+        }
+      }
 
-      // Fix 2: Remove the dead 'React' dependency and replace with the
-      //        modern install_modules_dependencies helper used by all
-      //        current RN native modules (worklets-core, VisionCamera, etc.)
-      contents = contents.replace(
-        /s\.dependency\s+['"]React['"]/,
-        "install_modules_dependencies(s)"
-      );
-
-      fs.writeFileSync(podspecPath, contents);
       return modConfig;
     },
   ]);
@@ -219,7 +235,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   //
   // Order matters: podspec patch must run before the Folly Podfile hook so
   // that CocoaPods sees a clean patched podspec when it resolves pods.
-  let result = withHealthKitPodspecPatch(appConfig);
+  let result = withNativeModulePodspecPatches(appConfig);
   result = withFollyNoCoroutines(result);
   return result;
 };

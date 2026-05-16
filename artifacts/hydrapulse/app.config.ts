@@ -4,15 +4,19 @@ import * as path from "path";
 import * as fs from "fs";
 
 // ── Folly coroutines fix ────────────────────────────────────────────────────
-// Appended as a Podfile post_install hook so it applies to every CocoaPod
-// target. Folly auto-detects C++20 coroutine support from compiler flags; when
-// any pod includes a Folly header (even transitively), Folly tries to pull in
-// folly/coro/Coroutine.h — a header that is not shipped in the Folly bundle
-// bundled with React Native. Setting FOLLY_CFG_NO_COROUTINES=1 globally tells
-// Folly to skip coroutines regardless of compiler capability.
-const FOLLY_PODFILE_HOOK = `
-# ── HydraPulse: disable Folly C++20 coroutines globally ────────────────────
-post_install do |installer|
+// CocoaPods only allows ONE post_install block per Podfile. Expo's generated
+// Podfile already has one (for react_native_post_install). We must inject
+// our Folly preprocessor flags INSIDE that existing block, not add a second.
+//
+// Folly auto-detects C++20 coroutine support from compiler flags; when any
+// pod includes a Folly header (even transitively), Folly tries to pull in
+// folly/coro/Coroutine.h — a header not shipped with the RN Folly bundle.
+// FOLLY_CFG_NO_COROUTINES=1 tells Folly to skip coroutines entirely.
+//
+// Injection point: immediately after "post_install do |installer|" — this is
+// always the first line of the post_install block in Expo's generated Podfile.
+const FOLLY_INJECTION = `
+  # ── HydraPulse: disable Folly C++20 coroutines globally ─────────────────
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       defs = Array(config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'])
@@ -20,9 +24,7 @@ post_install do |installer|
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
     end
   end
-end
-# ───────────────────────────────────────────────────────────────────────────
-`;
+  # ─────────────────────────────────────────────────────────────────────────`;
 
 function withFollyNoCoroutines(config: ExpoConfig): ExpoConfig {
   return withDangerousMod(config, [
@@ -33,9 +35,16 @@ function withFollyNoCoroutines(config: ExpoConfig): ExpoConfig {
         "Podfile"
       );
       if (!fs.existsSync(podfilePath)) return modConfig;
-      const contents = fs.readFileSync(podfilePath, "utf-8");
+      let contents = fs.readFileSync(podfilePath, "utf-8");
       if (contents.includes("FOLLY_CFG_NO_COROUTINES")) return modConfig;
-      fs.writeFileSync(podfilePath, contents + FOLLY_PODFILE_HOOK);
+      // Inject inside the existing post_install block — right after the
+      // opening "post_install do |installer|" line. This keeps the single
+      // post_install constraint that CocoaPods enforces.
+      contents = contents.replace(
+        /^(post_install do \|installer\|)$/m,
+        `$1${FOLLY_INJECTION}`
+      );
+      fs.writeFileSync(podfilePath, contents);
       return modConfig;
     },
   ]);

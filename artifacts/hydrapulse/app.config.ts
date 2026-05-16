@@ -8,20 +8,46 @@ import * as fs from "fs";
 // Podfile already has one (for react_native_post_install). We must inject
 // our Folly preprocessor flags INSIDE that existing block, not add a second.
 //
-// Folly auto-detects C++20 coroutine support from compiler flags; when any
-// pod includes a Folly header (even transitively), Folly tries to pull in
-// folly/coro/Coroutine.h — a header not shipped with the RN Folly bundle.
-// FOLLY_CFG_NO_COROUTINES=1 tells Folly to skip coroutines entirely.
+// RN 0.81 ships Folly as a prebuilt Maven artifact. That tarball does NOT
+// include folly/coro/Coroutine.h. Third-party pods (reanimated, worklets-core,
+// VisionCamera) use Folly headers and, when the C++ compiler supports
+// coroutines, Folly tries to pull in the missing header.
 //
-// Injection point: immediately after "post_install do |installer|" — this is
-// always the first line of the post_install block in Expo's generated Podfile.
+// Two flags are needed because different Folly versions use different guards:
+//   FOLLY_CFG_NO_COROUTINES=1  — checked by newer Folly (2022+)
+//   FOLLY_HAS_COROUTINES=0     — checked by older Folly / portability shims
+//
+// We set them via TWO channels because xcconfig inheritance can silence one:
+//   GCC_PREPROCESSOR_DEFINITIONS  — covers C, ObjC, ObjC++, C++
+//   OTHER_CPLUSPLUSFLAGS          — explicit -D flags for C++ only
+//
+// Note on Ruby types: CocoaPods stores GCC_PREPROCESSOR_DEFINITIONS as a
+// String (not an Array) when read from xcconfig. We must handle both types.
 const FOLLY_INJECTION = `
-  # ── HydraPulse: disable Folly C++20 coroutines globally ─────────────────
+  # ── HydraPulse: Folly coroutine + deprecation fixes ─────────────────────
+  folly_defs   = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
+  folly_cxx    = folly_defs.map { |d| "-D#{d}" }.join(' ')
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
-      defs = Array(config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'])
-      defs |= ['$(inherited)', 'FOLLY_NO_CONFIG=1', 'FOLLY_CFG_NO_COROUTINES=1']
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+      # --- GCC_PREPROCESSOR_DEFINITIONS (String or Array) ---
+      existing_pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+      if existing_pp.is_a?(Array)
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp | folly_defs)
+      elsif !(existing_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp || '$(inherited)').to_s + ' ' + folly_defs.join(' ')
+      end
+      # --- OTHER_CPLUSPLUSFLAGS (belt-and-suspenders for C++ TUs) ---
+      existing_cxx = config.build_settings['OTHER_CPLUSPLUSFLAGS'].to_s
+      unless existing_cxx.include?('FOLLY_CFG_NO_COROUTINES')
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (existing_cxx.empty? ? '$(inherited)' : existing_cxx) + ' ' + folly_cxx
+      end
+      # --- Suppress deprecated HealthKit API warnings in react-native-health ---
+      if target.name == 'RNAppleHealthKit'
+        existing_cflags = config.build_settings['OTHER_CFLAGS'].to_s
+        unless existing_cflags.include?('Wno-deprecated')
+          config.build_settings['OTHER_CFLAGS'] = (existing_cflags.empty? ? '$(inherited)' : existing_cflags) + ' -Wno-deprecated-declarations'
+        end
+      end
     end
   end
   # ─────────────────────────────────────────────────────────────────────────`;

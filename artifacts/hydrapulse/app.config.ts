@@ -40,6 +40,53 @@ function withFollyNoCoroutines(config: ExpoConfig): ExpoConfig {
     },
   ]);
 }
+
+// ── react-native-health podspec patch ───────────────────────────────────────
+// react-native-health@1.19 ships a podspec written for RN 0.59 era:
+//   1. swift_version = '4.2'  — Xcode 14+ dropped Swift 4.2 entirely; pod
+//      install fails when CocoaPods validates the swift version constraint.
+//   2. s.dependency 'React'   — The 'React' umbrella pod was removed in
+//      RN 0.60. It no longer exists, so pod install immediately errors with
+//      "Unable to find a specification for 'React'". Modern packages use
+//      install_modules_dependencies(s) instead.
+// This plugin patches the file in node_modules during expo prebuild, before
+// CocoaPods ever sees it.
+function withHealthKitPodspecPatch(config: ExpoConfig): ExpoConfig {
+  return withDangerousMod(config, [
+    "ios",
+    (modConfig) => {
+      const podspecPath = path.join(
+        modConfig.modRequest.projectRoot,
+        "node_modules",
+        "react-native-health",
+        "RNAppleHealthKit.podspec"
+      );
+      if (!fs.existsSync(podspecPath)) return modConfig;
+
+      let contents = fs.readFileSync(podspecPath, "utf-8");
+
+      // Already patched (idempotent)
+      if (contents.includes("install_modules_dependencies")) return modConfig;
+
+      // Fix 1: Swift 4.2 → 5.0 (Xcode 14+ requirement)
+      contents = contents.replace(
+        /s\.swift_version\s*=\s*['"]4\.2['"]/,
+        "s.swift_version = '5.0'"
+      );
+
+      // Fix 2: Remove the dead 'React' dependency and replace with the
+      //        modern install_modules_dependencies helper used by all
+      //        current RN native modules (worklets-core, VisionCamera, etc.)
+      contents = contents.replace(
+        /s\.dependency\s+['"]React['"]/,
+        "install_modules_dependencies(s)"
+      );
+
+      fs.writeFileSync(podspecPath, contents);
+      return modConfig;
+    },
+  ]);
+}
 // ───────────────────────────────────────────────────────────────────────────
 
 export default ({ config }: ConfigContext): ExpoConfig => {
@@ -167,7 +214,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
   };
 
-  // Apply the Folly fix as a programmatic plugin — inlined here so there is
-  // no separate file to resolve during the EAS "Read app config" phase.
-  return withFollyNoCoroutines(appConfig);
+  // Apply programmatic plugins — inlined so no separate file resolution is
+  // needed during the EAS "Read app config" phase.
+  //
+  // Order matters: podspec patch must run before the Folly Podfile hook so
+  // that CocoaPods sees a clean patched podspec when it resolves pods.
+  let result = withHealthKitPodspecPatch(appConfig);
+  result = withFollyNoCoroutines(result);
+  return result;
 };

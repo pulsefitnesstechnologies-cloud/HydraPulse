@@ -67,32 +67,44 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
       const root = modConfig.modRequest.projectRoot;
 
       // ── patch 1: react-native-health ──────────────────────────────────
+      // react-native-health is an OLD BRIDGE module. It only needs React-Core.
+      // We intentionally do NOT use install_modules_dependencies(s) because
+      // that would add Fabric/ReactCodegen deps for what is a bridge-only
+      // module, which can cause pod resolution conflicts with new arch.
       const hkPath = path.join(
         root, "node_modules", "react-native-health", "RNAppleHealthKit.podspec"
       );
       if (fs.existsSync(hkPath)) {
         let hk = fs.readFileSync(hkPath, "utf-8");
-        if (!hk.includes("install_modules_dependencies")) {
+        if (hk.includes("s.dependency 'React'")) {
+          // Fix 1: Swift 4.2 was dropped by Xcode 14. Use 5.0.
           hk = hk.replace(
             /s\.swift_version\s*=\s*['"]4\.2['"]/,
             "s.swift_version = '5.0'"
           );
+          // Fix 2: The 'React' umbrella pod was removed in RN 0.60.
+          // Replace with React-Core which is the correct modern pod for
+          // old-bridge native modules.
           hk = hk.replace(
             /s\.dependency\s+['"]React['"]/,
-            "install_modules_dependencies(s)"
+            "s.dependency 'React-Core'"
           );
           fs.writeFileSync(hkPath, hk);
         }
       }
 
       // ── patch 2: react-native-vision-camera FrameProcessors subspec ───
+      // VisionCamera v4's FrameProcessors subspec has fp.dependency "React"
+      // which is the same dead pod. Replace with React-Core.
+      // Uses respond_to? guard pattern (same as vision-camera-resize-plugin)
+      // so the spec is safe whether or not the helper is in scope.
       const vcPath = path.join(
         root, "node_modules", "react-native-vision-camera", "VisionCamera.podspec"
       );
       if (fs.existsSync(vcPath)) {
         let vc = fs.readFileSync(vcPath, "utf-8");
-        // Target only the FrameProcessors subspec line (fp.dependency "React")
-        // leaving the unrelated 's.subspec 'React'' block untouched.
+        // Only patch the FrameProcessors subspec line — leave the
+        // 's.subspec "React"' block name untouched.
         if (vc.includes('fp.dependency "React"')) {
           vc = vc.replace('fp.dependency "React"', 'fp.dependency "React-Core"');
           fs.writeFileSync(vcPath, vc);
@@ -115,9 +127,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: "./assets/images/icon.png",
     scheme: "hydrapulse",
     userInterfaceStyle: "automatic",
-    // New architecture enabled — all native packages in this project support
-    // JSI / Fabric. react-native-health was replaced with
-    // @kingstinct/react-native-healthkit which is built on NitroModules (new arch).
+    // New architecture enabled. react-native-health works via the RN 0.76+
+    // interop layer that bridges old-bridge modules into new arch at runtime.
     newArchEnabled: true,
 
     splash: {

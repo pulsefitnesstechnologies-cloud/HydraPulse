@@ -303,8 +303,10 @@ export default function SettingsScreen() {
       );
     } else {
       Alert.alert(
-        "Permission Required",
-        "HydraPulse needs access to Apple Health. If the permission dialog did not appear, it was previously denied — tap Open Settings to grant access manually.",
+        "Health Access Unavailable",
+        "HydraPulse could not connect to Apple Health.\n\n" +
+        "If HydraPulse does not appear under Health \u2192 Apps & Sources, the HealthKit capability may need to be enabled in the Apple Developer portal for this app.\n\n" +
+        "If the permission was previously denied, tap Open Settings to grant it manually.",
         [
           { text: "Cancel", style: "cancel" },
           {

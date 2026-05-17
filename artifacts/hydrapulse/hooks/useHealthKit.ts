@@ -47,14 +47,27 @@ export function useHealthKit() {
               AppleHealthKit.Constants.Permissions.HeartRate,
               AppleHealthKit.Constants.Permissions.HeartRateVariability,
             ],
-            write: [],
+            write: [
+              // Writing water consumption gives iOS Health a concrete write
+              // permission to display, making HydraPulse appear in Health →
+              // Apps even when the user hasn't granted read yet.
+              AppleHealthKit.Constants.Permissions.Water,
+            ],
           },
         },
         (err: unknown) => {
           if (err) {
-            // initHealthKit fails immediately on new arch if the interop layer
-            // isn't bridging correctly — treat as unavailable rather than crash.
-            console.warn("[useHealthKit] initHealthKit error:", err);
+            // Surface the error so the user can diagnose. The most common
+            // cause on a fresh EAS preview build is that the HealthKit
+            // capability is not enabled in the Apple Developer portal for
+            // this bundle ID — the entitlement is then stripped from the
+            // provisioning profile and initHealthKit returns an error.
+            console.warn(
+              "[useHealthKit] initHealthKit failed. If HydraPulse is missing from " +
+              "Health → Apps, go to developer.apple.com → Identifiers → " +
+              "com.hydrapulse.app → enable HealthKit, then rebuild. Error:",
+              JSON.stringify(err)
+            );
             setIsAvailable(false);
             resolve(false);
           } else {

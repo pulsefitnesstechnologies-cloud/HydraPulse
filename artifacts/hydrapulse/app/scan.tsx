@@ -67,9 +67,11 @@ function analyzeSignal(samples: number[]): {
   const mean = samples.reduce((a, b) => a + b) / samples.length;
   const centered = samples.map((v) => v - mean);
 
-  // Amplitude sanity check — finger probably not covering lens
+  // Amplitude sanity check — finger probably not covering lens.
+  // Threshold is intentionally low (0.5) because real camera PPG AC amplitude
+  // is tiny relative to the DC offset (often 1-8 units on a 0-255 scale).
   const amplitude = Math.max(...centered) - Math.min(...centered);
-  if (amplitude < 2) return null;
+  if (amplitude < 0.5) return null;
 
   // 2. Short moving-average smooth (~0.1 s window)
   const w = Math.max(1, Math.round(SAMPLE_RATE * 0.1));
@@ -81,20 +83,31 @@ function analyzeSignal(samples: number[]): {
     return s / (hi - lo + 1);
   });
 
-  // 3. Peak detection — min physiological distance 0.33 s (180 bpm cap)
+  // 3. Peak detection — min physiological distance 0.33 s (180 bpm cap).
+  // Smartphone PPG can be either polarity depending on whether the camera
+  // sees the torch light in transmission mode (peaks = valleys in red) or
+  // reflection mode (peaks = rises in red). Try both and use whichever
+  // yields more peaks.
   const minDist = Math.round(SAMPLE_RATE * 0.33);
-  const threshold = amplitude * 0.25;
-  const peaks: number[] = [];
-  for (let i = minDist; i < smoothed.length - minDist; i++) {
-    if (smoothed[i] < threshold) continue;
-    let isPeak = true;
-    for (let j = i - minDist; j <= i + minDist; j++) {
-      if (smoothed[j] > smoothed[i]) {
-        isPeak = false;
-        break;
+  const threshold = amplitude * 0.2;
+
+  const detectPeaks = (signal: number[]): number[] => {
+    const found: number[] = [];
+    for (let i = minDist; i < signal.length - minDist; i++) {
+      if (signal[i] < threshold) continue;
+      let isPeak = true;
+      for (let j = i - minDist; j <= i + minDist; j++) {
+        if (signal[j] > signal[i]) { isPeak = false; break; }
       }
+      if (isPeak) found.push(i);
     }
-    if (isPeak) peaks.push(i);
+    return found;
+  };
+
+  let peaks = detectPeaks(smoothed);
+  if (peaks.length < 3) {
+    // Inverted signal — pulse waveform goes down in red (transmission mode)
+    peaks = detectPeaks(smoothed.map((v) => -v));
   }
 
   if (peaks.length < 3) return null;

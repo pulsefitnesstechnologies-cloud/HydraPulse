@@ -202,7 +202,41 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
         }
       }
 
-      // ── patch 3: folly/coro/Coroutine.h stub ──────────────────────────
+      // ── patch 3: react-native-worklets-core invalidate fix ────────────
+      // react-native-worklets-core@1.6.x calls C++ worklet teardown
+      // synchronously inside -[Worklets invalidate], which blocks the JS
+      // thread long enough for RCTTurboModuleManager to time out with
+      // "Timed out waiting for modules to be invalidated" on new arch.
+      // Fix: dispatch the teardown to a background queue so the calling
+      // thread returns immediately and the timeout never fires.
+      const workletsMMPath = path.join(
+        root, "node_modules", "react-native-worklets-core", "ios", "Worklets.mm"
+      );
+      if (fs.existsSync(workletsMMPath)) {
+        let wk = fs.readFileSync(workletsMMPath, "utf-8");
+        if (wk.includes("RNWorklet::JsiWorkletContext::invalidateDefaultInstance();") &&
+            !wk.includes("dispatch_async")) {
+          wk = wk.replace(
+            `- (void)invalidate {
+  RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
+  RNWorklet::JsiWorkletApi::invalidateInstance();
+  _bridge = nil;
+}`,
+            `- (void)invalidate {
+  // HydraPulse patch: dispatch C++ worklet teardown off the calling thread
+  // so RCTTurboModuleManager doesn't time out waiting for invalidation.
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
+    RNWorklet::JsiWorkletApi::invalidateInstance();
+  });
+  _bridge = nil;
+}`
+          );
+          fs.writeFileSync(workletsMMPath, wk);
+        }
+      }
+
+      // ── patch 4: folly/coro/Coroutine.h stub ──────────────────────────
       // RN 0.81's prebuilt Maven tarball (ReactNativeDependencies) ships the
       // compiled Folly library but OMITS folly/coro/Coroutine.h and the rest
       // of the coro/ header directory. Third-party pods (reanimated, worklets-

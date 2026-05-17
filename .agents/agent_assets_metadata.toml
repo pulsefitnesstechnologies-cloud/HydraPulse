@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "rTkSM_Y1jvkL-1H3b2sDa"
 uri = "file://artifacts/hydrapulse/assets/images/icon.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "k4S_BXshPRmJhYieADyDO"
+uri = "file://attached_assets/hydrapulse-dev-qr.png"
+type = "image"
+title = "HydraPulse Dev Client QR Code"

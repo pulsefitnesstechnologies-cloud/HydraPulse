@@ -31,12 +31,13 @@ export function useHealthKit() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Show the system HealthKit permission sheet.
-  const requestAuthorization = useCallback((): Promise<boolean> => {
-    if (Platform.OS !== "ios") return Promise.resolve(false);
+  // Returns { ok, error } — error is the raw string from initHealthKit on failure.
+  const requestAuthorization = useCallback((): Promise<{ ok: boolean; error?: string }> => {
+    if (Platform.OS !== "ios") return Promise.resolve({ ok: false, error: "iOS only" });
     const AppleHealthKit = hk();
     if (!AppleHealthKit) {
       setIsAvailable(false);
-      return Promise.resolve(false);
+      return Promise.resolve({ ok: false, error: "react-native-health module not found" });
     }
 
     return new Promise((resolve) => {
@@ -57,22 +58,21 @@ export function useHealthKit() {
         },
         (err: unknown) => {
           if (err) {
-            // Surface the error so the user can diagnose. The most common
-            // cause on a fresh EAS preview build is that the HealthKit
-            // capability is not enabled in the Apple Developer portal for
-            // this bundle ID — the entitlement is then stripped from the
-            // provisioning profile and initHealthKit returns an error.
-            console.warn(
-              "[useHealthKit] initHealthKit failed. If HydraPulse is missing from " +
-              "Health → Apps, go to developer.apple.com → Identifiers → " +
-              "com.hydrapulse.app → enable HealthKit, then rebuild. Error:",
-              JSON.stringify(err)
-            );
-            setIsAvailable(false);
-            resolve(false);
+            const errStr =
+              typeof err === "string"
+                ? err
+                : typeof err === "object" && err !== null
+                ? JSON.stringify(err)
+                : String(err);
+            console.warn("[useHealthKit] initHealthKit error:", errStr);
+            // Do NOT mark isAvailable=false here — HealthKit is available on
+            // this device, the authorization just failed. Keeping isAvailable
+            // true lets the user retry. Only mark unavailable when the module
+            // itself is missing or HKHealthStore reports data unavailable.
+            resolve({ ok: false, error: errStr });
           } else {
             setIsAuthorized(true);
-            resolve(true);
+            resolve({ ok: true });
           }
         }
       );

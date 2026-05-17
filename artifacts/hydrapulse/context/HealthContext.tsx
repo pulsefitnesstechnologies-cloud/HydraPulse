@@ -18,7 +18,7 @@ interface HealthContextType {
   notificationsEnabled: boolean;
   reminderSchedule: ReminderSchedule;
   watchInterval: WatchInterval;
-  connectHealthKit: () => Promise<boolean>;
+  connectHealthKit: () => Promise<{ ok: boolean; error?: string }>;
   refreshHealthData: () => void;
   notificationPermission: boolean;
   requestNotificationPermission: () => Promise<boolean>;
@@ -59,13 +59,13 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const connectHealthKit = useCallback(async (): Promise<boolean> => {
-    const ok = await hk.requestAuthorization();
-    if (ok) {
+  const connectHealthKit = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+    const result = await hk.requestAuthorization();
+    if (result.ok) {
       setHealthKitEnabled(true);
       await AsyncStorage.setItem(STORAGE_KEYS.HEALTH_ENABLED, "true").catch(() => {});
     }
-    return ok;
+    return result;
   }, [hk]);
 
   const updateReminderSchedule = useCallback(

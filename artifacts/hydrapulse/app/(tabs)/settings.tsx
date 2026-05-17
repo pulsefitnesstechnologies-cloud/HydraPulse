@@ -294,19 +294,24 @@ export default function SettingsScreen() {
       Alert.alert("Apple Health", "Health data refreshed.");
       return;
     }
-    const ok = await connectHealthKit();
-    if (ok) {
+    const result = await connectHealthKit();
+    if (result.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       Alert.alert(
         "Connected",
         "HydraPulse can now read your heart rate and HRV from Apple Health."
       );
     } else {
+      const detail = result.error
+        ? `\n\nDiagnostic: ${result.error}`
+        : "";
       Alert.alert(
         "Health Access Unavailable",
         "HydraPulse could not connect to Apple Health.\n\n" +
-        "If HydraPulse does not appear under Health \u2192 Apps & Sources, the HealthKit capability may need to be enabled in the Apple Developer portal for this app.\n\n" +
-        "If the permission was previously denied, tap Open Settings to grant it manually.",
+        "The most common cause is a stale provisioning profile — rebuild with:\n" +
+        "eas build --profile preview --platform ios --clear-cache\n\n" +
+        "If the permission was previously denied, tap Open Settings to grant it manually." +
+        detail,
         [
           { text: "Cancel", style: "cancel" },
           {

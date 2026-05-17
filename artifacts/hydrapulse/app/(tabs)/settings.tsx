@@ -308,9 +308,9 @@ export default function SettingsScreen() {
       Alert.alert(
         "Health Access Unavailable",
         "HydraPulse could not connect to Apple Health.\n\n" +
-        "The most common cause is a stale provisioning profile — rebuild with:\n" +
-        "eas build --profile preview --platform ios --clear-cache\n\n" +
-        "If the permission was previously denied, tap Open Settings to grant it manually." +
+        "If this is a fresh install, tap Open Settings → Privacy & Security → Health → HydraPulse and enable access.\n\n" +
+        "If access is already granted or the option is missing, rebuild with fresh credentials:\n" +
+        "eas credentials --platform ios → delete provisioning profile → eas build --profile preview --platform ios" +
         detail,
         [
           { text: "Cancel", style: "cancel" },

@@ -11,13 +11,22 @@ const WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // Lazy-require keeps the JS bundle from crashing on Android/web where the
 // native module is absent. All calls are guarded by Platform.OS === "ios".
+// react-native-health may use CommonJS exports (module.exports = Kit) or ESM
+// default exports — handle both with the `?.default ?? mod` pattern.
+let _hkCache: typeof import("react-native-health").default | null | undefined;
+let _hkLoadError: string | null = null;
+
 function hk() {
+  if (_hkCache !== undefined) return _hkCache;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("react-native-health").default as typeof import("react-native-health").default;
-  } catch {
-    return null;
+    const mod = require("react-native-health");
+    _hkCache = (mod?.default ?? mod) as typeof import("react-native-health").default;
+  } catch (e) {
+    _hkLoadError = String(e);
+    _hkCache = null;
   }
+  return _hkCache;
 }
 
 export function useHealthKit() {
@@ -37,7 +46,10 @@ export function useHealthKit() {
     const AppleHealthKit = hk();
     if (!AppleHealthKit) {
       setIsAvailable(false);
-      return Promise.resolve({ ok: false, error: "react-native-health module not found" });
+      return Promise.resolve({
+        ok: false,
+        error: _hkLoadError ?? "react-native-health module not found",
+      });
     }
 
     return new Promise((resolve) => {

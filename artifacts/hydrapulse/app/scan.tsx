@@ -59,22 +59,23 @@ function analyzeSignal(samples: number[]): {
   heartRate: number;
   hrv: number;
   confidence: number;
+  debug: string;
 } | null {
-  // Need at least 5 s of data to attempt real analysis
-  if (samples.length < SAMPLE_RATE * 5) return null;
+  // Need at least 3 s of data (shorter minimum — 12 s scan always provides more)
+  if (samples.length < SAMPLE_RATE * 3) return null;
 
   // 1. Mean-centre (remove DC — slow drift from finger pressure)
   const mean = samples.reduce((a, b) => a + b) / samples.length;
   const centered = samples.map((v) => v - mean);
 
   // Amplitude sanity check — finger probably not covering lens.
-  // Threshold is intentionally low (0.5) because real camera PPG AC amplitude
+  // Threshold is intentionally low (0.3) because real camera PPG AC amplitude
   // is tiny relative to the DC offset (often 1-8 units on a 0-255 scale).
-  const amplitude = Math.max(...centered) - Math.min(...centered);
-  if (amplitude < 0.5) return null;
+  const rawAmplitude = Math.max(...centered) - Math.min(...centered);
+  if (rawAmplitude < 0.3) return null;
 
-  // 2. Short moving-average smooth (~0.1 s window)
-  const w = Math.max(1, Math.round(SAMPLE_RATE * 0.1));
+  // 2. Short moving-average smooth (~0.15 s window)
+  const w = Math.max(1, Math.round(SAMPLE_RATE * 0.15));
   const smoothed = centered.map((_, i) => {
     const lo = Math.max(0, i - w);
     const hi = Math.min(centered.length - 1, i + w);
@@ -83,13 +84,20 @@ function analyzeSignal(samples: number[]): {
     return s / (hi - lo + 1);
   });
 
+  // Use the smoothed amplitude for thresholding — smoothing reduces amplitude
+  // slightly so using the raw amplitude overstates the threshold, causing
+  // genuine peaks to be filtered out.
+  const smoothAmp = Math.max(...smoothed) - Math.min(...smoothed);
+
   // 3. Peak detection — min physiological distance 0.33 s (180 bpm cap).
   // Smartphone PPG can be either polarity depending on whether the camera
   // sees the torch light in transmission mode (peaks = valleys in red) or
   // reflection mode (peaks = rises in red). Try both and use whichever
   // yields more peaks.
   const minDist = Math.round(SAMPLE_RATE * 0.33);
-  const threshold = amplitude * 0.2;
+  // Use 15% of smoothed amplitude — low enough to capture real peaks without
+  // triggering on noise. Raw amplitude threshold of 20% was too aggressive.
+  const threshold = smoothAmp * 0.15;
 
   const detectPeaks = (signal: number[]): number[] => {
     const found: number[] = [];
@@ -105,10 +113,13 @@ function analyzeSignal(samples: number[]): {
   };
 
   let peaks = detectPeaks(smoothed);
+  const peaksPos = peaks.length;
   if (peaks.length < 3) {
     // Inverted signal — pulse waveform goes down in red (transmission mode)
     peaks = detectPeaks(smoothed.map((v) => -v));
   }
+
+  const debugStr = `n=${samples.length} amp=${rawAmplitude.toFixed(2)} sAmp=${smoothAmp.toFixed(2)} thr=${threshold.toFixed(2)} peaks+=${peaksPos} peaks-=${peaks.length}`;
 
   if (peaks.length < 3) return null;
 
@@ -152,7 +163,7 @@ function analyzeSignal(samples: number[]): {
       ? 2 // Low: mild dehydration markers
       : 1; // Critical
 
-  return { score, heartRate, hrv, confidence };
+  return { score, heartRate, hrv, confidence, debug: debugStr };
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -265,16 +276,27 @@ export default function ScanScreen() {
     clearInterval(timerRef.current!);
     setTorchOn(false);
     stopPulse();
-    const analyzed = analyzeSignal(sampleBuffer.current);
+    const buf = sampleBuffer.current.slice();
     sampleBuffer.current = [];
     setSignalQuality("none");
+    const analyzed = analyzeSignal(buf);
     if (analyzed) {
       setResult(analyzed);
       setState("done");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } else {
+      // Build a minimal debug string so you can diagnose what the signal
+      // looked like even when the algorithm couldn't extract a heart rate.
+      const n = buf.length;
+      let debugNote = `(${n} samples collected)`;
+      if (n >= 2) {
+        const mean = buf.reduce((a, b) => a + b) / n;
+        const centered = buf.map((v) => v - mean);
+        const amp = Math.max(...centered) - Math.min(...centered);
+        debugNote = `(${n} samples, amplitude ${amp.toFixed(2)})`;
+      }
       setFailReason(
-        "Signal too weak — your fingertip may not have been fully covering the lens, or there was too much movement."
+        `Signal too weak — your fingertip may not have been fully covering the lens, or there was too much movement. ${debugNote}`
       );
       setState("failed");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});

@@ -34,6 +34,19 @@ const FOLLY_INJECTION = `
   # We place the stub INSIDE the Pods sandbox so $(PODS_ROOT)/FollyStubs
   # resolves to it with no ".." traversal (more reliable across Xcode versions).
   #
+  # PRIMARY: Place the stub inside the prebuilt ReactNativeDependencies headers
+  # directory. The compiler already has -I.../ReactNativeDependencies in its
+  # search path (set by CocoaPods xcconfig for every pod). The prebuilt
+  # folly/Expected.h does #include <folly/coro/Coroutine.h>, which the compiler
+  # resolves as ReactNativeDependencies/folly/coro/Coroutine.h. We create that
+  # file here so the include succeeds. No HEADER_SEARCH_PATHS change needed.
+  _folly_rnd_coro_dir  = installer.sandbox.root.join('Headers', 'Public', 'ReactNativeDependencies', 'folly', 'coro')
+  _folly_rnd_coro_file = _folly_rnd_coro_dir.join('Coroutine.h')
+  FileUtils.mkdir_p(_folly_rnd_coro_dir)
+  File.write(_folly_rnd_coro_file, "#pragma once\\n// HydraPulse stub: folly/coro/Coroutine.h omitted from RN 0.81 prebuilt Folly\\n") unless _folly_rnd_coro_file.exist?
+  # SECONDARY (belt-and-suspenders): also place stub in FollyStubs/ and register
+  # it via HEADER_SEARCH_PATHS, in case the ReactNativeDependencies path differs
+  # across Xcode or CocoaPods versions.
   _folly_stub_dir  = installer.sandbox.root.join('FollyStubs', 'folly', 'coro')
   _folly_stub_file = _folly_stub_dir.join('Coroutine.h')
   FileUtils.mkdir_p(_folly_stub_dir)

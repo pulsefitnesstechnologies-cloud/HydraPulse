@@ -25,45 +25,77 @@ import * as fs from "fs";
 // String (not an Array) when read from xcconfig. We must handle both types.
 const FOLLY_INJECTION = `
   # ── HydraPulse: Folly coroutine + deprecation fixes ─────────────────────
-  # Two-layer defence for folly/coro/Coroutine.h:
-  #   Layer 1 — stub header at ios/FollyStubs/folly/coro/Coroutine.h
-  #             prepended to HEADER_SEARCH_PATHS so an unconditional
-  #             #include <folly/coro/Coroutine.h> resolves to the stub
-  #             instead of failing with "file not found".
-  #   Layer 2 — preprocessor flags via GCC_PREPROCESSOR_DEFINITIONS and
-  #             OTHER_CPLUSPLUSFLAGS so any guarded code paths skip
-  #             coroutine features entirely.
-  folly_defs = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
-  folly_cxx  = folly_defs.map { |d| "-D#{d}" }.join(' ')
-  # $(PODS_ROOT) = ios/Pods/ ; $(PODS_ROOT)/.. = ios/ ; ../FollyStubs = ios/FollyStubs
-  folly_stub_path = '"$(PODS_ROOT)/../FollyStubs"'
+  require 'fileutils'
+  #
+  # LAYER 1 — physical stub file, created here (during pod install) so it
+  # exists on disk before Xcode ever tries to open the header.
+  #
+  # installer.sandbox.root = absolute path to ios/Pods/
+  # We place the stub INSIDE the Pods sandbox so $(PODS_ROOT)/FollyStubs
+  # resolves to it with no ".." traversal (more reliable across Xcode versions).
+  #
+  _folly_stub_dir  = installer.sandbox.root.join('FollyStubs', 'folly', 'coro')
+  _folly_stub_file = _folly_stub_dir.join('Coroutine.h')
+  FileUtils.mkdir_p(_folly_stub_dir)
+  File.write(_folly_stub_file, "#pragma once\\n// HydraPulse: folly/coro/Coroutine.h stub\\n// RN 0.81 prebuilt Folly omits coro/ headers.\\n") unless _folly_stub_file.exist?
+  _folly_stub_hsp  = '"$(PODS_ROOT)/FollyStubs"'
+  #
+  # LAYER 2 — preprocessor flags so guarded includes also resolve to nothing.
+  #
+  _folly_defs = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
+  _folly_cxx  = _folly_defs.map { |d| "-D#{d}" }.join(' ')
+  #
+  # Apply to every pod target (covers RNReanimated, VisionCamera, worklets-core,
+  # RNAppleHealthKit, ReactCodegen, and all others).
+  #
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
-      # --- HEADER_SEARCH_PATHS: prepend stub dir so it wins over prebuilt Folly ---
-      existing_hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
-      unless existing_hsp.include?('FollyStubs')
-        config.build_settings['HEADER_SEARCH_PATHS'] = folly_stub_path + ' ' + (existing_hsp.empty? ? '$(inherited)' : existing_hsp)
+      # HEADER_SEARCH_PATHS — stub dir first
+      _hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
+      unless _hsp.include?('FollyStubs')
+        config.build_settings['HEADER_SEARCH_PATHS'] = _folly_stub_hsp + ' ' + (_hsp.empty? ? '$(inherited)' : _hsp)
       end
-      # --- GCC_PREPROCESSOR_DEFINITIONS (may be String or Array in CocoaPods) ---
-      existing_pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
-      if existing_pp.is_a?(Array)
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp | folly_defs)
-      elsif !(existing_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (existing_pp || '$(inherited)').to_s + ' ' + folly_defs.join(' ')
+      # GCC_PREPROCESSOR_DEFINITIONS — handles String or Array value from CocoaPods
+      _pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+      if _pp.is_a?(Array)
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp | _folly_defs)
+      elsif !(_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp || '$(inherited)').to_s + ' ' + _folly_defs.join(' ')
       end
-      # --- OTHER_CPLUSPLUSFLAGS: belt-and-suspenders -D flags for C++ TUs ---
-      existing_cxx = config.build_settings['OTHER_CPLUSPLUSFLAGS'].to_s
-      unless existing_cxx.include?('FOLLY_CFG_NO_COROUTINES')
-        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (existing_cxx.empty? ? '$(inherited)' : existing_cxx) + ' ' + folly_cxx
+      # OTHER_CPLUSPLUSFLAGS — belt-and-suspenders for C++ TUs
+      _cxx = config.build_settings['OTHER_CPLUSPLUSFLAGS'].to_s
+      unless _cxx.include?('FOLLY_CFG_NO_COROUTINES')
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (_cxx.empty? ? '$(inherited)' : _cxx) + ' ' + _folly_cxx
       end
-      # --- Suppress deprecated HealthKit API warnings from react-native-health ---
-      if target.name == 'RNAppleHealthKit'
-        existing_cflags = config.build_settings['OTHER_CFLAGS'].to_s
-        unless existing_cflags.include?('Wno-deprecated')
-          config.build_settings['OTHER_CFLAGS'] = (existing_cflags.empty? ? '$(inherited)' : existing_cflags) + ' -Wno-deprecated-declarations'
+      # OTHER_CFLAGS — suppress deprecated HealthKit API warnings globally
+      # (warning can be triggered by any target that imports react-native-health headers)
+      _cf = config.build_settings['OTHER_CFLAGS'].to_s
+      unless _cf.include?('Wno-deprecated')
+        config.build_settings['OTHER_CFLAGS'] = (_cf.empty? ? '$(inherited)' : _cf) + ' -Wno-deprecated-declarations'
+      end
+    end
+  end
+  #
+  # Also apply HEADER_SEARCH_PATHS to the main app target (HydraPulse.xcodeproj)
+  # in case any app-target C++ compilation unit includes Folly headers directly.
+  #
+  installer.aggregate_targets.each do |agg|
+    next unless agg.user_project
+    agg.user_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        _hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
+        unless _hsp.include?('FollyStubs')
+          config.build_settings['HEADER_SEARCH_PATHS'] = _folly_stub_hsp + ' ' + (_hsp.empty? ? '$(inherited)' : _hsp)
+        end
+        _pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+        if _pp.is_a?(Array)
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp | _folly_defs)
+        elsif !(_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp || '$(inherited)').to_s + ' ' + _folly_defs.join(' ')
         end
       end
     end
+    agg.user_project.save
   end
   # ─────────────────────────────────────────────────────────────────────────`;
 

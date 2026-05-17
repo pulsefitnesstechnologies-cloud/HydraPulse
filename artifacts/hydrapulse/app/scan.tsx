@@ -64,9 +64,15 @@ function analyzeSignal(samples: number[]): {
   // Need at least 3 s of data (shorter minimum — 12 s scan always provides more)
   if (samples.length < SAMPLE_RATE * 3) return null;
 
+  // Drop the first 2 s — the iPhone camera auto-exposure swings wildly when
+  // the torch turns on, producing a huge DC spike that corrupts the amplitude
+  // calculation and buries the real PPG signal (~1–5 units variation).
+  const stable = samples.slice(SAMPLE_RATE * 2);
+  if (stable.length < SAMPLE_RATE * 3) return null;
+
   // 1. Mean-centre (remove DC — slow drift from finger pressure)
-  const mean = samples.reduce((a, b) => a + b) / samples.length;
-  const centered = samples.map((v) => v - mean);
+  const mean = stable.reduce((a, b) => a + b) / stable.length;
+  const centered = stable.map((v) => v - mean);
 
   // Amplitude sanity check — finger probably not covering lens.
   // Threshold is intentionally low (0.3) because real camera PPG AC amplitude
@@ -119,7 +125,7 @@ function analyzeSignal(samples: number[]): {
     peaks = detectPeaks(smoothed.map((v) => -v));
   }
 
-  const debugStr = `n=${samples.length} amp=${rawAmplitude.toFixed(2)} sAmp=${smoothAmp.toFixed(2)} thr=${threshold.toFixed(2)} peaks+=${peaksPos} peaks-=${peaks.length}`;
+  const debugStr = `n=${stable.length}(+${samples.length - stable.length}skipped) amp=${rawAmplitude.toFixed(2)} sAmp=${smoothAmp.toFixed(2)} thr=${threshold.toFixed(2)} peaks+=${peaksPos} peaks-=${peaks.length}`;
 
   if (peaks.length < 3) return null;
 

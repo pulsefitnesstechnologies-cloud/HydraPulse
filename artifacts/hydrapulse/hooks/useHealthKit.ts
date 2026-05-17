@@ -53,41 +53,56 @@ export function useHealthKit() {
     }
 
     return new Promise((resolve) => {
-      AppleHealthKit.initHealthKit(
-        {
-          permissions: {
-            read: [
-              AppleHealthKit.Constants.Permissions.HeartRate,
-              AppleHealthKit.Constants.Permissions.HeartRateVariability,
-            ],
-            write: [
-              // Writing water consumption gives iOS Health a concrete write
-              // permission to display, making HydraPulse appear in Health →
-              // Apps even when the user hasn't granted read yet.
-              AppleHealthKit.Constants.Permissions.Water,
-            ],
+      // 12-second timeout — if the provisioning profile is missing the
+      // HealthKit entitlement, iOS silently drops the initHealthKit call and
+      // the callback never fires, leaving the UI frozen with no feedback.
+      const timer = setTimeout(() => {
+        resolve({
+          ok: false,
+          error:
+            "Timed out — HealthKit entitlement is likely missing from the " +
+            "provisioning profile. Run: eas credentials --platform ios → " +
+            "delete provisioning profile → rebuild.",
+        });
+      }, 12000);
+
+      try {
+        AppleHealthKit.initHealthKit(
+          {
+            permissions: {
+              read: [
+                AppleHealthKit.Constants.Permissions.HeartRate,
+                AppleHealthKit.Constants.Permissions.HeartRateVariability,
+              ],
+              write: [
+                // Writing water consumption gives iOS Health a concrete write
+                // permission to display, making HydraPulse appear in Health →
+                // Apps even when the user hasn't granted read yet.
+                AppleHealthKit.Constants.Permissions.Water,
+              ],
+            },
           },
-        },
-        (err: unknown) => {
-          if (err) {
-            const errStr =
-              typeof err === "string"
-                ? err
-                : typeof err === "object" && err !== null
-                ? JSON.stringify(err)
-                : String(err);
-            console.warn("[useHealthKit] initHealthKit error:", errStr);
-            // Do NOT mark isAvailable=false here — HealthKit is available on
-            // this device, the authorization just failed. Keeping isAvailable
-            // true lets the user retry. Only mark unavailable when the module
-            // itself is missing or HKHealthStore reports data unavailable.
-            resolve({ ok: false, error: errStr });
-          } else {
-            setIsAuthorized(true);
-            resolve({ ok: true });
+          (err: unknown) => {
+            clearTimeout(timer);
+            if (err) {
+              const errStr =
+                typeof err === "string"
+                  ? err
+                  : typeof err === "object" && err !== null
+                  ? JSON.stringify(err)
+                  : String(err);
+              console.warn("[useHealthKit] initHealthKit error:", errStr);
+              resolve({ ok: false, error: errStr });
+            } else {
+              setIsAuthorized(true);
+              resolve({ ok: true });
+            }
           }
-        }
-      );
+        );
+      } catch (e) {
+        clearTimeout(timer);
+        resolve({ ok: false, error: `initHealthKit threw: ${String(e)}` });
+      }
     });
   }, []);
 

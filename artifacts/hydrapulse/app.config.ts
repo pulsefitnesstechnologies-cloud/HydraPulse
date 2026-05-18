@@ -80,12 +80,6 @@ const FOLLY_INJECTION = `
       unless _cxx.include?('FOLLY_CFG_NO_COROUTINES')
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (_cxx.empty? ? '$(inherited)' : _cxx) + ' ' + _folly_cxx
       end
-      # OTHER_CFLAGS — suppress deprecated HealthKit API warnings globally
-      # (warning can be triggered by any target that imports react-native-health headers)
-      _cf = config.build_settings['OTHER_CFLAGS'].to_s
-      unless _cf.include?('Wno-deprecated')
-        config.build_settings['OTHER_CFLAGS'] = (_cf.empty? ? '$(inherited)' : _cf) + ' -Wno-deprecated-declarations'
-      end
     end
   end
   #
@@ -161,34 +155,7 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
     (modConfig) => {
       const root = modConfig.modRequest.projectRoot;
 
-      // ── patch 1: react-native-health ──────────────────────────────────
-      // react-native-health is an OLD BRIDGE module. It only needs React-Core.
-      // We intentionally do NOT use install_modules_dependencies(s) because
-      // that would add Fabric/ReactCodegen deps for what is a bridge-only
-      // module, which can cause pod resolution conflicts with new arch.
-      const hkPath = path.join(
-        root, "node_modules", "react-native-health", "RNAppleHealthKit.podspec"
-      );
-      if (fs.existsSync(hkPath)) {
-        let hk = fs.readFileSync(hkPath, "utf-8");
-        if (hk.includes("s.dependency 'React'")) {
-          // Fix 1: Swift 4.2 was dropped by Xcode 14. Use 5.0.
-          hk = hk.replace(
-            /s\.swift_version\s*=\s*['"]4\.2['"]/,
-            "s.swift_version = '5.0'"
-          );
-          // Fix 2: The 'React' umbrella pod was removed in RN 0.60.
-          // Replace with React-Core which is the correct modern pod for
-          // old-bridge native modules.
-          hk = hk.replace(
-            /s\.dependency\s+['"]React['"]/,
-            "s.dependency 'React-Core'"
-          );
-          fs.writeFileSync(hkPath, hk);
-        }
-      }
-
-      // ── patch 2: react-native-vision-camera FrameProcessors subspec ───
+      // ── patch 2 (was 2): react-native-vision-camera FrameProcessors subspec ───
       // VisionCamera v4's FrameProcessors subspec has fp.dependency "React"
       // which is the same dead pod. Replace with React-Core.
       const vcPath = path.join(
@@ -358,18 +325,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
 
-      // ── HealthKit — react-native-health config plugin ────────────────────
-      // Wires the HealthKit entitlement and NSHealth* usage strings.
-      // react-native-health uses the legacy bridge; the new-arch interop layer
-      // in RN 0.76+ lets it work alongside newArchEnabled: true.
+      // ── HealthKit — @kingstinct/react-native-healthkit config plugin ─────
+      // Proper Turbo Module (new-arch native) — works with newArchEnabled: true.
+      // Wires the HealthKit entitlement, NSHealth* usage strings, and pod.
       [
-        "react-native-health",
+        "@kingstinct/react-native-healthkit",
         {
           healthSharePermission:
             "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
           healthUpdatePermission:
-            "HydraPulse saves your hydration scan scores to Apple Health for tracking over time.",
-          isClinicalDataEnabled: false,
+            "HydraPulse saves hydration data to Apple Health for tracking over time.",
         },
       ],
 

@@ -1,0 +1,46 @@
+Which build profile do you want to configure? » preview
+√ Using build profile: preview
+If you provide your Apple account credentials we will be able to generate all necessary build credentials and fully validate them.
+This is optional, but without Apple account access you will need to provide all the missing values manually and we can only run minimal validation on them.
+√ Do you want to log in to your Apple account? ... yes
+
+› Log in to your Apple Developer account to continue
+√ Apple ID: ... pulsefitnesstechnologies@gmail.com
+› Restoring session C:\Users\geoff\.app-store\auth\pulsefitnesstechnologies@gmail.com\cookie
+› Team Geoff Stovall (WQM9GVNZC8)
+› Provider Geoff Stovall (128901213)
+√ Logged in Local session
+iOS Credentials
+Project                   @pulsefitnesstechnologies/hydrapulse
+Bundle Identifier         com.hydrapulse.app
+Apple Team                WQM9GVNZC8 (Geoff Stovall (Individual))
+
+Push Key
+Developer Portal ID       ACKSN367U8
+Apple Team                WQM9GVNZC8 (Geoff Stovall (Individual))
+Updated                   3 days ago
+
+
+Ad Hoc Configuration
+
+Distribution Certificate
+Serial Number             5325FD3F86B93379EB03DE5B788A9BE5
+Expiration Date           Thu, 13 May 2027 07:01:05 CDT
+Apple Team                WQM9GVNZC8 (Geoff Stovall (Individual))
+Updated                   4 days ago
+
+Provisioning Profile
+Developer Portal ID       38MM9B84W2
+Status                    active
+Expiration                Thu, 13 May 2027 07:01:05 CDT
+Apple Team                WQM9GVNZC8 (Geoff Stovall (Individual))
+Provisioned devices       - iPhone (UDID: 00008140-001C716011E8801C)
+Updated                   3 days ago
+
+? What do you want to do? » - Use arrow-keys. Return to submit.
+>   Build Credentials: Manage everything needed to build your project
+    Push Notifications: Manage your Apple Push Notifications Key
+    App Store Connect: Manage your API Key
+    credentials.json: Upload/Download credentials between EAS servers and your local json
+    Go back
+    Exit

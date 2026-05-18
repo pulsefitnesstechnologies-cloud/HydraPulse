@@ -1,5 +1,5 @@
 import { ConfigContext, ExpoConfig } from "expo/config";
-import { withDangerousMod } from "@expo/config-plugins";
+import { withDangerousMod, withEntitlementsPlist } from "@expo/config-plugins";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -404,5 +404,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   // that CocoaPods sees a clean patched podspec when it resolves pods.
   let result = withNativeModulePodspecPatches(appConfig);
   result = withFollyNoCoroutines(result);
+
+  // Explicitly wire the HealthKit entitlements so EAS managed provisioning
+  // always picks them up, regardless of what the react-native-health plugin
+  // does (its entitlement wiring has been silently failing).
+  result = withEntitlementsPlist(result, (cfg) => {
+    cfg.modResults["com.apple.developer.healthkit"] = true;
+    cfg.modResults["com.apple.developer.healthkit.access"] = [];
+    return cfg;
+  });
+
   return result;
 };

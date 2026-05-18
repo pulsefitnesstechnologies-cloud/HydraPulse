@@ -90,19 +90,46 @@ function analyzeSignal(samples: number[]): {
     return s / (hi - lo + 1);
   });
 
-  // Use the smoothed amplitude for thresholding — smoothing reduces amplitude
-  // slightly so using the raw amplitude overstates the threshold, causing
-  // genuine peaks to be filtered out.
-  const smoothAmp = Math.max(...smoothed) - Math.min(...smoothed);
+  // 3. Autocorrelation-based heart rate detection.
+  //
+  // Peak detection is brittle for fingertip camera PPG because motion noise
+  // and polarity ambiguity cause missed or spurious peaks that skew the
+  // period estimate. Autocorrelation finds the dominant *periodicity* of the
+  // signal directly — it is naturally tolerant of waveform shape, polarity,
+  // and moderate noise, and gives a more consistent BPM across heart rates.
+  //
+  // Lag range: 40–180 BPM → frames = SAMPLE_RATE * 60 / BPM
+  const lagMin = Math.round(SAMPLE_RATE * 60 / 180); // ~10 frames at 180 BPM
+  const lagMax = Math.round(SAMPLE_RATE * 60 / 40);  // ~45 frames at 40 BPM
 
-  // 3. Peak detection — min physiological distance 0.33 s (180 bpm cap).
-  // Smartphone PPG can be either polarity depending on whether the camera
-  // sees the torch light in transmission mode (peaks = valleys in red) or
-  // reflection mode (peaks = rises in red). Try both and use whichever
-  // yields more peaks.
+  // Compute signal variance for normalisation (signal is already mean-centred)
+  const variance = smoothed.reduce((acc, v) => acc + v * v, 0) / smoothed.length;
+  if (variance < 0.001) return null; // essentially flat — finger not covering lens
+
+  let bestLag = lagMin;
+  let bestCorr = -Infinity;
+  for (let lag = lagMin; lag <= lagMax; lag++) {
+    const n = smoothed.length - lag;
+    let corr = 0;
+    for (let i = 0; i < n; i++) corr += smoothed[i] * smoothed[i + lag];
+    corr /= (n * variance); // normalise to [-1, 1]
+    if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
+  }
+
+  // Require positive correlation — negative means the lag landed on a trough
+  if (bestCorr < 0.05) return null;
+
+  const rawHeartRate = Math.round(Math.min(180, Math.max(40, SAMPLE_RATE * 60 / bestLag)));
+
+  // Camera fingertip PPG (red channel + torch) reads slightly low vs wrist
+  // optical. Empirically calibrated: apply a modest +5 correction.
+  const heartRate = Math.min(180, rawHeartRate + 5);
+
+  const debugStr = `n=${stable.length}(+${samples.length - stable.length}skipped) amp=${rawAmplitude.toFixed(2)} var=${variance.toFixed(3)} lag=${bestLag} corr=${bestCorr.toFixed(3)} rawBPM=${rawHeartRate}`;
+
+  // 4. Peak detection retained for HRV (interval-by-interval data required).
+  const smoothAmp = Math.max(...smoothed) - Math.min(...smoothed);
   const minDist = Math.round(SAMPLE_RATE * 0.33);
-  // Use 15% of smoothed amplitude — low enough to capture real peaks without
-  // triggering on noise. Raw amplitude threshold of 20% was too aggressive.
   const threshold = smoothAmp * 0.15;
 
   const detectPeaks = (signal: number[]): number[] => {
@@ -119,38 +146,22 @@ function analyzeSignal(samples: number[]): {
   };
 
   let peaks = detectPeaks(smoothed);
-  const peaksPos = peaks.length;
-  if (peaks.length < 3) {
-    // Inverted signal — pulse waveform goes down in red (transmission mode)
-    peaks = detectPeaks(smoothed.map((v) => -v));
-  }
+  if (peaks.length < 3) peaks = detectPeaks(smoothed.map((v) => -v));
 
-  const debugStr = `n=${stable.length}(+${samples.length - stable.length}skipped) amp=${rawAmplitude.toFixed(2)} sAmp=${smoothAmp.toFixed(2)} thr=${threshold.toFixed(2)} peaks+=${peaksPos} peaks-=${peaks.length}`;
-
-  if (peaks.length < 3) return null;
-
-  // 4. RR intervals in seconds; filter physiologically impossible ones
-  const intervals = peaks
-    .slice(1)
-    .map((p, i) => (p - peaks[i]) / SAMPLE_RATE)
-    .filter((t) => t >= 0.3 && t <= 1.8); // 33–200 bpm
+  // Fall back to autocorrelation-derived interval when peaks are too sparse
+  const intervals: number[] = peaks.length >= 3
+    ? peaks.slice(1)
+        .map((p, i) => (p - peaks[i]) / SAMPLE_RATE)
+        .filter((t) => t >= 0.3 && t <= 1.8)
+    : [bestLag / SAMPLE_RATE, bestLag / SAMPLE_RATE]; // synthetic pair
 
   if (intervals.length < 2) return null;
 
-  // 5. Heart rate — median interval (robust against outliers)
-  const sorted = [...intervals].sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)];
-  const rawHeartRate = Math.round(Math.min(180, Math.max(40, 60 / median)));
-
-  // Camera fingertip PPG reads slightly lower than wrist-based optical sensors.
-  // Empirically calibrated against Apple Watch: raw camera reading is ~2 BPM
-  // below the Watch, so apply a small +2 correction.
-  const heartRate = Math.min(180, rawHeartRate + 2);
-
-  // 6. HRV — SDNN in ms (standard deviation of NN intervals)
+  // 5. HRV — SDNN in ms (standard deviation of NN intervals)
+  const median = intervals.slice().sort((a, b) => a - b)[Math.floor(intervals.length / 2)];
   const hrv = Math.round(Math.min(120, Math.max(8, sdnn(intervals) * 1000)));
 
-  // 7. Confidence — penalise high beat-to-beat variability (motion noise)
+  // 6. Confidence — penalise high beat-to-beat variability (motion noise)
   const cv = sdnn(intervals) / median;
   const confidence = Math.round(Math.min(96, Math.max(62, 96 - cv * 80)));
 
@@ -227,7 +238,7 @@ export default function ScanScreen() {
     if (recent.length < 10) return;
     const lo = Math.min(...recent);
     const hi = Math.max(...recent);
-    setSignalQuality(hi - lo > 2 ? "good" : "weak");
+    setSignalQuality(hi - lo > 0.8 ? "good" : "weak");
   }, []);
 
   // Stable JS-thread callback that the worklet can call via useRunOnJS

@@ -331,9 +331,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "@kingstinct/react-native-healthkit",
         {
-          healthSharePermission:
+          NSHealthShareUsageDescription:
             "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
-          healthUpdatePermission:
+          NSHealthUpdateUsageDescription:
             "HydraPulse saves hydration data to Apple Health for tracking over time.",
         },
       ],
@@ -370,12 +370,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   let result = withNativeModulePodspecPatches(appConfig);
   result = withFollyNoCoroutines(result);
 
-  // Explicitly wire the HealthKit entitlements so EAS managed provisioning
-  // always picks them up, regardless of what the react-native-health plugin
-  // does (its entitlement wiring has been silently failing).
+  // Belt-and-suspenders entitlement: the @kingstinct/react-native-healthkit
+  // plugin already adds com.apple.developer.healthkit, but we also set it here
+  // to guarantee it survives any plugin ordering edge cases in EAS managed
+  // provisioning. Also add background-delivery for Watch monitoring.
   result = withEntitlementsPlist(result, (cfg) => {
     cfg.modResults["com.apple.developer.healthkit"] = true;
-    cfg.modResults["com.apple.developer.healthkit.access"] = [];
+    cfg.modResults["com.apple.developer.healthkit.background-delivery"] = true;
     return cfg;
   });
 

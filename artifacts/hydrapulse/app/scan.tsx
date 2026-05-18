@@ -90,45 +90,60 @@ function analyzeSignal(samples: number[]): {
     return s / (hi - lo + 1);
   });
 
-  // 3. Autocorrelation-based heart rate detection.
-  //
-  // Peak detection is brittle for fingertip camera PPG because motion noise
-  // and polarity ambiguity cause missed or spurious peaks that skew the
-  // period estimate. Autocorrelation finds the dominant *periodicity* of the
-  // signal directly — it is naturally tolerant of waveform shape, polarity,
-  // and moderate noise, and gives a more consistent BPM across heart rates.
-  //
-  // Lag range: 40–180 BPM → frames = SAMPLE_RATE * 60 / BPM
-  const lagMin = Math.round(SAMPLE_RATE * 60 / 180); // ~10 frames at 180 BPM
-  const lagMax = Math.round(SAMPLE_RATE * 60 / 40);  // ~45 frames at 40 BPM
+  const smoothAmp = Math.max(...smoothed) - Math.min(...smoothed);
 
-  // Compute signal variance for normalisation (signal is already mean-centred)
+  // 3. Heart rate via autocorrelation — finds the dominant periodicity of the
+  //    signal without needing to detect individual peaks, so it tolerates
+  //    noise, polarity ambiguity, and mild motion much better than peak-based
+  //    methods.
+  //
+  //    Key implementation detail: DO NOT take the global maximum of the
+  //    autocorrelation function. Due to moving-average smoothing, very short
+  //    lags always have artificially high correlation. Instead, compute the
+  //    full curve and find the first prominent LOCAL MAXIMUM — that is the
+  //    true cardiac periodicity.
+  //
+  //    Lag range: 40–170 BPM
+  const lagMin = Math.round(SAMPLE_RATE * 60 / 170); // ~10 frames
+  const lagMax = Math.round(SAMPLE_RATE * 60 / 40);  // ~45 frames
+
   const variance = smoothed.reduce((acc, v) => acc + v * v, 0) / smoothed.length;
-  if (variance < 0.001) return null; // essentially flat — finger not covering lens
+  if (variance < 0.001) return null; // flat signal — finger not covering lens
 
-  let bestLag = lagMin;
-  let bestCorr = -Infinity;
+  const corrCurve: number[] = [];
   for (let lag = lagMin; lag <= lagMax; lag++) {
     const n = smoothed.length - lag;
-    let corr = 0;
-    for (let i = 0; i < n; i++) corr += smoothed[i] * smoothed[i + lag];
-    corr /= (n * variance); // normalise to [-1, 1]
-    if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
+    let c = 0;
+    for (let i = 0; i < n; i++) c += smoothed[i] * smoothed[i + lag];
+    corrCurve.push(c / (n * variance));
   }
 
-  // Require positive correlation — negative means the lag landed on a trough
-  if (bestCorr < 0.05) return null;
+  // Find the LOCAL MAXIMUM with the highest correlation value.
+  // A local maximum at index k means corrCurve[k] > neighbours on both sides.
+  let bestIdx = -1;
+  let bestCorrVal = 0.08; // minimum threshold — below this is noise
+  for (let k = 1; k < corrCurve.length - 1; k++) {
+    if (corrCurve[k] > corrCurve[k - 1] &&
+        corrCurve[k] > corrCurve[k + 1] &&
+        corrCurve[k] > bestCorrVal) {
+      bestCorrVal = corrCurve[k];
+      bestIdx = k;
+    }
+  }
 
-  const rawHeartRate = Math.round(Math.min(180, Math.max(40, SAMPLE_RATE * 60 / bestLag)));
+  if (bestIdx === -1) return null; // no clear cardiac periodicity found
 
-  // Camera fingertip PPG (red channel + torch) reads slightly low vs wrist
-  // optical. Empirically calibrated: apply a modest +5 correction.
+  const bestLag = lagMin + bestIdx;
+  const rawHeartRate = Math.round(Math.min(170, Math.max(40, SAMPLE_RATE * 60 / bestLag)));
+
+  // Small empirical correction: camera fingertip PPG reads slightly low vs
+  // wrist-based optical sensors. +5 is the midpoint of observed calibration
+  // across different resting heart rates (40–80 BPM range).
   const heartRate = Math.min(180, rawHeartRate + 5);
 
-  const debugStr = `n=${stable.length}(+${samples.length - stable.length}skipped) amp=${rawAmplitude.toFixed(2)} var=${variance.toFixed(3)} lag=${bestLag} corr=${bestCorr.toFixed(3)} rawBPM=${rawHeartRate}`;
+  const debugStr = `n=${stable.length}(+${samples.length - stable.length}skipped) amp=${rawAmplitude.toFixed(2)} lag=${bestLag} corr=${bestCorrVal.toFixed(3)} rawBPM=${rawHeartRate}`;
 
-  // 4. Peak detection retained for HRV (interval-by-interval data required).
-  const smoothAmp = Math.max(...smoothed) - Math.min(...smoothed);
+  // 4. Peak detection for HRV (requires interval-by-interval data).
   const minDist = Math.round(SAMPLE_RATE * 0.33);
   const threshold = smoothAmp * 0.15;
 
@@ -148,16 +163,17 @@ function analyzeSignal(samples: number[]): {
   let peaks = detectPeaks(smoothed);
   if (peaks.length < 3) peaks = detectPeaks(smoothed.map((v) => -v));
 
-  // Fall back to autocorrelation-derived interval when peaks are too sparse
+  // When peaks are too sparse, synthesise intervals from the autocorrelation
+  // lag so HRV calculation has at least a fallback value.
   const intervals: number[] = peaks.length >= 3
     ? peaks.slice(1)
         .map((p, i) => (p - peaks[i]) / SAMPLE_RATE)
         .filter((t) => t >= 0.3 && t <= 1.8)
-    : [bestLag / SAMPLE_RATE, bestLag / SAMPLE_RATE]; // synthetic pair
+    : [bestLag / SAMPLE_RATE, bestLag / SAMPLE_RATE];
 
   if (intervals.length < 2) return null;
 
-  // 5. HRV — SDNN in ms (standard deviation of NN intervals)
+  // 5. HRV — SDNN in ms
   const median = intervals.slice().sort((a, b) => a - b)[Math.floor(intervals.length / 2)];
   const hrv = Math.round(Math.min(120, Math.max(8, sdnn(intervals) * 1000)));
 

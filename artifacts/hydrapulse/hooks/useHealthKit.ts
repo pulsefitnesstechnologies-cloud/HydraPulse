@@ -66,6 +66,23 @@ export function useHealthKit() {
         });
       }, 12000);
 
+      // If the native module didn't register (missing entitlement in
+      // provisioning profile), initHealthKit will be undefined and calling
+      // it throws. Catch this early with a clear actionable message.
+      if (typeof AppleHealthKit.initHealthKit !== "function") {
+        clearTimeout(timer);
+        resolve({
+          ok: false,
+          error:
+            "RNAppleHealthKit native module not registered. The App ID in " +
+            "Apple Developer Portal must have HealthKit capability enabled. " +
+            "Visit developer.apple.com → Identifiers → com.hydrapulse.app → " +
+            "enable HealthKit → then delete the provisioning profile in " +
+            "'eas credentials' and rebuild.",
+        });
+        return;
+      }
+
       try {
         AppleHealthKit.initHealthKit(
           {

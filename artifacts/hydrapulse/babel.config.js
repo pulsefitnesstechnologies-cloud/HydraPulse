@@ -3,6 +3,24 @@ module.exports = function (api) {
   return {
     presets: [["babel-preset-expo", { unstable_transformImportMeta: true }]],
     plugins: [
+      [
+        "module-resolver",
+        {
+          root: ["./"],
+          alias: { "@": "./" },
+          extensions: [
+            ".ios.ts",
+            ".android.ts",
+            ".ts",
+            ".ios.tsx",
+            ".android.tsx",
+            ".tsx",
+            ".js",
+            ".jsx",
+            ".json",
+          ],
+        },
+      ],
       // Required for react-native-worklets-core frame processor worklets.
       // Must be listed before any other transform plugins.
       "react-native-worklets-core/plugin",

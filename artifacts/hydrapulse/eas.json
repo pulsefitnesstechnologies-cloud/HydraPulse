@@ -4,11 +4,7 @@
     "appVersionSource": "local"
   },
   "build": {
-    "base": {
-      "prebuildCommand": "pnpm --filter @workspace/hydrapulse exec expo prebuild --no-install"
-    },
     "development": {
-      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -26,7 +22,6 @@
       }
     },
     "development-simulator": {
-      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -39,7 +34,6 @@
       }
     },
     "preview": {
-      "extends": "base",
       "distribution": "internal",
       "ios": {
         "buildConfiguration": "Release",
@@ -54,7 +48,6 @@
       }
     },
     "production": {
-      "extends": "base",
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"

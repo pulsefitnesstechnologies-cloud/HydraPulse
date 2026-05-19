@@ -1,0 +1,36 @@
+Starting Metro Bundler
+iOS node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+iOS Bundling failed 363ms node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js (1 module)
+Unable to resolve module ../../App from /Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js: 
+None of these files exist:
+  * node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/App(.ios.ts|.native.ts|.ts|.ios.tsx|.native.tsx|.tsx|.ios.mjs|.native.mjs|.mjs|.ios.js|.native.js|.js|.ios.jsx|.native.jsx|.jsx|.ios.json|.native.json|.json|.ios.cjs|.native.cjs|.cjs|.ios.scss|.native.scss|.scss|.ios.sass|.native.sass|.sass|.ios.css|.native.css|.css)
+  * node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/App
+  1 | import registerRootComponent from 'expo/src/launch/registerRootComponent';
+  2 |
+> 3 | import App from '../../App';
+    |                  ^
+  4 |
+  5 | registerRootComponent(App);
+  6 |
+Import stack:
+ node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js
+ | import "../../App"
+ 
+ | import "/Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js"
+Error: Unable to resolve module ../../App from /Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js: 
+None of these files exist:
+  * node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/App(.ios.ts|.native.ts|.ts|.ios.tsx|.native.tsx|.tsx|.ios.mjs|.native.mjs|.mjs|.ios.js|.native.js|.js|.ios.jsx|.native.jsx|.jsx|.ios.json|.native.json|.json|.ios.cjs|.native.cjs|.cjs|.ios.scss|.native.scss|.scss|.ios.sass|.native.sass|.sass|.ios.css|.native.css|.css)
+  * node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/App
+  1 | import registerRootComponent from 'expo/src/launch/registerRootComponent';
+  2 |
+> 3 | import App from '../../App';
+    |                  ^
+  4 |
+  5 | registerRootComponent(App);
+  6 |
+Import stack:
+ node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js
+ | import "../../App"
+ 
+ | import "/Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_b5a86173bd4841fba77d1224b40b2c0d/node_modules/expo/AppEntry.js"
+pnpm expo export:embed --eager --platform ios --dev false exited with non-zero code: 1

@@ -10,11 +10,8 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
-  "main": "expo-router/entry",
   "devDependencies": {
     "typescript": "~5.9.2",
-    "prettier": "^3.8.1",
-    "expo": "~54.0.27",
-    "expo-router": "~6.0.17"
+    "prettier": "^3.8.1"
   }
 }

@@ -18,7 +18,8 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "development"
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
       }
     },
     "development-simulator": {
@@ -30,7 +31,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "development"
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
       }
     },
     "preview": {
@@ -44,7 +46,8 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "preview"
+        "EXPO_PUBLIC_ENV": "preview",
+        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
       }
     },
     "production": {
@@ -57,7 +60,8 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "production"
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
       }
     }
   },

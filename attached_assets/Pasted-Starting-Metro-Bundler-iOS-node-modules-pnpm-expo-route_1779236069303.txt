@@ -1,0 +1,34 @@
+Starting Metro Bundler
+iOS node_modules/.pnpm/expo-router@6.0.23_@types+react-dom@19.1.11_@types+react@19.1.17__@types+react@19.1.17__6cd3da6d3f4335c18f6fbe7b2fb6d7c6/node_modules/expo-router/entry.js ▓▓▓░░░░░░░░░░░░░ 24.6% (182/367)
+iOS Bundling failed 4231ms node_modules/.pnpm/expo-router@6.0.23_@types+react-dom@19.1.11_@types+react@19.1.17__@types+react@19.1.17__6cd3da6d3f4335c18f6fbe7b2fb6d7c6/node_modules/expo-router/entry.js (959 modules)
+Unable to resolve module ../../../../hooks/useColors from /Users/expo/workingdir/build/artifacts/hydrapulse/app/(tabs)/_layout.tsx: 
+None of these files exist:
+  * ../../hooks/useColors(.ios.ts|.native.ts|.ts|.ios.tsx|.native.tsx|.tsx|.ios.mjs|.native.mjs|.mjs|.ios.js|.native.js|.js|.ios.jsx|.native.jsx|.jsx|.ios.json|.native.json|.json|.ios.cjs|.native.cjs|.cjs|.ios.scss|.native.scss|.scss|.ios.sass|.native.sass|.sass|.ios.css|.native.css|.css)
+  * ../../hooks/useColors
+   8 | import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+   9 |
+> 10 | import { useColors } from "@/hooks/useColors";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | function NativeTabLayout() {
+  13 |   return (
+Import stack:
+ artifacts/hydrapulse/app/(tabs)/_layout.tsx
+ | import "../../../../hooks/useColors"
+ artifacts/hydrapulse/app (require.context)
+Error: Unable to resolve module ../../../../hooks/useColors from /Users/expo/workingdir/build/artifacts/hydrapulse/app/(tabs)/_layout.tsx: 
+None of these files exist:
+  * ../../hooks/useColors(.ios.ts|.native.ts|.ts|.ios.tsx|.native.tsx|.tsx|.ios.mjs|.native.mjs|.mjs|.ios.js|.native.js|.js|.ios.jsx|.native.jsx|.jsx|.ios.json|.native.json|.json|.ios.cjs|.native.cjs|.cjs|.ios.scss|.native.scss|.scss|.ios.sass|.native.sass|.sass|.ios.css|.native.css|.css)
+  * ../../hooks/useColors
+   8 | import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+   9 |
+> 10 | import { useColors } from "@/hooks/useColors";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 |
+  12 | function NativeTabLayout() {
+  13 |   return (
+Import stack:
+ artifacts/hydrapulse/app/(tabs)/_layout.tsx
+ | import "../../../../hooks/useColors"
+ artifacts/hydrapulse/app (require.context)
+pnpm expo export:embed --eager --platform ios --dev false exited with non-zero code: 1

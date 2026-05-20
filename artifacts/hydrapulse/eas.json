@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "prebuildCommand": "cd artifacts/hydrapulse && pnpm exec expo prebuild --no-install",
       "ios": {
         "buildConfiguration": "Debug",
         "simulator": false,
@@ -18,25 +19,25 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "development",
-        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
+        "EXPO_PUBLIC_ENV": "development"
       }
     },
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
+      "prebuildCommand": "cd artifacts/hydrapulse && pnpm exec expo prebuild --no-install",
       "ios": {
         "buildConfiguration": "Debug",
         "simulator": true,
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "development",
-        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
+        "EXPO_PUBLIC_ENV": "development"
       }
     },
     "preview": {
       "distribution": "internal",
+      "prebuildCommand": "cd artifacts/hydrapulse && pnpm exec expo prebuild --no-install",
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"
@@ -46,11 +47,11 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "preview",
-        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
+        "EXPO_PUBLIC_ENV": "preview"
       }
     },
     "production": {
+      "prebuildCommand": "cd artifacts/hydrapulse && pnpm exec expo prebuild --no-install",
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"
@@ -60,8 +61,7 @@
         "resourceClass": "medium"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PROJECT_ROOT": "artifacts/hydrapulse"
+        "EXPO_PUBLIC_ENV": "production"
       }
     }
   },

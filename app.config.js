@@ -1,0 +1,247 @@
+const { withDangerousMod, withEntitlementsPlist } = require("@expo/config-plugins");
+const path = require("path");
+const fs = require("fs");
+
+// Absolute path to the hydrapulse sub-package.  All asset refs and
+// node_module look-ups are relative to this, regardless of what CWD
+// EAS uses when it invokes prebuild from the monorepo root.
+const HP = path.join(__dirname, "artifacts", "hydrapulse");
+
+// ── Folly coroutines fix ─────────────────────────────────────────────────────
+const FOLLY_INJECTION = `
+  # ── HydraPulse: Folly coroutine + deprecation fixes ─────────────────────
+  require 'fileutils'
+  _folly_rnd_coro_dir  = installer.sandbox.root.join('Headers', 'Public', 'ReactNativeDependencies', 'folly', 'coro')
+  _folly_rnd_coro_file = _folly_rnd_coro_dir.join('Coroutine.h')
+  FileUtils.mkdir_p(_folly_rnd_coro_dir)
+  File.write(_folly_rnd_coro_file, "#pragma once\\n// HydraPulse stub: folly/coro/Coroutine.h omitted from RN 0.81 prebuilt Folly\\n") unless _folly_rnd_coro_file.exist?
+  _folly_stub_dir  = installer.sandbox.root.join('FollyStubs', 'folly', 'coro')
+  _folly_stub_file = _folly_stub_dir.join('Coroutine.h')
+  FileUtils.mkdir_p(_folly_stub_dir)
+  File.write(_folly_stub_file, "#pragma once\\n// HydraPulse: folly/coro/Coroutine.h stub\\n") unless _folly_stub_file.exist?
+  _folly_stub_hsp  = '"$(PODS_ROOT)/FollyStubs"'
+  _folly_defs = %w[FOLLY_NO_CONFIG=1 FOLLY_MOBILE=1 FOLLY_USE_LIBCPP=1 FOLLY_CFG_NO_COROUTINES=1 FOLLY_HAS_COROUTINES=0]
+  _folly_cxx  = _folly_defs.map { |d| "-D#{d}" }.join(' ')
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      _hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
+      unless _hsp.include?('FollyStubs')
+        config.build_settings['HEADER_SEARCH_PATHS'] = _folly_stub_hsp + ' ' + (_hsp.empty? ? '$(inherited)' : _hsp)
+      end
+      _pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+      if _pp.is_a?(Array)
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp | _folly_defs)
+      elsif !(_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp || '$(inherited)').to_s + ' ' + _folly_defs.join(' ')
+      end
+      _cxx = config.build_settings['OTHER_CPLUSPLUSFLAGS'].to_s
+      unless _cxx.include?('FOLLY_CFG_NO_COROUTINES')
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = (_cxx.empty? ? '$(inherited)' : _cxx) + ' ' + _folly_cxx
+      end
+    end
+  end
+  installer.aggregate_targets.each do |agg|
+    next unless agg.user_project
+    agg.user_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        _hsp = config.build_settings['HEADER_SEARCH_PATHS'].to_s
+        unless _hsp.include?('FollyStubs')
+          config.build_settings['HEADER_SEARCH_PATHS'] = _folly_stub_hsp + ' ' + (_hsp.empty? ? '$(inherited)' : _hsp)
+        end
+        _pp = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+        if _pp.is_a?(Array)
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp | _folly_defs)
+        elsif !(_pp.to_s.include?('FOLLY_CFG_NO_COROUTINES'))
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = (_pp || '$(inherited)').to_s + ' ' + _folly_defs.join(' ')
+        end
+      end
+    end
+    agg.user_project.save
+  end
+  # ─────────────────────────────────────────────────────────────────────────`;
+
+function withFollyNoCoroutines(config) {
+  return withDangerousMod(config, [
+    "ios",
+    (modConfig) => {
+      const podfilePath = path.join(modConfig.modRequest.platformProjectRoot, "Podfile");
+      if (!fs.existsSync(podfilePath)) return modConfig;
+      let contents = fs.readFileSync(podfilePath, "utf-8");
+      if (contents.includes("FOLLY_CFG_NO_COROUTINES")) return modConfig;
+      contents = contents.replace(
+        /^(post_install do \|installer\|)$/m,
+        `$1${FOLLY_INJECTION}`
+      );
+      fs.writeFileSync(podfilePath, contents);
+      return modConfig;
+    },
+  ]);
+}
+
+function withNativeModulePodspecPatches(config) {
+  return withDangerousMod(config, [
+    "ios",
+    (modConfig) => {
+      // Use HP (absolute monorepo-relative path) so patches work regardless
+      // of what directory EAS uses as the prebuild CWD.
+      const root = HP;
+
+      // ── react-native-vision-camera FrameProcessors subspec ────────────────
+      const vcPath = path.join(root, "node_modules", "react-native-vision-camera", "VisionCamera.podspec");
+      if (fs.existsSync(vcPath)) {
+        let vc = fs.readFileSync(vcPath, "utf-8");
+        if (vc.includes('fp.dependency "React"')) {
+          vc = vc.replace('fp.dependency "React"', 'fp.dependency "React-Core"');
+          fs.writeFileSync(vcPath, vc);
+        }
+      }
+
+      // ── react-native-worklets-core invalidate fix ─────────────────────────
+      const workletsMMPath = path.join(root, "node_modules", "react-native-worklets-core", "ios", "Worklets.mm");
+      if (fs.existsSync(workletsMMPath)) {
+        let wk = fs.readFileSync(workletsMMPath, "utf-8");
+        if (
+          wk.includes("RNWorklet::JsiWorkletContext::invalidateDefaultInstance();") &&
+          !wk.includes("dispatch_async")
+        ) {
+          wk = wk.replace(
+            `- (void)invalidate {
+  RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
+  RNWorklet::JsiWorkletApi::invalidateInstance();
+  _bridge = nil;
+}`,
+            `- (void)invalidate {
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
+    RNWorklet::JsiWorkletApi::invalidateInstance();
+  });
+  _bridge = nil;
+}`
+          );
+          fs.writeFileSync(workletsMMPath, wk);
+        }
+      }
+
+      // ── folly/coro/Coroutine.h stub ───────────────────────────────────────
+      const iosDir = modConfig.modRequest.platformProjectRoot;
+      const stubCoroDir = path.join(iosDir, "FollyStubs", "folly", "coro");
+      const stubCoroFile = path.join(stubCoroDir, "Coroutine.h");
+      if (!fs.existsSync(stubCoroFile)) {
+        fs.mkdirSync(stubCoroDir, { recursive: true });
+        fs.writeFileSync(
+          stubCoroFile,
+          [
+            "// HydraPulse: folly/coro/Coroutine.h stub",
+            "#pragma once",
+          ].join("\n") + "\n"
+        );
+      }
+
+      return modConfig;
+    },
+  ]);
+}
+
+module.exports = ({ config }) => {
+  const appConfig = {
+    ...config,
+    name: "HydraPulse",
+    slug: "hydrapulse",
+    version: "1.0.0",
+    orientation: "portrait",
+    // Absolute paths so they resolve correctly regardless of prebuild CWD
+    icon: path.join(HP, "assets", "images", "icon.png"),
+    scheme: "hydrapulse",
+    userInterfaceStyle: "automatic",
+    newArchEnabled: true,
+
+    splash: {
+      image: path.join(HP, "assets", "images", "icon.png"),
+      resizeMode: "contain",
+      backgroundColor: "#070D1A",
+    },
+
+    ios: {
+      supportsTablet: false,
+      bundleIdentifier: "com.hydrapulse.app",
+      buildNumber: "1",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+        NSCameraUsageDescription:
+          "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",
+        NSMicrophoneUsageDescription:
+          "HydraPulse may use the microphone for voice-timbre hydration analysis in a future update.",
+        UIBackgroundModes: ["remote-notification"],
+      },
+    },
+
+    android: {
+      package: "com.hydrapulse.app",
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.FLASHLIGHT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.WRITE_NUTRITION",
+      ],
+    },
+
+    web: {
+      favicon: path.join(HP, "assets", "images", "icon.png"),
+    },
+
+    plugins: [
+      "expo-dev-client",
+      ["expo-router", { origin: "https://replit.com/" }],
+      [
+        "react-native-vision-camera",
+        {
+          cameraPermissionText:
+            "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",
+          enableMicrophonePermission: false,
+        },
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          NSHealthShareUsageDescription:
+            "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
+          NSHealthUpdateUsageDescription:
+            "HydraPulse saves hydration data to Apple Health for tracking over time.",
+        },
+      ],
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          icon: path.join(HP, "assets", "images", "icon.png"),
+          color: "#0EA5E9",
+          sounds: [],
+        },
+      ],
+    ],
+
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+
+    extra: {
+      eas: {
+        projectId: "15fd2666-3b4a-448c-bfe4-efdd1d70f44a",
+      },
+    },
+  };
+
+  let result = withNativeModulePodspecPatches(appConfig);
+  result = withFollyNoCoroutines(result);
+  result = withEntitlementsPlist(result, (cfg) => {
+    cfg.modResults["com.apple.developer.healthkit"] = true;
+    cfg.modResults["com.apple.developer.healthkit.background-delivery"] = true;
+    return cfg;
+  });
+
+  return result;
+};

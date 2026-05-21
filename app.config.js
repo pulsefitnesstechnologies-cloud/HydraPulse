@@ -1,11 +1,22 @@
-const { withDangerousMod, withEntitlementsPlist } = require("@expo/config-plugins");
+const { withDangerousMod, withEntitlementsPlist } = require(
+  require("path").join(__dirname, "artifacts", "hydrapulse", "node_modules", "@expo", "config-plugins")
+);
 const path = require("path");
 const fs = require("fs");
 
-// Absolute path to the hydrapulse sub-package.  All asset refs and
-// node_module look-ups are relative to this, regardless of what CWD
-// EAS uses when it invokes prebuild from the monorepo root.
+// Absolute path to the hydrapulse sub-package.
+// All asset refs and plugin look-ups are relative to this so they resolve
+// correctly on the user's local machine AND on EAS Cloud (which always runs
+// prebuild from the git root, not from artifacts/hydrapulse).
 const HP = path.join(__dirname, "artifacts", "hydrapulse");
+
+// Helper: require a plugin's app.plugin.js from the hydrapulse node_modules.
+// This avoids string-based plugin resolution, which would fail when the EAS
+// CLI or EAS Cloud tries to resolve relative to a node_modules that doesn't
+// contain these packages.
+function hp(pkg) {
+  return require(path.join(HP, "node_modules", pkg, "app.plugin.js"));
+}
 
 // ── Folly coroutines fix ─────────────────────────────────────────────────────
 const FOLLY_INJECTION = `
@@ -14,7 +25,7 @@ const FOLLY_INJECTION = `
   _folly_rnd_coro_dir  = installer.sandbox.root.join('Headers', 'Public', 'ReactNativeDependencies', 'folly', 'coro')
   _folly_rnd_coro_file = _folly_rnd_coro_dir.join('Coroutine.h')
   FileUtils.mkdir_p(_folly_rnd_coro_dir)
-  File.write(_folly_rnd_coro_file, "#pragma once\\n// HydraPulse stub: folly/coro/Coroutine.h omitted from RN 0.81 prebuilt Folly\\n") unless _folly_rnd_coro_file.exist?
+  File.write(_folly_rnd_coro_file, "#pragma once\\n// HydraPulse stub\\n") unless _folly_rnd_coro_file.exist?
   _folly_stub_dir  = installer.sandbox.root.join('FollyStubs', 'folly', 'coro')
   _folly_stub_file = _folly_stub_dir.join('Coroutine.h')
   FileUtils.mkdir_p(_folly_stub_dir)
@@ -82,11 +93,11 @@ function withNativeModulePodspecPatches(config) {
   return withDangerousMod(config, [
     "ios",
     (modConfig) => {
-      // Use HP (absolute monorepo-relative path) so patches work regardless
-      // of what directory EAS uses as the prebuild CWD.
+      // Always look in the hydrapulse package for podspecs, regardless of
+      // what directory EAS uses as prebuild CWD.
       const root = HP;
 
-      // ── react-native-vision-camera FrameProcessors subspec ────────────────
+      // react-native-vision-camera FrameProcessors subspec
       const vcPath = path.join(root, "node_modules", "react-native-vision-camera", "VisionCamera.podspec");
       if (fs.existsSync(vcPath)) {
         let vc = fs.readFileSync(vcPath, "utf-8");
@@ -96,7 +107,7 @@ function withNativeModulePodspecPatches(config) {
         }
       }
 
-      // ── react-native-worklets-core invalidate fix ─────────────────────────
+      // react-native-worklets-core invalidate fix
       const workletsMMPath = path.join(root, "node_modules", "react-native-worklets-core", "ios", "Worklets.mm");
       if (fs.existsSync(workletsMMPath)) {
         let wk = fs.readFileSync(workletsMMPath, "utf-8");
@@ -122,19 +133,13 @@ function withNativeModulePodspecPatches(config) {
         }
       }
 
-      // ── folly/coro/Coroutine.h stub ───────────────────────────────────────
+      // folly/coro/Coroutine.h stub in the iOS project dir
       const iosDir = modConfig.modRequest.platformProjectRoot;
       const stubCoroDir = path.join(iosDir, "FollyStubs", "folly", "coro");
       const stubCoroFile = path.join(stubCoroDir, "Coroutine.h");
       if (!fs.existsSync(stubCoroFile)) {
         fs.mkdirSync(stubCoroDir, { recursive: true });
-        fs.writeFileSync(
-          stubCoroFile,
-          [
-            "// HydraPulse: folly/coro/Coroutine.h stub",
-            "#pragma once",
-          ].join("\n") + "\n"
-        );
+        fs.writeFileSync(stubCoroFile, "#pragma once\n// HydraPulse: folly/coro/Coroutine.h stub\n");
       }
 
       return modConfig;
@@ -149,7 +154,7 @@ module.exports = ({ config }) => {
     slug: "hydrapulse",
     version: "1.0.0",
     orientation: "portrait",
-    // Absolute paths so they resolve correctly regardless of prebuild CWD
+    // Absolute paths — correct regardless of prebuild working directory
     icon: path.join(HP, "assets", "images", "icon.png"),
     scheme: "hydrapulse",
     userInterfaceStyle: "automatic",
@@ -191,11 +196,13 @@ module.exports = ({ config }) => {
       favicon: path.join(HP, "assets", "images", "icon.png"),
     },
 
+    // Each plugin is required by absolute path from the hydrapulse node_modules
+    // so resolution succeeds both on the developer's machine and on EAS Cloud.
     plugins: [
-      "expo-dev-client",
-      ["expo-router", { origin: "https://replit.com/" }],
+      hp("expo-dev-client"),
+      [hp("expo-router"), { origin: "https://replit.com/" }],
       [
-        "react-native-vision-camera",
+        hp("react-native-vision-camera"),
         {
           cameraPermissionText:
             "HydraPulse uses the rear camera and torch to illuminate your fingertip for PPG-based hydration estimation.",
@@ -203,7 +210,7 @@ module.exports = ({ config }) => {
         },
       ],
       [
-        "@kingstinct/react-native-healthkit",
+        hp("@kingstinct/react-native-healthkit"),
         {
           NSHealthShareUsageDescription:
             "HydraPulse reads heart rate and HRV data from Apple Health to enhance your hydration insights.",
@@ -211,10 +218,10 @@ module.exports = ({ config }) => {
             "HydraPulse saves hydration data to Apple Health for tracking over time.",
         },
       ],
-      "expo-font",
-      "expo-web-browser",
+      hp("expo-font"),
+      hp("expo-web-browser"),
       [
-        "expo-notifications",
+        hp("expo-notifications"),
         {
           icon: path.join(HP, "assets", "images", "icon.png"),
           color: "#0EA5E9",
@@ -230,7 +237,7 @@ module.exports = ({ config }) => {
 
     extra: {
       eas: {
-        projectId: "15fd2666-3b4a-448c-bfe4-efdd1d70f44a",
+        projectId: "15fd2666-3b4a-448c-bfe4-efedd1d70f44a",
       },
     },
   };

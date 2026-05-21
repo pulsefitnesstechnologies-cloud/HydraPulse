@@ -203,7 +203,40 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
         }
       }
 
-      // ── patch 4: folly/coro/Coroutine.h stub ──────────────────────────
+      // ── patch 4: @kingstinct/react-native-healthkit isBigInt → isInt64 ─
+      // healthkit@12.2.0 was generated against a nitro-modules pre-release
+      // that renamed the BigInt helpers. react-native-nitro-modules@0.35.x
+      // only has isInt64/getInt64; isBigInt/getBigInt don't exist → Swift
+      // compile error. We patch QuantityTypeModule.swift directly.
+      //
+      // The file lives in the root pnpm virtual store (.pnpm/<pkg>/...), not
+      // in this package's node_modules/. root = artifacts/hydrapulse, so the
+      // git root (where the pnpm store is) is two levels up.
+      const patchHkBigInt = (swiftPath: string) => {
+        if (!fs.existsSync(swiftPath)) return;
+        let src = fs.readFileSync(swiftPath, "utf-8");
+        if (!src.includes("isBigInt") && !src.includes("getBigInt")) return;
+        src = src
+          .replace(/anyMap\.isBigInt\(key:/g, "anyMap.isInt64(key:")
+          .replace(/anyMap\.getBigInt\(key:/g, "anyMap.getInt64(key:");
+        fs.writeFileSync(swiftPath, src);
+      };
+      // Try direct symlink path first (works when pnpm creates one here)
+      patchHkBigInt(path.join(root, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift"));
+      // Search the root pnpm store — git root is two levels above artifacts/hydrapulse
+      const gitRoot = path.resolve(root, "..", "..");
+      const pnpmStore = path.join(gitRoot, "node_modules", ".pnpm");
+      if (fs.existsSync(pnpmStore)) {
+        const hkPrefix = "@kingstinct+react-native-healthkit@";
+        for (const entry of fs.readdirSync(pnpmStore)) {
+          if (!entry.startsWith(hkPrefix)) continue;
+          patchHkBigInt(
+            path.join(pnpmStore, entry, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift")
+          );
+        }
+      }
+
+      // ── patch 5: folly/coro/Coroutine.h stub ──────────────────────────
       // RN 0.81's prebuilt Maven tarball (ReactNativeDependencies) ships the
       // compiled Folly library but OMITS folly/coro/Coroutine.h and the rest
       // of the coro/ header directory. Third-party pods (reanimated, worklets-

@@ -11,11 +11,11 @@ const fs = require("fs");
 const HP = path.join(__dirname, "artifacts", "hydrapulse");
 
 // Helper: require a plugin's app.plugin.js from the hydrapulse node_modules.
-// This avoids string-based plugin resolution, which would fail when the EAS
-// CLI or EAS Cloud tries to resolve relative to a node_modules that doesn't
-// contain these packages.
+// app.plugin.js files use ES module "export default", so require() wraps the
+// result in { default: fn }.  We unwrap it so Expo receives the bare function.
 function hp(pkg) {
-  return require(path.join(HP, "node_modules", pkg, "app.plugin.js"));
+  const mod = require(path.join(HP, "node_modules", pkg, "app.plugin.js"));
+  return mod.default ?? mod;
 }
 
 // ── Folly coroutines fix ─────────────────────────────────────────────────────

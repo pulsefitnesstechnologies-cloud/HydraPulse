@@ -133,6 +133,20 @@ function withNativeModulePodspecPatches(config) {
         }
       }
 
+      // @kingstinct/react-native-healthkit isBigInt/getBigInt → isInt64/getInt64
+      // healthkit@12.2.0 was generated against a nitro-modules pre-release that
+      // renamed the BigInt helpers; 0.35.x uses isInt64/getInt64 instead.
+      const hkSwiftPath = path.join(root, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift");
+      if (fs.existsSync(hkSwiftPath)) {
+        let hkSwift = fs.readFileSync(hkSwiftPath, "utf-8");
+        if (hkSwift.includes("isBigInt") || hkSwift.includes("getBigInt")) {
+          hkSwift = hkSwift
+            .replace(/anyMap\.isBigInt\(key:/g, "anyMap.isInt64(key:")
+            .replace(/anyMap\.getBigInt\(key:/g, "anyMap.getInt64(key:");
+          fs.writeFileSync(hkSwiftPath, hkSwift);
+        }
+      }
+
       // folly/coro/Coroutine.h stub in the iOS project dir
       const iosDir = modConfig.modRequest.platformProjectRoot;
       const stubCoroDir = path.join(iosDir, "FollyStubs", "folly", "coro");

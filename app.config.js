@@ -136,16 +136,29 @@ function withNativeModulePodspecPatches(config) {
       // @kingstinct/react-native-healthkit isBigInt/getBigInt → isInt64/getInt64
       // healthkit@12.2.0 was generated against a nitro-modules pre-release that
       // renamed the BigInt helpers; 0.35.x uses isInt64/getInt64 instead.
-      const hkSwiftPath = path.join(root, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift");
-      if (fs.existsSync(hkSwiftPath)) {
-        let hkSwift = fs.readFileSync(hkSwiftPath, "utf-8");
-        if (hkSwift.includes("isBigInt") || hkSwift.includes("getBigInt")) {
-          hkSwift = hkSwift
-            .replace(/anyMap\.isBigInt\(key:/g, "anyMap.isInt64(key:")
-            .replace(/anyMap\.getBigInt\(key:/g, "anyMap.getInt64(key:");
-          fs.writeFileSync(hkSwiftPath, hkSwift);
+      // The file lives in the root pnpm store (.pnpm/<pkg>/node_modules/...),
+      // not in artifacts/hydrapulse/node_modules — scan the store directory.
+      const patchHkBigInt = (swiftPath) => {
+        if (!fs.existsSync(swiftPath)) return;
+        let src = fs.readFileSync(swiftPath, "utf-8");
+        if (!src.includes("isBigInt") && !src.includes("getBigInt")) return;
+        src = src
+          .replace(/anyMap\.isBigInt\(key:/g, "anyMap.isInt64(key:")
+          .replace(/anyMap\.getBigInt\(key:/g, "anyMap.getInt64(key:");
+        fs.writeFileSync(swiftPath, src);
+      };
+      // Try root pnpm store first (EAS Cloud layout)
+      const pnpmStore = path.join(__dirname, "node_modules", ".pnpm");
+      if (fs.existsSync(pnpmStore)) {
+        const hkPrefix = "@kingstinct+react-native-healthkit@";
+        for (const entry of fs.readdirSync(pnpmStore)) {
+          if (!entry.startsWith(hkPrefix)) continue;
+          patchHkBigInt(path.join(pnpmStore, entry, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift"));
         }
       }
+      // Fallback: direct path (local dev / hoisted layout)
+      patchHkBigInt(path.join(root, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift"));
+      patchHkBigInt(path.join(__dirname, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift"));
 
       // folly/coro/Coroutine.h stub in the iOS project dir
       const iosDir = modConfig.modRequest.platformProjectRoot;

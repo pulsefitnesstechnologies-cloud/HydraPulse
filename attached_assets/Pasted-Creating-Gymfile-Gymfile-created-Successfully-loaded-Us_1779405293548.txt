@@ -1,0 +1,1180 @@
+Creating Gymfile
+Gymfile created
+Successfully loaded '/Users/expo/workingdir/build/artifacts/hydrapulse/ios/Gymfile' 📄
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                  Detected Values from './Gymfile'                                                                   |
++-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
+| suppress_xcode_output | true                                                                                                                                        |
+| clean                 | false                                                                                                                                       |
+| scheme                | HydraPulse                                                                                                                                  |
+| configuration         | Release                                                                                                                                     |
+| export_options        |                                                                                                                                             |
+| export_xcargs         | OTHER_CODE_SIGN_FLAGS="--keychain /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/eas-build-f7a32525-f65f-4fe2-996c-5a18c151db74.keychain" |
+| disable_xcpretty      | true                                                                                                                                        |
+| buildlog_path         | /Users/expo/workingdir/logs                                                                                                                 |
+| derived_data_path     | ./build                                                                                                                                     |
+| result_bundle         | true                                                                                                                                        |
+| result_bundle_path    | /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/result-bundle-1779404813343.xcresult                                                       |
+| output_directory      | ./build                                                                                                                                     |
++-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
+Resolving Swift Package Manager dependencies...
+$ xcodebuild -resolvePackageDependencies -workspace ./HydraPulse.xcworkspace -scheme HydraPulse -configuration Release -derivedDataPath ./build
+▸ Command line invocation:
+▸     /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -resolvePackageDependencies -workspace ./HydraPulse.xcworkspace -scheme HydraPulse -configuration Release -derivedDataPath ./build
+▸ resolved source packages:
+$ xcodebuild -showBuildSettings -workspace ./HydraPulse.xcworkspace -scheme HydraPulse -configuration Release -derivedDataPath ./build 2>&1
+Detected provisioning profile mapping: {:"com.hydrapulse.app"=>"03ddfed6-4047-4f60-a357-96c4446bbdf1"}
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                                                                       Summary for gym 2.228.0                                                                                        |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
+| workspace                                              | ./HydraPulse.xcworkspace                                                                                                                    |
+| scheme                                                 | HydraPulse                                                                                                                                  |
+| clean                                                  | false                                                                                                                                       |
+| output_directory                                       | ./build                                                                                                                                     |
+| output_name                                            | HydraPulse                                                                                                                                  |
+| configuration                                          | Release                                                                                                                                     |
+| silent                                                 | false                                                                                                                                       |
+| skip_package_ipa                                       | false                                                                                                                                       |
+| skip_package_pkg                                       | false                                                                                                                                       |
+| export_options.method                                  | ad-hoc                                                                                                                                      |
+| export_options.provisioningProfiles.com.hydrapulse.app | 03ddfed6-4047-4f60-a357-96c4446bbdf1                                                                                                        |
+| export_xcargs                                          | OTHER_CODE_SIGN_FLAGS="--keychain /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/eas-build-f7a32525-f65f-4fe2-996c-5a18c151db74.keychain" |
+| build_path                                             | /Users/expo/Library/Developer/Xcode/Archives/2026-05-21                                                                                     |
+| derived_data_path                                      | ./build                                                                                                                                     |
+| result_bundle                                          | true                                                                                                                                        |
+| result_bundle_path                                     | /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/result-bundle-1779404813343.xcresult                                                       |
+| buildlog_path                                          | /Users/expo/workingdir/logs                                                                                                                 |
+| destination                                            | generic/platform=iOS                                                                                                                        |
+| suppress_xcode_output                                  | true                                                                                                                                        |
+| xcodebuild_formatter                                   | xcpretty                                                                                                                                    |
+| build_timing_summary                                   | false                                                                                                                                       |
+| disable_xcpretty                                       | true                                                                                                                                        |
+| skip_profile_detection                                 | false                                                                                                                                       |
+| xcodebuild_command                                     | xcodebuild                                                                                                                                  |
+| skip_package_dependencies_resolution                   | false                                                                                                                                       |
+| disable_package_automatic_updates                      | false                                                                                                                                       |
+| use_system_scm                                         | false                                                                                                                                       |
+| xcode_path                                             | /Applications/Xcode.app                                                                                                                     |
++--------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
+$ set -o pipefail && xcodebuild -workspace ./HydraPulse.xcworkspace -scheme HydraPulse -configuration Release -derivedDataPath ./build -destination 'generic/platform=iOS' -archivePath /Users/expo/Library/Developer/Xcode/Archives/2026-05-21/HydraPulse\ 2026-05-21\ 16.06.58.xcarchive -resultBundlePath '/var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/result-bundle-1779404813343.xcresult' archive | tee /Users/expo/workingdir/logs/HydraPulse-HydraPulse.log > /dev/null
+› Executing react-native Pods/hermes-engine » [CP-User] [Hermes] Replace Hermes for the right configuration, if needed
+› Executing react-native Pods/ReactNativeDependencies » [CP-User] [RNDeps] Replace React Native Dependencies for the right configuration, if needed
+› Executing react-native Pods/hermes-engine » [CP] Copy XCFrameworks
+› Preparing expo-image Pods/SDWebImage-SDWebImage » ResourceBundle-SDWebImage-SDWebImage-Info.plist
+› Copying   expo-image ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/SDWebImage.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/artifacts/hydrapulse/ios/Pods/SDWebImage/WebImage/PrivacyInfo.xcprivacy
+› Preparing Pods/React-cxxreact-React-cxxreact_privacy » ResourceBundle-React-cxxreact_privacy-React-cxxreact-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/React-cxxreact_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactCommon/cxxreact/PrivacyInfo.xcprivacy
+› Preparing Pods/React-Core-React-Core_privacy » ResourceBundle-React-Core_privacy-React-Core-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/React-Core_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/React/Resources/PrivacyInfo.xcprivacy
+› Creating  expo-image Pods/SDWebImage-SDWebImage » SDWebImage.bundle
+› Creating  Pods/React-cxxreact-React-cxxreact_privacy » React-cxxreact_privacy.bundle
+› Preparing Pods/RNSVG-RNSVGFilters » ResourceBundle-RNSVGFilters-RNSVG-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/RNSVGFilters.bundle/RNSVGCompositeXor.iphoneos.metallib ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/react-native-svg@15.12.1_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-svg/apple/Filters/MetalCI/RNSVGCompositeXor.iphoneos.metallib
+› Preparing Pods/RNCAsyncStorage-RNCAsyncStorage_resources » ResourceBundle-RNCAsyncStorage_resources-RNCAsyncStorage-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/RNCAsyncStorage_resources.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.81.5_@babel+core@7.29.0__088e8303e028f6e6ca5c16cc3d46621a/node_modules/@react-native-async-storage/async-storage/ios/PrivacyInfo.xcprivacy
+› Creating  Pods/React-Core-React-Core_privacy » React-Core_privacy.bundle
+› Preparing Pods/ExpoSystemUI-ExpoSystemUI_privacy » ResourceBundle-ExpoSystemUI_privacy-ExpoSystemUI-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ExpoSystemUI_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/expo-system-ui@6.0.9_expo@54.0.34_react-native-web@0.21.2_react-dom@19.1.0_react@19.1.0_5a1d307cb3690947405ac8709d73cbce/node_modules/expo-system-ui/ios/PrivacyInfo.xcprivacy
+› Creating  Pods/RNSVG-RNSVGFilters » RNSVGFilters.bundle
+› Preparing Pods/ExpoFileSystem-ExpoFileSystem_privacy » ResourceBundle-ExpoFileSystem_privacy-ExpoFileSystem-Info.plist
+› Preparing Pods/ExpoNotifications-ExpoNotifications_privacy » ResourceBundle-ExpoNotifications_privacy-ExpoNotifications-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ExpoNotifications_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/expo-notifications@55.0.23_expo@54.0.34_react-native@0.81.5_@babel+core@7.29.0_@types+r_f425d3acdd958d6b0d3e05df30ad6681/node_modules/expo-notifications/ios/PrivacyInfo.xcprivacy
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ExpoFileSystem_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/expo-file-system@19.0.22_expo@54.0.34_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-file-system/ios/PrivacyInfo.xcprivacy
+› Creating  Pods/RNCAsyncStorage-RNCAsyncStorage_resources » RNCAsyncStorage_resources.bundle
+› Preparing Pods/EXConstants-ExpoConstants_privacy » ResourceBundle-ExpoConstants_privacy-EXConstants-Info.plist
+› Creating  Pods/ExpoSystemUI-ExpoSystemUI_privacy » ExpoSystemUI_privacy.bundle
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ExpoConstants_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/expo-constants@18.0.13_expo@54.0.34_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0_/node_modules/expo-constants/ios/PrivacyInfo.xcprivacy
+› Preparing expo-constants Pods/EXConstants-EXConstants » ResourceBundle-EXConstants-EXConstants-Info.plist
+› Preparing Pods/EXApplication-ExpoApplication_privacy » ResourceBundle-ExpoApplication_privacy-EXApplication-Info.plist
+› Copying   ios/build/Build/Intermediates.noindex/ArchiveIntermediates/HydraPulse/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ExpoApplication_privacy.bundle/PrivacyInfo.xcprivacy ➜ ../../../Users/expo/workingdir/build/node_modules/.pnpm/expo-application@55.0.15_expo@54.0.34/node_modules/expo-application/ios/PrivacyInfo.xcprivacy
+› Creating  Pods/ExpoNotifications-ExpoNotifications_privacy » ExpoNotifications_privacy.bundle
+› Creating  Pods/ExpoFileSystem-ExpoFileSystem_privacy » ExpoFileSystem_privacy.bundle
+› Creating  Pods/EXConstants-ExpoConstants_privacy » ExpoConstants_privacy.bundle
+› Creating  expo-constants Pods/EXConstants-EXConstants » EXConstants.bundle
+› Creating  Pods/EXApplication-ExpoApplication_privacy » ExpoApplication_privacy.bundle
+› Executing react-native Pods/ReactNativeDependencies » [CP] Copy XCFrameworks
+› Executing react-native Pods/React-Core-prebuilt » [CP-User] [RNDeps] Replace React Native Core for the right configuration, if needed
+› Compiling expo-image Pods/libwebp » sharpyuv_csp.c
+› Compiling expo-image Pods/libwebp » yuv_sse41.c
+› Compiling expo-image Pods/libwebp » yuv_sse2.c
+› Compiling yuv_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » yuv_mips32.c
+› Compiling expo-image Pods/libwebp » upsampling_sse41.c
+› Compiling expo-image Pods/libwebp » upsampling_sse2.c
+› Compiling expo-image Pods/libwebp » upsampling_msa.c
+› Compiling expo-image Pods/libwebp » upsampling_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » upsampling.c
+› Compiling expo-image Pods/libwebp » tree_enc.c
+› Compiling expo-image Pods/libwebp » tree_dec.c
+› Compiling expo-image Pods/libwebp » thread_utils.c
+› Compiling expo-image Pods/libwebp » syntax_enc.c
+› Compiling expo-image Pods/libwebp » ssim_sse2.c
+› Compiling expo-image Pods/libwebp » sharpyuv_sse2.c
+› Compiling expo-image Pods/libwebp » sharpyuv_gamma.c
+› Compiling expo-image Pods/libwebp » sharpyuv_cpu.c
+› Compiling expo-image Pods/libwebp » rescaler_sse2.c
+› Compiling expo-image Pods/libwebp » rescaler_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » rescaler_mips32.c
+› Compiling expo-image Pods/libwebp » rescaler.c
+› Compiling expo-image Pods/libwebp » random_utils.c
+› Compiling expo-image Pods/libwebp » quant_levels_dec_utils.c
+› Compiling expo-image Pods/libwebp » quant_dec.c
+› Compiling expo-image Pods/libwebp » picture_tools_enc.c
+› Compiling expo-image Pods/libwebp » yuv.c
+› Compiling expo-image Pods/libwebp » webp_enc.c
+› Compiling expo-image Pods/libwebp » webp_dec.c
+› Compiling expo-image Pods/libwebp » vp8l_enc.c
+› Compiling expo-image Pods/libwebp » yuv_neon.c
+› Compiling expo-image Pods/libwebp » vp8l_dec.c
+› Compiling expo-image Pods/libwebp » vp8_dec.c
+› Compiling expo-image Pods/libwebp » utils.c
+› Compiling expo-image Pods/libwebp » upsampling_neon.c
+› Compiling expo-image Pods/libwebp » token_enc.c
+› Compiling expo-image Pods/libwebp » ssim.c
+› Compiling expo-image Pods/libwebp » sharpyuv_neon.c
+› Compiling expo-image Pods/libwebp » sharpyuv_dsp.c
+› Compiling expo-image Pods/libwebp » sharpyuv.c
+› Compiling expo-image Pods/libwebp » rescaler_utils.c
+› Compiling expo-image Pods/libwebp » rescaler_neon.c
+› Compiling expo-image Pods/libwebp » quant_levels_utils.c
+› Compiling expo-image Pods/libwebp » quant_enc.c
+› Compiling expo-image Pods/libwebp » predictor_enc.c
+› Compiling expo-image Pods/libwebp » picture_rescale_enc.c
+› Compiling expo-image Pods/libwebp » picture_psnr_enc.c
+› Compiling expo-image Pods/libwebp » picture_enc.c
+› Compiling expo-image Pods/libwebp » picture_csp_enc.c
+› Compiling expo-image Pods/libwebp » palette.c
+› Compiling expo-image Pods/libwebp » near_lossless_enc.c
+› Compiling expo-image Pods/libwebp » muxread.c
+› Compiling expo-image Pods/libwebp » muxinternal.c
+› Compiling expo-image Pods/libwebp » lossless_sse41.c
+› Compiling expo-image Pods/libwebp » muxedit.c
+› Compiling expo-image Pods/libwebp » lossless_sse2.c
+› Compiling expo-image Pods/libwebp » lossless_neon.c
+› Compiling expo-image Pods/libwebp » lossless_msa.c
+› Compiling expo-image Pods/libwebp » lossless_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » lossless_enc_sse41.c
+› Compiling expo-image Pods/libwebp » lossless_enc_sse2.c
+› Compiling expo-image Pods/libwebp » lossless_enc_neon.c
+› Compiling expo-image Pods/libwebp » lossless_enc_mips32.c
+› Compiling expo-image Pods/libwebp » lossless_enc_msa.c
+› Compiling expo-image Pods/libwebp » lossless_enc.c
+› Compiling expo-image Pods/libwebp » lossless.c
+› Compiling expo-image Pods/libwebp » iterator_enc.c
+› Compiling expo-image Pods/libwebp » io_dec.c
+› Compiling expo-image Pods/libwebp » idec_dec.c
+› Compiling expo-image Pods/libwebp » huffman_utils.c
+› Compiling expo-image Pods/libwebp » huffman_encode_utils.c
+› Compiling expo-image Pods/libwebp » histogram_enc.c
+› Compiling expo-image Pods/libwebp » frame_enc.c
+› Compiling expo-image Pods/libwebp » frame_dec.c
+› Compiling expo-image Pods/libwebp » filters_utils.c
+› Compiling expo-image Pods/libwebp » filters_sse2.c
+› Compiling expo-image Pods/libwebp » filters_neon.c
+› Compiling expo-image Pods/libwebp » filters_msa.c
+› Compiling expo-image Pods/libwebp » filters_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » filters.c
+› Compiling expo-image Pods/libwebp » filter_enc.c
+› Compiling expo-image Pods/libwebp » enc_sse41.c
+› Compiling expo-image Pods/libwebp » enc_sse2.c
+› Compiling expo-image Pods/libwebp » enc_neon.c
+› Compiling expo-image Pods/libwebp » enc_msa.c
+› Compiling expo-image Pods/libwebp » enc_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » enc_mips32.c
+› Compiling expo-image Pods/libwebp » enc.c
+› Compiling expo-image Pods/libwebp » demux.c
+› Compiling expo-image Pods/libwebp » dec_sse41.c
+› Compiling expo-image Pods/libwebp » dec_sse2.c
+› Compiling expo-image Pods/libwebp » dec_neon.c
+› Compiling expo-image Pods/libwebp » dec_msa.c
+› Compiling expo-image Pods/libwebp » dec_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » dec_mips32.c
+› Compiling expo-image Pods/libwebp » dec_clip_tables.c
+› Compiling expo-image Pods/libwebp » dec.c
+› Compiling expo-image Pods/libwebp » cpu.c
+› Compiling expo-image Pods/libwebp » cost_sse2.c
+› Compiling expo-image Pods/libwebp » cost_neon.c
+› Compiling expo-image Pods/libwebp » cost_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » cost_mips32.c
+› Compiling expo-image Pods/libwebp » cost_enc.c
+› Compiling expo-image Pods/libwebp » cost.c
+› Compiling expo-image Pods/libwebp » config_enc.c
+› Compiling expo-image Pods/libwebp » color_cache_utils.c
+› Compiling expo-image Pods/libwebp » buffer_dec.c
+› Compiling expo-image Pods/libwebp » bit_writer_utils.c
+› Compiling expo-image Pods/libwebp » bit_reader_utils.c
+› Compiling expo-image Pods/libwebp » backward_references_enc.c
+› Compiling expo-image Pods/libwebp » backward_references_cost_enc.c
+› Compiling expo-image Pods/libwebp » anim_decode.c
+› Compiling expo-image Pods/libwebp » analysis_enc.c
+› Compiling expo-image Pods/libwebp » alpha_processing_sse41.c
+› Compiling expo-image Pods/libwebp » alpha_processing_sse2.c
+› Compiling expo-image Pods/libwebp » alpha_processing_neon.c
+› Compiling expo-image Pods/libwebp » alpha_processing_mips_dsp_r2.c
+› Compiling expo-image Pods/libwebp » alpha_processing.c
+› Compiling expo-image Pods/libwebp » alpha_enc.c
+› Compiling expo-image Pods/libwebp » alpha_dec.c
+› Compiling expo-image Pods/libdav1d » wedge.c
+› Compiling expo-image Pods/libdav1d » tables.c
+› Compiling expo-image Pods/libdav1d » scan.c
+› Compiling expo-image Pods/libdav1d » qm.c
+› Compiling expo-image Pods/libdav1d » lf_mask.c
+› Compiling expo-image Pods/libdav1d » itx_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » itx_tmpl.c
+› Compiling expo-image Pods/libdav1d » itx_1d.c
+› Compiling expo-image Pods/libdav1d » warpmv.c
+› Compiling expo-image Pods/libdav1d » thread_task.c
+› Compiling expo-image Pods/libdav1d » refmvs.c
+› Compiling expo-image Pods/libdav1d » ref.c
+› Compiling expo-image Pods/libdav1d » recon_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » recon_tmpl.c
+› Compiling expo-image Pods/libdav1d » picture.c
+› Compiling expo-image Pods/libdav1d » obu.c
+› Compiling expo-image Pods/libdav1d » msac.c
+› Compiling expo-image Pods/libdav1d » mem.c
+› Compiling expo-image Pods/libdav1d » mc_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » mc_tmpl.c
+› Compiling expo-image Pods/libdav1d » lr_apply_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » lr_apply_tmpl.c
+› Compiling expo-image Pods/libdav1d » looprestoration_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » looprestoration_tmpl.c
+› Compiling expo-image Pods/libdav1d » loopfilter_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » loopfilter_tmpl.c
+› Compiling expo-image Pods/libdav1d » log.c
+› Compiling expo-image Pods/libdav1d » lib.c
+› Compiling expo-image Pods/libdav1d » lf_apply_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » lf_apply_tmpl.c
+› Compiling expo-image Pods/libdav1d » ipred_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » ipred_tmpl.c
+› Compiling expo-image Pods/libdav1d » ipred_prepare_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » ipred_prepare_tmpl.c
+› Compiling expo-image Pods/libdav1d » intra_edge.c
+› Compiling expo-image Pods/libdav1d » getbits.c
+› Compiling expo-image Pods/libdav1d » filmgrain_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » filmgrain_tmpl.c
+› Compiling expo-image Pods/libdav1d » fg_apply_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » fg_apply_tmpl.c
+› Compiling expo-image Pods/libdav1d » dequant_tables.c
+› Compiling expo-image Pods/libdav1d » data.c
+› Compiling expo-image Pods/libdav1d » cpu.c
+› Compiling expo-image Pods/libdav1d » decode.c
+› Compiling expo-image Pods/libdav1d » cdf.c
+› Compiling expo-image Pods/libdav1d » cdef_tmpl.c
+› Compiling expo-image Pods/libdav1d » cdef_apply_tmpl_16.c
+› Compiling expo-image Pods/libdav1d » cpu.c
+› Compiling expo-image Pods/libdav1d » cdef_apply_tmpl.c
+› Compiling Pods/libavif » write.c
+› Compiling Pods/libavif » utils.c
+› Compiling Pods/libavif » scale.c
+› Compiling Pods/libavif » reformat_libyuv.c
+› Compiling Pods/libavif » reformat_libsharpyuv.c
+› Compiling expo-image Pods/libwebp » libwebp-dummy.m
+› Compiling expo-image Pods/libdav1d » libdav1d-dummy.m
+› Compiling Pods/libavif » rawdata.c
+› Compiling Pods/libavif » obu.c
+› Packaging expo-image Pods/libwebp » liblibwebp.a
+› Compiling Pods/libavif » io.c
+› Compiling Pods/libavif » exif.c
+› Compiling Pods/libavif » diag.c
+› Compiling Pods/libavif » colr.c
+› Compiling Pods/libavif » codec_dav1d.c
+› Compiling Pods/libavif » avif.c
+› Packaging expo-image Pods/libdav1d » liblibdav1d.a
+› Compiling Pods/libavif » alpha.c
+› Compiling Pods/libavif » reformat.c
+› Compiling Pods/libavif » mem.c
+› Compiling Pods/libavif » stream.c
+› Compiling Pods/libavif » read.c
+› Compiling Pods/libavif » libavif-dummy.m
+› Compiling Pods/ZXingObjC » ZXingObjC-dummy.m
+› Compiling Pods/ZXingObjC » ZXWifiResultParser.m
+› Compiling Pods/ZXingObjC » ZXWifiParsedResult.m
+› Compiling Pods/ZXingObjC » ZXWhiteRectangleDetector.m
+› Compiling Pods/ZXingObjC » ZXVINParsedResult.m
+› Compiling Pods/ZXingObjC » ZXVEventResultParser.m
+› Compiling Pods/ZXingObjC » ZXVCardResultParser.m
+› Compiling Pods/ZXingObjC » ZXURLTOResultParser.m
+› Compiling Pods/ZXingObjC » ZXURIResultParser.m
+› Compiling Pods/ZXingObjC » ZXURIParsedResult.m
+› Compiling Pods/ZXingObjC » ZXUPCEWriter.m
+› Compiling Pods/ZXingObjC » ZXUPCEReader.m
+› Compiling Pods/ZXingObjC » ZXUPCEANWriter.m
+› Compiling Pods/ZXingObjC » ZXUPCEANReader.m
+› Compiling Pods/ZXingObjC » ZXUPCEANExtensionSupport.m
+› Compiling Pods/ZXingObjC » ZXUPCEANExtension2Support.m
+› Compiling ZXUPCAWriter.m
+› Compiling Pods/ZXingObjC » ZXUPCAReader.m
+› Compiling Pods/ZXingObjC » ZXTextParsedResult.m
+› Compiling Pods/ZXingObjC » ZXTelResultParser.m
+› Compiling Pods/ZXingObjC » ZXTelParsedResult.m
+› Compiling Pods/ZXingObjC » ZXStringUtils.m
+› Compiling Pods/ZXingObjC » ZXSMTPResultParser.m
+› Compiling Pods/ZXingObjC » ZXSMSTOMMSTOResultParser.m
+› Compiling Pods/ZXingObjC » ZXSMSMMSResultParser.m
+› Compiling Pods/ZXingObjC » ZXResultPoint.m
+› Compiling Pods/ZXingObjC » ZXResultParser.m
+› Compiling Pods/ZXingObjC » ZXResult.m
+› Compiling Pods/ZXingObjC » ZXReedSolomonEncoder.m
+› Compiling ZXReedSolomonDecoder.m
+› Compiling Pods/ZXingObjC » ZXRSSUtils.m
+› Compiling Pods/ZXingObjC » ZXRSSPair.m
+› Compiling Pods/ZXingObjC » ZXRSSFinderPattern.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedRow.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedReader.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedPair.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedGeneralAppIdDecoder.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedDecodedObject.m
+› Compiling ZXRSSExpandedDecodedNumeric.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedDecodedInformation.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedDecodedChar.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedCurrentParsingState.m
+› Compiling Pods/ZXingObjC » ZXRSSExpandedBlockParsedResult.m
+› Compiling Pods/ZXingObjC » ZXRSSDataCharacter.m
+› Compiling Pods/ZXingObjC » ZXRSS14Reader.m
+› Compiling Pods/ZXingObjC » ZXRGBLuminanceSource.m
+› Compiling Pods/ZXingObjC » ZXProductResultParser.m
+› Compiling Pods/ZXingObjC » ZXProductParsedResult.m
+› Compiling Pods/ZXingObjC » ZXPerspectiveTransform.m
+› Compiling Pods/ZXingObjC » ZXParsedResult.m
+› Compiling Pods/ZXingObjC » ZXPDF417Writer.m
+› Compiling Pods/ZXingObjC » ZXPDF417ScanningDecoder.m
+› Compiling Pods/ZXingObjC » ZXPDF417ResultMetadata.m
+› Compiling Pods/ZXingObjC » ZXPDF417Reader.m
+› Compiling ZXPDF417HighLevelEncoder.m
+› Compiling Pods/ZXingObjC » ZXPDF417ErrorCorrection.m
+› Compiling Pods/ZXingObjC » ZXPDF417ECErrorCorrection.m
+› Compiling Pods/ZXingObjC » ZXPDF417Dimensions.m
+› Compiling Pods/ZXingObjC » ZXPDF417DetectorResult.m
+› Compiling Pods/ZXingObjC » ZXPDF417Detector.m
+› Compiling Pods/ZXingObjC » ZXPDF417DetectionResultRowIndicatorColumn.m
+› Compiling Pods/ZXingObjC » ZXPDF417DetectionResultColumn.m
+› Compiling Pods/ZXingObjC » ZXPDF417DetectionResult.m
+› Compiling Pods/ZXingObjC » ZXPDF417DecodedBitStreamParser.m
+› Compiling Pods/ZXingObjC » ZXPDF417Common.m
+› Compiling Pods/ZXingObjC » ZXPDF417CodewordDecoder.m
+› Compiling ZXPDF417Codeword.m
+› Compiling Pods/ZXingObjC » ZXPDF417BoundingBox.m
+› Compiling Pods/ZXingObjC » ZXPDF417BarcodeValue.m
+› Compiling Pods/ZXingObjC » ZXPDF417BarcodeRow.m
+› Compiling Pods/ZXingObjC » ZXPDF417BarcodeMetadata.m
+› Compiling Pods/ZXingObjC » ZXPDF417.m
+› Compiling Pods/ZXingObjC » ZXOneDimensionalCodeWriter.m
+› Compiling Pods/ZXingObjC » ZXOneDReader.m
+› Compiling ZXMultiFormatWriter.m
+› Compiling Pods/ZXingObjC » ZXMultiFormatUPCEANReader.m
+› Compiling Pods/ZXingObjC » ZXMultiFormatReader.m
+› Compiling Pods/ZXingObjC » ZXMultiFormatOneDReader.m
+› Compiling Pods/ZXingObjC » ZXMonochromeRectangleDetector.m
+› Compiling Pods/ZXingObjC » ZXModulusPoly.m
+› Compiling Pods/ZXingObjC » ZXModulusGF.m
+› Compiling Pods/ZXingObjC » ZXMathUtils.m
+› Compiling ZXLuminanceSource.m
+› Compiling Pods/ZXingObjC » ZXInvertedLuminanceSource.m
+› Compiling Pods/ZXingObjC » ZXIntArray.m
+› Compiling Pods/ZXingObjC » ZXImage.m
+› Compiling Pods/ZXingObjC » ZXITFWriter.m
+› Compiling Pods/ZXingObjC » ZXITFReader.m
+› Compiling Pods/ZXingObjC » ZXISBNResultParser.m
+› Compiling Pods/ZXingObjC » ZXISBNParsedResult.m
+› Compiling ZXHybridBinarizer.m
+› Compiling Pods/ZXingObjC » ZXGridSampler.m
+› Compiling Pods/ZXingObjC » ZXGlobalHistogramBinarizer.m
+› Compiling Pods/ZXingObjC » ZXGeoResultParser.m
+› Compiling Pods/ZXingObjC » ZXGeoParsedResult.m
+› Compiling Pods/ZXingObjC » ZXGenericGFPoly.m
+› Compiling Pods/ZXingObjC » ZXGenericGF.m
+› Compiling Pods/ZXingObjC » ZXExpandedProductResultParser.m
+› Compiling Pods/ZXingObjC » ZXExpandedProductParsedResult.m
+› Compiling Pods/ZXingObjC » ZXErrors.m
+› Compiling Pods/ZXingObjC » ZXEncodeHints.m
+› Compiling Pods/ZXingObjC » ZXEmailDoCoMoResultParser.m
+› Compiling Pods/ZXingObjC » ZXEmailAddressResultParser.m
+› Compiling Pods/ZXingObjC » ZXEmailAddressParsedResult.m
+› Compiling Pods/ZXingObjC » ZXEANManufacturerOrgSupport.m
+› Compiling Pods/ZXingObjC » ZXEAN8Writer.m
+› Compiling Pods/ZXingObjC » ZXEAN8Reader.m
+› Compiling Pods/ZXingObjC » ZXEAN13Writer.m
+› Compiling Pods/ZXingObjC » ZXEAN13Reader.m
+› Compiling Pods/ZXingObjC » ZXDimension.m
+› Compiling Pods/ZXingObjC » ZXDetectorResult.m
+› Compiling Pods/ZXingObjC » ZXDefaultGridSampler.m
+› Compiling Pods/ZXingObjC » ZXDecoderResult.m
+› Compiling Pods/ZXingObjC » ZXDecodeHints.m
+› Compiling Pods/ZXingObjC » ZXDecimal.m
+› Compiling Pods/ZXingObjC » ZXCode93Writer.m
+› Compiling Pods/ZXingObjC » ZXCode93Reader.m
+› Compiling Pods/ZXingObjC » ZXCode39Writer.m
+› Compiling Pods/ZXingObjC » ZXCode39Reader.m
+› Compiling Pods/ZXingObjC » ZXCode128Writer.m
+› Compiling Pods/ZXingObjC » ZXCode128Reader.m
+› Compiling Pods/ZXingObjC » ZXCodaBarWriter.m
+› Compiling Pods/ZXingObjC » ZXCodaBarReader.m
+› Compiling Pods/ZXingObjC » ZXCharacterSetECI.m
+› Compiling Pods/ZXingObjC » ZXCalendarParsedResult.m
+› Compiling Pods/ZXingObjC » ZXCGImageLuminanceSource.m
+› Compiling Pods/ZXingObjC » ZXByteMatrix.m
+› Compiling Pods/ZXingObjC » ZXByteArray.m
+› Compiling Pods/ZXingObjC » ZXByQuadrantReader.m
+› Compiling Pods/ZXingObjC » ZXBoolArray.m
+› Compiling Pods/ZXingObjC » ZXBookmarkDoCoMoResultParser.m
+› Compiling Pods/ZXingObjC » ZXBitSource.m
+› Compiling Pods/ZXingObjC » ZXBizcardResultParser.m
+› Compiling Pods/ZXingObjC » ZXBitMatrix.m
+› Compiling Pods/ZXingObjC » ZXBitArrayBuilder.m
+› Compiling Pods/ZXingObjC » ZXBitArray.m
+› Compiling Pods/ZXingObjC » ZXBinarizer.m
+› Compiling ZXAnyAIDecoder.m
+› Compiling Pods/ZXingObjC » ZXAddressBookParsedResult.m
+› Compiling Pods/ZXingObjC » ZXAddressBookDoCoMoResultParser.m
+› Compiling Pods/ZXingObjC » ZXAddressBookAUResultParser.m
+› Compiling Pods/ZXingObjC » ZXAbstractExpandedDecoder.m
+› Compiling Pods/ZXingObjC » ZXAbstractDoCoMoResultParser.m
+› Compiling Pods/ZXingObjC » ZXAI01weightDecoder.m
+› Compiling Pods/ZXingObjC » ZXAI01decoder.m
+› Compiling Pods/ZXingObjC » ZXAI013x0xDecoder.m
+› Compiling Pods/ZXingObjC » ZXAI013x0x1xDecoder.m
+› Compiling Pods/ZXingObjC » ZXAI01392xDecoder.m
+› Compiling Pods/ZXingObjC » ZXAI01320xDecoder.m
+› Compiling Pods/ZXingObjC » ZXAI013103decoder.m
+› Compiling Pods/ZXingObjC » ZXCapture.m
+› Compiling expo-image Pods/SDWebImageSVGCoder » SDWebImageSVGCoderDefine.m
+› Compiling expo-image Pods/SDWebImageSVGCoder » SDWebImageSVGCoder-dummy.m
+› Compiling expo-image Pods/SDWebImageSVGCoder » SDImageSVGCoder.m
+› Packaging Pods/ZXingObjC » libZXingObjC.a
+› Compiling expo-image Pods/SDWebImageAVIFCoder » SDWebImageAVIFCoder-dummy.m
+› Compiling expo-image Pods/SDWebImage » UIView+WebCacheState.m
+› Compiling expo-image Pods/SDWebImage » UIView+WebCacheOperation.m
+› Compiling expo-image Pods/SDWebImage » UIView+WebCache.m
+› Compiling expo-image Pods/SDWebImage » UIImageView+WebCache.m
+› Compiling expo-image Pods/SDWebImage » UIImageView+HighlightedWebCache.m
+› Compiling expo-image Pods/SDWebImage » UIImage+MultiFormat.m
+› Compiling expo-image Pods/SDWebImage » UIImage+Metadata.m
+› Compiling expo-image Pods/SDWebImage » UIImage+MemoryCacheCost.m
+› Compiling expo-image Pods/SDWebImage » UIImage+GIF.m
+› Compiling expo-image Pods/SDWebImage » UIImage+ForceDecode.m
+› Compiling expo-image Pods/SDWebImage » UIImage+ExtendedCacheData.m
+› Compiling expo-image Pods/SDWebImage » UIColor+SDHexString.m
+› Compiling expo-image Pods/SDWebImage » UIButton+WebCache.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageTransition.m
+› Compiling expo-image Pods/SDWebImage » SDWebImagePrefetcher.m
+› Compiling expo-image Pods/SDWebImageAVIFCoder » SDImageAVIFCoder.m
+› Compiling expo-image Pods/SDWebImageAVIFCoder » Conversion.m
+› Compiling expo-image Pods/SDWebImageAVIFCoder » ColorSpace.m
+› Compiling expo-image Pods/SDWebImage » UIImage+Transform.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageOptionsProcessor.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageManager.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageIndicator.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageError.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloaderResponseModifier.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloaderRequestModifier.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloaderConfig.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloaderDecryptor.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloaderOperation.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDownloader.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageCompat.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageDefine.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageCacheSerializer.m
+› Compiling expo-image Pods/SDWebImage » SDWebImageCacheKeyFilter.m
+› Compiling expo-image Pods/SDWebImage » SDWebImage-dummy.m
+› Compiling expo-image Pods/SDWebImage » SDWeakProxy.m
+› Compiling expo-image Pods/SDWebImage » SDMemoryCache.m
+› Compiling expo-image Pods/SDWebImage » SDInternalMacros.m
+› Compiling expo-image Pods/SDWebImage » SDImageTransformer.m
+› Compiling expo-image Pods/SDWebImage » SDImageLoader.m
+› Compiling expo-image Pods/SDWebImage » SDImageGraphics.m
+› Compiling expo-image Pods/SDWebImage » SDImageIOCoder.m
+› Compiling expo-image Pods/SDWebImage » SDImageIOAnimatedCoder.m
+› Compiling expo-image Pods/SDWebImage » SDImageFramePool.m
+› Compiling expo-image Pods/SDWebImage » SDImageGIFCoder.m
+› Compiling expo-image Pods/SDWebImage » SDImageFrame.m
+› Compiling expo-image Pods/SDWebImageWebPCoder » UIImage+WebP.m
+› Compiling expo-image Pods/SDWebImageWebPCoder » SDWebImageWebPCoderDefine.m
+› Compiling expo-image Pods/SDWebImageWebPCoder » SDWebImageWebPCoder-dummy.m
+› Compiling expo-image Pods/SDWebImage » SDImageCodersManager.m
+› Compiling expo-image Pods/SDWebImage » SDImageCoderHelper.m
+› Compiling expo-image Pods/SDWebImage » SDImageCoder.m
+› Compiling expo-image Pods/SDWebImage » SDImageCachesManagerOperation.m
+› Compiling expo-image Pods/SDWebImage » SDImageCacheDefine.m
+› Compiling expo-image Pods/SDWebImage » SDImageCacheConfig.m
+› Compiling expo-image Pods/SDWebImage » SDImageCache.m
+› Compiling expo-image Pods/SDWebImage » SDImageAssetManager.m
+› Compiling expo-image Pods/SDWebImage » SDImageAWebPCoder.m
+› Compiling expo-image Pods/SDWebImage » SDGraphicsImageRenderer.m
+› Compiling expo-image Pods/SDWebImage » SDImageAPNGCoder.m
+› Compiling expo-image Pods/SDWebImage » SDDisplayLink.m
+› Compiling expo-image Pods/SDWebImage » SDDeviceHelper.m
+› Compiling expo-image Pods/SDWebImage » SDCallbackQueue.m
+› Compiling expo-image Pods/SDWebImage » SDDiskCache.m
+› Compiling expo-image Pods/SDWebImage » SDAsyncBlockOperation.m
+› Compiling expo-image Pods/SDWebImage » SDAssociatedObject.m
+› Compiling expo-image Pods/SDWebImage » SDAnimatedImageView+WebCache.m
+› Compiling expo-image Pods/SDWebImage » SDAnimatedImageRep.m
+› Compiling expo-image Pods/SDWebImage » SDAnimatedImagePlayer.m
+› Compiling expo-image Pods/SDWebImage » SDAnimatedImage.m
+› Compiling expo-image Pods/SDWebImage » NSImage+Compatibility.m
+› Compiling expo-image Pods/SDWebImage » NSData+ImageContentType.m
+› Compiling expo-image Pods/SDWebImage » NSButton+WebCache.m
+› Compiling expo-image Pods/SDWebImage » NSBezierPath+SDRoundedCorners.m
+› Executing react-native Pods/React-Core-prebuilt » [CP] Copy XCFrameworks
+› Packaging Pods/libavif » liblibavif.a
+› Packaging expo-image Pods/SDWebImage » libSDWebImage.a
+› Packaging expo-image Pods/SDWebImageSVGCoder » libSDWebImageSVGCoder.a
+› Packaging expo-image Pods/SDWebImageWebPCoder » libSDWebImageWebPCoder.a
+› Packaging expo-image Pods/SDWebImageAVIFCoder » libSDWebImageAVIFCoder.a
+› Executing react-native Pods/React-RCTFBReactNativeSpec » [CP-User] [RN]Check FBReactNativeSpec
+› Executing @workspace/hydrapulse Pods/ReactCodegen » [CP-User] Generate Specs
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » safeareacontextJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » States.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » safeareacontext-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnworkletsJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnworklets-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnsvgJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnsvg-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnscreensJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnscreens-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnreanimatedJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnreanimated-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rngesturehandler_codegenJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rngesturehandler_codegen-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnasyncstorageJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » rnasyncstorage-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » reactnativekeyboardcontrollerJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » reactnativekeyboardcontroller-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » States.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » States.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » States.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » States.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ShadowNodes.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ShadowNodes.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ShadowNodes.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ShadowNodes.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ShadowNodes.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RNWorkletsSpecJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RNWorkletsSpec-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RNVisionCameraResizePluginSpecJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RNVisionCameraResizePluginSpec-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RCTUnstableModulesRequiringMainQueueSetupProvider.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RCTThirdPartyComponentsProvider.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RCTModulesConformingToProtocolsProvider.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » RCTModuleProviders.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » Props.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » Props.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » Props.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » Props.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » Props.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » NitroModulesSpecJSI-generated.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » NitroModulesSpec-generated.mm
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » EventEmitters.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » EventEmitters.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » EventEmitters.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » EventEmitters.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » EventEmitters.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ComponentDescriptors.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ComponentDescriptors.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ComponentDescriptors.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ComponentDescriptors.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ComponentDescriptors.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » Worklets.mm
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTRuntimeLifecycleMonitor.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTJsiWorkletContext.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTJsiWorkletApi.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTJsiPromiseWrapper.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTJsiHostObject.cpp
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » WKTDispatchQueue.cpp
+› Compiling @workspace/hydrapulse Pods/ReactCodegen » ReactCodegen-dummy.m
+› Packaging @workspace/hydrapulse Pods/ReactCodegen » libReactCodegen.a
+› Compiling react-native-worklets-core Pods/react-native-worklets-core » react-native-worklets-core-dummy.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewState.cpp
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewShadowNode.cpp
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewComponentView.mm
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaProviderComponentView.mm
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaContext.mm
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » react-native-safe-area-context-dummy.m
+› Compiling @workspace/hydrapulse Pods/ReactAppDependencyProvider » RCTAppDependencyProvider.mm
+› Compiling @workspace/hydrapulse Pods/ReactAppDependencyProvider » ReactAppDependencyProvider-dummy.m
+› Packaging react-native-worklets-core Pods/react-native-worklets-core » libreact-native-worklets-core.a
+› Compiling react-native-worklets Pods/RNWorklets » WorkletsNetworking.mm
+› Packaging @workspace/hydrapulse Pods/ReactAppDependencyProvider » libReactAppDependencyProvider.a
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewMode.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewManager.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewLocalData.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewEdges.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaViewEdgeMode.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaView.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaUtils.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaProviderManager.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCSafeAreaProvider.m
+› Compiling react-native-safe-area-context Pods/react-native-safe-area-context » RNCOnInsetsChangeEvent.m
+› Compiling react-native-worklets Pods/RNWorklets » WorkletsModuleProxy.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletsModule.mm
+› Compiling react-native-worklets Pods/RNWorklets » WorkletsMessageThread.mm
+› Packaging react-native-safe-area-context Pods/react-native-safe-area-context » libreact-native-safe-area-context.a
+› Compiling react-native-worklets Pods/RNWorklets » WorkletsJSIUtils.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletRuntimeRegistry.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletRuntimeDecorator.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletRuntime.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletHermesRuntime.cpp
+› Compiling react-native-worklets Pods/RNWorklets » WorkletEventHandler.cpp
+› Compiling react-native-worklets Pods/RNWorklets » VersionUtils.cpp
+› Compiling react-native-worklets Pods/RNWorklets » ValueUnpacker.cpp
+› Compiling react-native-worklets Pods/RNWorklets » UIScheduler.cpp
+› Compiling react-native-worklets Pods/RNWorklets » UIRuntimeDecorator.cpp
+› Compiling react-native-worklets Pods/RNWorklets » SynchronizableUnpacker.cpp
+› Compiling react-native-worklets Pods/RNWorklets » SynchronizableAccess.cpp
+› Compiling react-native-worklets Pods/RNWorklets » Synchronizable.cpp
+› Compiling react-native-worklets Pods/RNWorklets » StableApi.cpp
+› Compiling react-native-worklets Pods/RNWorklets » SlowAnimations.mm
+› Compiling react-native-worklets Pods/RNWorklets » ShareableHostUnpacker.cpp
+› Compiling react-native-worklets Pods/RNWorklets » ShareableGuestUnpacker.cpp
+› Compiling react-native-worklets Pods/RNWorklets » Shareable.cpp
+› Compiling react-native-worklets Pods/RNWorklets » SerializableFactory.cpp
+› Compiling react-native-worklets Pods/RNWorklets » Serializable.cpp
+› Compiling react-native-worklets Pods/RNWorklets » RuntimeManager.cpp
+› Compiling react-native-worklets Pods/RNWorklets » RuntimeData.cpp
+› Compiling react-native-worklets Pods/RNWorklets » RNRuntimeWorkletDecorator.cpp
+› Compiling react-native-worklets Pods/RNWorklets » PlatformLogger.mm
+› Compiling react-native-worklets Pods/RNWorklets » MemoryManager.cpp
+› Compiling react-native-worklets Pods/RNWorklets » JSScheduler.cpp
+› Compiling react-native-worklets Pods/RNWorklets » JSLogger.cpp
+› Compiling react-native-worklets Pods/RNWorklets » JSIWorkletsModuleProxy.cpp
+› Compiling react-native-worklets Pods/RNWorklets » JSISerializer.cpp
+› Compiling react-native-worklets Pods/RNWorklets » IOSUIScheduler.mm
+› Compiling react-native-worklets Pods/RNWorklets » HermesProfiling.cpp
+› Compiling react-native-worklets Pods/RNWorklets » FeatureFlags.cpp
+› Compiling react-native-worklets Pods/RNWorklets » EventLoop.cpp
+› Compiling react-native-worklets Pods/RNWorklets » EventHandlerRegistry.cpp
+› Compiling react-native-worklets Pods/RNWorklets » CustomSerializableUnpacker.cpp
+› Compiling react-native-worklets Pods/RNWorklets » AsyncQueueImpl.cpp
+› Compiling react-native-worklets Pods/RNWorklets » AnimationFrameQueue.mm
+› Compiling react-native-worklets Pods/RNWorklets » AnimationFrameBatchinator.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCOverKeyboardViewState.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCOverKeyboardViewShadowNode.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCKeyboardGestureAreaShadowNode.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCKeyboardExtenderShadowNode.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCKeyboardControllerViewShadowNode.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RNKCKeyboardBackgroundViewShadowNode.cpp
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » OverKeyboardViewManager.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardGestureAreaManager.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardExtenderManager.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardControllerViewManager.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardControllerView.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardControllerModule.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardBackgroundViewManager.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » VisionCameraProxyHolder.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » VisionCameraProxy.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » VisionCameraInstaller.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » SharedArray.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » JSINSObjectConversion.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » FrameProcessorPluginHostObject.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » FrameProcessor.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » FrameHostObject.mm
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » react-native-keyboard-controller-dummy.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » UITextView+DelegateManager.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » KeyboardMoveEvent.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » RCTUIManager+LayoutAnimationManager.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » FocusedInputTextChangedEvent.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » FocusedInputSelectionChangedEvent.m
+› Compiling react-native-keyboard-controller Pods/react-native-keyboard-controller » FocusedInputLayoutChangedEvent.m
+› Packaging react-native-keyboard-controller Pods/react-native-keyboard-controller » libreact-native-keyboard-controller.a
+› Executing react-native-keyboard-controller Pods/react-native-keyboard-controller » Copy generated compatibility header
+› Compiling react-native-screens Pods/RNScreens » UIWindow+RNScreens.mm
+› Compiling react-native-screens Pods/RNScreens » UIViewController+RNScreens.mm
+› Compiling react-native-screens Pods/RNScreens » UIView+RNSUtility.mm
+› Compiling react-native-screens Pods/RNScreens » UIScrollView+RNScreens.mm
+› Compiling react-native-screens Pods/RNScreens » UINavigationBar+RNSUtility.mm
+› Compiling react-native-screens Pods/RNScreens » RNScreensTurboModule.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSViewControllerInvalidator.mm
+› Compiling react-native-screens Pods/RNScreens » RNSTabsScreenViewController.mm
+› Compiling react-native-screens Pods/RNScreens » RNSTabBarControllerDelegate.mm
+› Compiling react-native-screens Pods/RNScreens » RNSTabBarController.mm
+› Compiling react-native-screens Pods/RNScreens » RNSSplitViewScreenShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSSearchBar.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScrollViewHelper.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScrollViewFinder.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenWindowTraits.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenViewEvent.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenState.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderSubviewState.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderSubviewShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderSubview.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderConfigState.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderConfigShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackHeaderConfig.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStackAnimator.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenStack.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenRemovalListener.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSScreenNavigationContainer.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenFooter.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenContentWrapper.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreenContainer.mm
+› Compiling react-native-screens Pods/RNScreens » RNSScreen.mm
+› Compiling react-native-screens Pods/RNScreens » RNSReactBaseView.mm
+› Compiling react-native-screens Pods/RNScreens » RNSPercentDrivenInteractiveTransition.mm
+› Compiling react-native-screens Pods/RNScreens » RNSModule.mm
+› Compiling react-native-screens Pods/RNScreens » RNSModalScreenShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSModalScreen.mm
+› Compiling react-native-screens Pods/RNScreens » RNSInvalidatedComponentsRegistry.mm
+› Compiling react-native-screens Pods/RNScreens » RNSHeaderHeightChangeEvent.mm
+› Compiling react-native-screens Pods/RNScreens » RNSGammaStubs.mm
+› Compiling react-native-screens Pods/RNScreens » RNSFullWindowOverlay.mm
+› Compiling react-native-screens Pods/RNScreens » RNSConvert.mm
+› Compiling react-native-screens Pods/RNScreens » RNSConversions.mm
+› Compiling react-native-screens Pods/RNScreens » RNSConversions-SplitView.mm
+› Compiling react-native-screens Pods/RNScreens » RNSConversions-Fabric.mm
+› Compiling react-native-screens Pods/RNScreens » RNSConversions-BottomTabs.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsState.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsShadowNode.cpp
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsScreenEventEmitter.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsScreenComponentViewManager.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsScreenComponentView.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsHostEventEmitter.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsHostComponentViewManager.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsHostComponentView.mm
+› Compiling react-native-screens Pods/RNScreens » RNSBottomTabsHostComponentView+RNSImageLoader.mm
+› Compiling react-native-screens Pods/RNScreens » RCTTouchHandler+RNSUtility.mm
+› Compiling react-native-screens Pods/RNScreens » RCTSurfaceTouchHandler+RNSUtility.mm
+› Compiling react-native-screens Pods/RNScreens » RCTImageComponentView+RNSScreenStackHeaderConfig.mm
+› Compiling react-native-screens Pods/RNScreens » RCTConvert+RNScreens.mm
+› Compiling react-native-screens Pods/RNScreens » RCTConvert+RNSBottomTabs.mm
+› Compiling react-native-screens Pods/RNScreens » NSString+RNSUtility.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGViewBox.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGUseManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGUse.mm
+› Compiling react-native-screens Pods/RNScreens » RNScreens-dummy.m
+› Compiling react-native-worklets Pods/RNWorklets » RNWorklets-dummy.m
+› Packaging react-native-worklets Pods/RNWorklets » libRNWorklets.a
+› Packaging react-native-screens Pods/RNScreens » libRNScreens.a
+› Compiling react-native-svg Pods/RNSVG » RNSVGTextProperties.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGTextPathManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGTextPath.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGTextManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGText.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGTSpanManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGTSpan.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSymbolManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSymbol.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSvgViewModule.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSvgViewManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSvgView.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGSolidColorBrush.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGShadowNodes.cpp
+› Compiling react-native-svg Pods/RNSVG » RNSVGRenderableModule.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRenderableManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRenderable.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRenderUtils.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRectManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRect.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRadialGradientManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGRadialGradient.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPropHelper.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPatternManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPattern.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPathParser.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPathMeasure.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPathManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPath.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPainterBrush.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGPainter.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGNodeManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGNode.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGMaskManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGMask.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGMarkerPosition.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGMarkerManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGMarker.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLinearGradientManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLinearGradient.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLineManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLine.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLength.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGLayoutableShadowNode.cpp
+› Compiling react-native-svg Pods/RNSVG » RNSVGImageState.cpp
+› Compiling react-native-svg Pods/RNSVG » RNSVGImageShadowNode.cpp
+› Compiling react-native-svg Pods/RNSVG » RNSVGImageManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGImage.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGGroupManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGGroup.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGGlyphContext.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGForeignObjectManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGForeignObject.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFontData.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFilterRegion.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFilterPrimitiveManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFilterPrimitive.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFilterManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFilter.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeOffsetManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeOffset.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeMergeManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeMerge.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeGaussianBlurManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeGaussianBlur.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeFloodManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeFlood.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeCompositeManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeComposite.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeColorMatrixManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeColorMatrix.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeBlendManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGFeBlend.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGEllipseManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGEllipse.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGDefsManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGDefs.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGCustomFilter.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGConvert.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGContextBrush.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGCompositeXor.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGClipPathManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGClipPath.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGCircleManager.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGCircle.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGBrush.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGBezierElement.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVGArithmeticFilter.mm
+› Compiling react-native-svg Pods/RNSVG » RCTConvert+RNSVG.mm
+› Compiling react-native-vision-camera Pods/VisionCamera » Frame.m
+› Compiling react-native-vision-camera Pods/VisionCamera » FrameProcessorPluginRegistry.m
+› Compiling react-native-vision-camera Pods/VisionCamera » FrameProcessorPlugin.m
+› Compiling react-native-vision-camera Pods/VisionCamera » CameraDevicesManager.m
+› Packaging react-native-vision-camera Pods/VisionCamera » libVisionCamera.a
+› Compiling react-native-reanimated Pods/RNReanimated » translate.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » steps.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » skew.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » scale.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » rotate.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » props.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » perspective.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » matrix.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » linear.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » interpolators.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » cubicBezier.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » common.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » algorithms.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ViewStylesRepository.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ValueInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » UpdatesRegistryManager.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » UpdatesRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » UIRuntimeDecorator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » UIEventHandlerRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » UIEventHandler.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransitionStyleInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransitionProgressProvider.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformsStyleInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformOperationInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformOperation.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformOp.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformMatrix3D.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformMatrix2D.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » TransformMatrix.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » StyleOperationInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » StyleOperation.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » StaticPropsRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SimpleValueInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SharedTransitions.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ShadowTreeCloner.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SetGestureState.mm
+› Compiling react-native-reanimated Pods/RNReanimated » SVGStrokeDashArray.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SVGStops.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SVGPath.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » SVGBrush.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ResolvableValueInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » RecordPropertiesInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedVersion.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedMountHook.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedModuleProxySpec.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedModuleProxy.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedModule.mm
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedCommitHook.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » RNRuntimeDecorator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » REANodesManager.mm
+› Compiling react-native-reanimated REAKeyboardEventObserver.mm
+› Compiling react-native-reanimated Pods/RNReanimated » Quaternion.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » PropsDiffer.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » PropertyInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » PropValueProcessor.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » PlatformDepMethodsHolderImpl.mm
+› Compiling react-native-reanimated Pods/RNReanimated » OperationsStyleInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » NativeProxy.mm
+› Compiling react-native-reanimated Pods/RNReanimated » LayoutAnimationsUtils.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » LayoutAnimationsProxy_Legacy.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » LayoutAnimationsProxy_Experimental.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » LayoutAnimationsProxyCommon.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » LayoutAnimationsManager.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » InterpolatorRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » InterpolatorFactory.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » GroupPropertiesInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » FilterStyleInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » FilterOperationInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » FilterOperation.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » FilterOp.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » FeatureFlags.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » EasingFunctions.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » DelayedItemsManager.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSValueVariant.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSTransitionsRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSTransitionConfig.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSTransition.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSNumber.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSLengthArray.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSLength.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSKeyword.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSKeyframesRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSKeyframesConfig.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSDropShadow.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSDiscreteArray.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSColor.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSBoxShadow.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSBoolean.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSAnimationsRegistry.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSAnimationConfig.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSAnimation.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » CSSAngle.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » ArrayPropertiesInterpolator.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » AnimationProgressProvider.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » AnimatedSensorModule.cpp
+› Compiling react-native-reanimated Pods/RNReanimated » AnimatedPropsRegistry.cpp
+› Executing react-native-vision-camera Pods/VisionCamera » Copy generated compatibility header
+› Compiling vision-camera-resize-plugin Pods/vision-camera-resize-plugin » ResizePlugin.mm
+› Compiling vision-camera-resize-plugin Pods/vision-camera-resize-plugin » FrameBuffer.mm
+› Compiling react-native-svg Pods/RNSVG » RNSVG-dummy.m
+› Packaging react-native-svg Pods/RNSVG » libRNSVG.a
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedSensorContainer.m
+› Compiling react-native-reanimated Pods/RNReanimated » ReanimatedSensor.m
+› Compiling react-native-reanimated Pods/RNReanimated » RCTUIView+Reanimated.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNNativeViewHandler.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerRootViewComponentView.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerModule.mm
+› Compiling vision-camera-resize-plugin Pods/vision-camera-resize-plugin » vision-camera-resize-plugin-dummy.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerManager.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerButtonManager.mm
+› Packaging vision-camera-resize-plugin Pods/vision-camera-resize-plugin » libvision-camera-resize-plugin.a
+› Compiling react-native-gesture-handler RNGestureHandlerButtonComponentView.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerButton.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandler.mm
+› Compiling react-native-reanimated Pods/RNReanimated » RNReanimated-dummy.m
+› Packaging react-native-reanimated Pods/RNReanimated » libRNReanimated.a
+› Compiling @react-native-async-storage/async-storage Pods/RNCAsyncStorage » RNCAsyncStorage.mm
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandler-dummy.m
+› Compiling @react-native-async-storage/async-storage Pods/RNCAsyncStorage » RNCAsyncStorage-dummy.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNRotationHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNTapHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNRootViewGestureRecognizer.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNPinchHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNPanHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNManualHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNManualActivationRecognizer.m
+› Packaging @react-native-async-storage/async-storage Pods/RNCAsyncStorage » libRNCAsyncStorage.a
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNLongPressHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNHoverHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerRegistry.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerPointerTracker.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandlerEvents.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGHVector.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNGHStylusData.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNForceTouchHandler.m
+› Compiling react-native-gesture-handler Pods/RNGestureHandler » RNFlingHandler.m
+› Packaging react-native-gesture-handler Pods/RNGestureHandler » libRNGestureHandler.a
+› Compiling react-native-nitro-modules Pods/NitroModules » ThreadUtils.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » PropNameIDCache.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » NitroTypeInfo.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » NativeNitroModules+OldArch.mm
+› Compiling react-native-nitro-modules Pods/NitroModules » NativeNitroModules+NewArch.mm
+› Compiling react-native-nitro-modules Pods/NitroModules » JSICache.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » InstallNitro.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » HybridObjectRegistry.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » HybridObjectPrototype.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » HybridObject.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » HybridNitroModulesProxy.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » Dispatcher.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » CommonGlobals.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » BoxedHybridObject.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » ArrayBuffer.cpp
+› Compiling react-native-nitro-modules Pods/NitroModules » AnyMap.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » TypedArray.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » SwiftUIVirtualViewObjC.mm
+› Compiling react-native-nitro-modules Pods/NitroModules » NitroModules-dummy.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » SharedRef.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » SharedObject.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ObjectDeallocator.cpp
+› Packaging react-native-nitro-modules Pods/NitroModules » libNitroModules.a
+› Compiling expo-modules-core Pods/ExpoModulesCore » NativeModule.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » MainThreadInvoker.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » LazyObject.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » JSIUtils.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoViewShadowNode.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoViewProps.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoViewEventEmitter.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoViewComponentDescriptor.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoModulesHostObject.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoFabricViewObjC.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoBridgeModule.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EventEmitter.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXStringUtils.cpp
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXSharedObjectUtils.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXReactNativeAdapter.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXReactDelegateWrapper.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXRawJavaScriptFunction.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXNativeModulesProxy.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptWeakObject.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptValue.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptTypedArray.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptSharedObjectBinding.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptRuntime.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJavaScriptObject.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJSIUtils.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJSIInstaller.mm
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXJSIConversions.mm
+› Executing react-native-nitro-modules Pods/NitroModules » Copy generated compatibility header
+
+❌  (../../node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/QuantityTypeModule.swift:89:13)
+
+  87 |     return anyMap.getString(key: key)
+  88 |   }
+> 89 |   if anyMap.isBigInt(key: key) {
+     |             ^ value of type 'AnyMap' has no member 'isBigInt'
+  90 |     return anyMap.getBigInt(key: key)
+  91 |   }
+  92 |   if anyMap.isNull(key: key) {
+
+
+❌  (../../node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/QuantityTypeModule.swift:90:19)
+
+  88 |   }
+  89 |   if anyMap.isBigInt(key: key) {
+> 90 |     return anyMap.getBigInt(key: key)
+     |                   ^ value of type 'AnyMap' has no member 'getBigInt'
+  91 |   }
+  92 |   if anyMap.isNull(key: key) {
+  93 |     return nil
+
+› Compiling expo-modules-core Pods/ExpoModulesCore » RCTComponentData+Privates.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXModuleRegistryHolderReactModule.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXUtilities.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXSingletonModule.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » ExpoModulesCore-dummy.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXReactLogHandler.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXPermissionsService.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXPermissionsMethodsDelegate.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXModuleRegistryAdapter.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXLogManager.m
+› Compiling expo-modules-core EXExportedModule.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXAppDefines.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » CoreModuleHelper.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXModuleRegistry.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXModuleRegistryProvider.m
+› Compiling expo-modules-core Pods/ExpoModulesCore » EXReactNativeEventEmitter.m
+› Packaging expo-modules-core Pods/ExpoModulesCore » libExpoModulesCore.a
+› Executing expo-modules-core Pods/ExpoModulesCore » Copy generated compatibility header
+› Compiling expo-system-ui Pods/ExpoSystemUI » ExpoSystemUI-dummy.m
+› Compiling expo-splash-screen Pods/ExpoSplashScreen » ExpoSplashScreen-dummy.m
+› Compiling expo-symbols Pods/ExpoSymbols » ExpoSymbols-dummy.m
+› Packaging expo-system-ui Pods/ExpoSystemUI » libExpoSystemUI.a
+› Packaging expo-symbols Pods/ExpoSymbols » libExpoSymbols.a
+› Packaging expo-splash-screen Pods/ExpoSplashScreen » libExpoSplashScreen.a
+› Executing expo-system-ui Pods/ExpoSystemUI » Copy generated compatibility header
+› Executing expo-symbols Pods/ExpoSymbols » Copy generated compatibility header
+› Compiling expo-web-browser Pods/ExpoWebBrowser » ExpoWebBrowser-dummy.m
+› Packaging expo-web-browser Pods/ExpoWebBrowser » libExpoWebBrowser.a
+› Executing expo-web-browser Pods/ExpoWebBrowser » Copy generated compatibility header
+› Executing expo-splash-screen Pods/ExpoSplashScreen » Copy generated compatibility header
+› Compiling expo-linking Pods/ExpoLinking » ExpoLinking-dummy.m
+› Packaging expo-linking Pods/ExpoLinking » libExpoLinking.a
+› Compiling expo-location Pods/ExpoLocation » ExpoLocation-dummy.m
+› Executing Copy generated compatibility header
+› Compiling expo-location Pods/ExpoLocation » EXLocationTaskConsumer.m
+› Compiling expo-location Pods/ExpoLocation » EXLocationPermissionRequester.m
+› Compiling expo-location Pods/ExpoLocation » EXLocation.m
+› Compiling expo-location Pods/ExpoLocation » EXGeofencingTaskConsumer.m
+› Compiling expo-location Pods/ExpoLocation » EXForegroundPermissionRequester.m
+› Compiling expo-location Pods/ExpoLocation » EXBaseLocationRequester.m
+› Compiling expo-location Pods/ExpoLocation » EXBackgroundLocationPermissionRequester.m
+› Packaging expo-location Pods/ExpoLocation » libExpoLocation.a
+› Compiling expo-linear-gradient Pods/ExpoLinearGradient » ExpoLinearGradient-dummy.m
+› Executing expo-location Pods/ExpoLocation » Copy generated compatibility header
+› Packaging expo-linear-gradient Pods/ExpoLinearGradient » libExpoLinearGradient.a
+› Executing expo-linear-gradient Pods/ExpoLinearGradient » Copy generated compatibility header
+› Compiling expo-keep-awake Pods/ExpoKeepAwake » ExpoKeepAwake-dummy.m
+› Packaging expo-keep-awake Pods/ExpoKeepAwake » libExpoKeepAwake.a
+› Executing expo-keep-awake Pods/ExpoKeepAwake » Copy generated compatibility header
+▸ ** ARCHIVE FAILED **
+▸ The following build commands failed:
+▸ 	CompileSwift normal arm64 (in target 'ReactNativeHealthkit' from project 'Pods')
+▸ 	SwiftCompile normal arm64 Compiling\ AggregationStyle.swift,\ AuthDataTypes.swift,\ AuthorizationRequestStatus.swift,\ AuthorizationStatus.swift,\ BiologicalSex.swift,\ BloodType.swift,\ CategorySample.swift,\ CategorySampleForSaving.swift,\ CategorySamplesWithAnchorResponse.swift,\ CategoryTypeIdentifier.swift,\ CategoryTypeModule.swift,\ CharacteristicTypeModule.swift,\ ComparisonPredicateOperator.swift,\ Constants.swift,\ CoreModule.swift,\ CorrelationObject.swift,\ CorrelationSample.swift,\ CorrelationTypeIdentifier.swift,\ CorrelationTypeModule.swift,\ DateFilter.swift,\ DeletedSample.swift,\ Device.swift,\ ECGQueryOptionsWithAnchor.swift,\ ECGQueryOptionsWithSortOrder.swift,\ ElectrocardiogramClassification.swift,\ ElectrocardiogramLead.swift,\ ElectrocardiogramModule.swift,\ ElectrocardiogramSample.swift,\ ElectrocardiogramSamplesWithAnchorResponse.swift,\ ElectrocardiogramSymptomsStatus.swift,\ ElectrocardiogramVoltage.swift,\ FilterForSamples.swift,\ FilterForSamplesBase.swift,\ FilterForWorkouts.swift,\ FilterForWorkoutsBase.swift,\ FitzpatrickSkinType.swift,\ Func_void_AuthorizationRequestStatus.swift,\ Func_void_BiologicalSex.swift,\ Func_void_BloodType.swift,\ Func_void_bool.swift,\ Func_void_CategorySamplesWithAnchorResponse.swift,\ Func_void_double.swift,\ Func_void_ElectrocardiogramSamplesWithAnchorResponse.swift,\ Func_void_FitzpatrickSkinType.swift,\ Func_void_HeartbeatSeriesSamplesWithAnchorResponse.swift,\ Func_void_MedicationDoseEventsWithAnchorResponse.swift,\ Func_void_OnChangeCallbackArgs.swift,\ Func_void_QuantitySamplesWithAnchorResponse.swift,\ Func_void_QueryCorrelationSamplesWithAnchorResponse.swift,\ Func_void_QueryStatisticsResponse.swift,\ Func_void_QueryWorkoutSamplesWithAnchorResponse.swift,\ Func_void_StateOfMindSamplesWithAnchorResponse.swift,\ Func_void_std__exception_ptr.swift,\ Func_void_std__optional_QueryStatisticsResponse_.swift,\ Func_void_std__optional_std__chrono__system_clock__time_point_.swift,\ Func_void_std__optional_WorkoutPlan_.swift,\ Func_void_std__shared_ptr_HybridWorkoutProxySpec_.swift,\ Func_void_std__unordered_map_std__string__bool_.swift,\ Func_void_std__unordered_map_std__string__QueryStatisticsResponse_.swift,\ Func_void_std__vector_CategorySample_.swift,\ Func_void_std__vector_CorrelationSample_.swift,\ Func_void_std__vector_ElectrocardiogramSample_.swift,\ Func_void_std__vector_HeartbeatSeriesSample_.swift,\ Func_void_std__vector_IdentifierWithUnit_.swift,\ Func_void_std__vector_MedicationDoseEvent_.swift,\ Func_void_std__vector_QuantitySample_.swift,\ Func_void_std__vector_QueryStatisticsResponse_.swift,\ Func_void_std__vector_StateOfMindSample_.swift,\ Func_void_std__vector_std__shared_ptr_HybridSourceProxySpec__.swift,\ Func_void_std__vector_std__shared_ptr_HybridWorkoutProxySpec__.swift,\ Func_void_std__vector_UserAnnotatedMedication_.swift,\ Func_void_std__vector_WorkoutRoute_.swift,\ Func_void_WheelchairUse.swift,\ GeneralForm.swift,\ Heartbeat.swift,\ HeartbeatSeriesModule.swift,\ HeartbeatSeriesSample.swift,\ HeartbeatSeriesSamplesWithAnchorResponse.swift,\ HeartRateMotionContext.swift,\ Helpers.swift,\ HybridCategoryTypeModuleSpec.swift,\ HybridCategoryTypeModuleSpec_cxx.swift,\ HybridCharacteristicTypeModuleSpec.swift,\ HybridCharacteristicTypeModuleSpec_cxx.swift,\ HybridCoreModuleSpec.swift,\ HybridCoreModuleSpec_cxx.swift,\ HybridCorrelationTypeModuleSpec.swift,\ HybridCorrelationTypeModuleSpec_cxx.swift,\ HybridElectrocardiogramModuleSpec.swift,\ HybridElectrocardiogramModuleSpec_cxx.swift,\ HybridHeartbeatSeriesModuleSpec.swift,\ HybridHeartbeatSeriesModuleSpec_cxx.swift,\ HybridMedicationModuleSpec.swift,\ HybridMedicationModuleSpec_cxx.swift,\ HybridQuantityTypeModuleSpec.swift,\ HybridQuantityTypeModuleSpec_cxx.swift,\ HybridSourceProxySpec.swift,\ HybridSourceProxySpec_cxx.swift,\ HybridStateOfMindModuleSpec.swift,\ HybridStateOfMindModuleSpec_cxx.swift,\ HybridWorkoutProxySpec.swift,\ HybridWorkoutProxySpec_cxx.swift,\ HybridWorkoutsModuleSpec.swift,\ HybridWorkoutsModuleSpec_cxx.swift,\ IdentifierWithUnit.swift,\ InsulinDeliveryReason.swift,\ IntervalComponents.swift,\ LocationForSaving.swift,\ MedicationConcept.swift,\ MedicationDoseEvent.swift,\ MedicationDoseEventLogStatus.swift,\ MedicationDoseEventScheduleType.swift,\ MedicationDoseEventsWithAnchorResponse.swift,\ MedicationModule.swift,\ ObjectTypeIdentifier.swift,\ OnChangeCallbackArgs.swift,\ PredicateHelpers.swift,\ PredicateWithMetadataKey.swift,\ Quantity.swift,\ QuantityDateInterval.swift,\ QuantitySample.swift,\ QuantitySampleForSaving.swift,\ QuantitySamplesWithAnchorResponse.swift,\ QuantityTypeIdentifier.swift,\ QuantityTypeModule.swift,\ QueryCorrelationSamplesWithAnchorResponse.swift,\ QueryOptionsWithAnchor.swift,\ QueryOptionsWithAnchorAndUnit.swift,\ QueryOptionsWithSortOrder.swift,\ QueryOptionsWithSortOrderAndUnit.swift,\ QueryStatisticsResponse.swift,\ QueryWorkoutSamplesWithAnchorResponse.swift,\ ReactNativeHealthkitAutolinking.swift,\ RelatedCoding.swift,\ SampleForSaving.swift,\ SampleType.swift,\ SampleTypeIdentifier.swift,\ SampleTypeIdentifierWriteable.swift,\ Serializers.swift,\ Source.swift,\ SourceProxy.swift,\ SourceRevision.swift,\ StateOfMindAssociation.swift,\ StateOfMindKind.swift,\ StateOfMindLabel.swift,\ StateOfMindModule.swift,\ StateOfMindSample.swift,\ StateOfMindSamplesWithAnchorResponse.swift,\ StateOfMindValenceClassification.swift,\ StatisticsOptions.swift,\ StatisticsQueryOptions.swift,\ UpdateFrequency.swift,\ UserAnnotatedMedication.swift,\ Variant_Bool_String_Double_Date.swift,\ WeatherCondition.swift,\ WheelchairUse.swift,\ WorkoutActivity.swift,\ WorkoutActivityType.swift,\ WorkoutConfiguration.swift,\ WorkoutDurationPredicate.swift,\ WorkoutEvent.swift,\ WorkoutEventType.swift,\ WorkoutPlan.swift,\ WorkoutProxy.swift,\ WorkoutQueryOptions.swift,\ WorkoutQueryOptionsWithAnchor.swift,\ WorkoutRoute.swift,\ WorkoutRouteLocation.swift,\ WorkoutSample.swift,\ WorkoutSessionLocationType.swift,\ WorkoutsModule.swift,\ WorkoutTotals.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/AggregationStyle.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/AuthDataTypes.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/AuthorizationRequestStatus.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/AuthorizationStatus.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/BiologicalSex.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/BloodType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CategorySample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6
+_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CategorySampleForSaving.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CategorySamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CategoryTypeIdentifier.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/CategoryTypeModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/CharacteristicTypeModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ComparisonPredicateOperator.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/Constants.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/CoreModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CorrelationObject.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CorrelationSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/CorrelationTypeIdentifier.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/CorrelationTypeModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/DateFilter.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/DeletedSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Device.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ECGQueryOptionsWithAnchor.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ECGQueryOptionsWithSortOrder.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramClassification.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramLead.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/ElectrocardiogramModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramSymptomsStatus.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ElectrocardiogramVoltage.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/FilterForSamples.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/FilterForSamplesBase.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/FilterForWorkouts.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/FilterForWorkoutsBase.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/FitzpatrickSkinType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_AuthorizationRequestStatus.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrog
+en/generated/ios/swift/Func_void_BiologicalSex.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_BloodType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_bool.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_CategorySamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_double.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_ElectrocardiogramSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_FitzpatrickSkinType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_HeartbeatSeriesSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_MedicationDoseEventsWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_OnChangeCallbackArgs.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_QuantitySamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_QueryCorrelationSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_QueryStatisticsResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_QueryWorkoutSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_StateOfMindSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__exception_ptr.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__optional_QueryStatisticsResponse_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__optional_std__chrono__system_clock__time_point_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__optional_WorkoutPlan_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__shared_ptr_HybridWorkoutProxySpec_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__unordered_map_std__string__bool_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__unordered_map_std__string__QueryStatisticsResponse_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_CategorySample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_CorrelationSample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_ElectrocardiogramSample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_HeartbeatSeriesSample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_IdentifierWithUnit_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_MedicationDoseEvent_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-n
+ative-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_QuantitySample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_QueryStatisticsResponse_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_StateOfMindSample_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_std__shared_ptr_HybridSourceProxySpec__.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_std__shared_ptr_HybridWorkoutProxySpec__.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_UserAnnotatedMedication_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_std__vector_WorkoutRoute_.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Func_void_WheelchairUse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/GeneralForm.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Heartbeat.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/HeartbeatSeriesModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HeartbeatSeriesSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HeartbeatSeriesSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HeartRateMotionContext.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/Helpers.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCategoryTypeModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCategoryTypeModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCharacteristicTypeModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCharacteristicTypeModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCoreModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCoreModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCorrelationTypeModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridCorrelationTypeModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridElectrocardiogramModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridElectrocardiogramModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridHeartbeatSeriesModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridHeartbeatSeriesModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridMedicationModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridMedicationModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstin
+ct/react-native-healthkit/nitrogen/generated/ios/swift/HybridQuantityTypeModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridQuantityTypeModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridSourceProxySpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridSourceProxySpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridStateOfMindModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridStateOfMindModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridWorkoutProxySpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridWorkoutProxySpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridWorkoutsModuleSpec.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/HybridWorkoutsModuleSpec_cxx.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/IdentifierWithUnit.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/InsulinDeliveryReason.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/IntervalComponents.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/LocationForSaving.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/MedicationConcept.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/MedicationDoseEvent.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/MedicationDoseEventLogStatus.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/MedicationDoseEventScheduleType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/MedicationDoseEventsWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/MedicationModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/ObjectTypeIdentifier.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/OnChangeCallbackArgs.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/PredicateHelpers.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/PredicateWithMetadataKey.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Quantity.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QuantityDateInterval.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QuantitySample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QuantitySampleForSaving.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QuantitySamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QuantityTypeIdentifier.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d09
+4c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/QuantityTypeModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryCorrelationSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryOptionsWithAnchor.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryOptionsWithAnchorAndUnit.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryOptionsWithSortOrder.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryOptionsWithSortOrderAndUnit.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryStatisticsResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/QueryWorkoutSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/ReactNativeHealthkitAutolinking.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/RelatedCoding.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/SampleForSaving.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/SampleType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/SampleTypeIdentifier.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/SampleTypeIdentifierWriteable.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/Serializers.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Source.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/SourceProxy.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/SourceRevision.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindAssociation.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindKind.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindLabel.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/StateOfMindModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindSamplesWithAnchorResponse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StateOfMindValenceClassification.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StatisticsOptions.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/StatisticsQueryOptions.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/UpdateFrequency.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/UserAnnotatedMedication.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/Variant_Bool_String_Double_Date.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthk
+› Compiling expo-notifications Pods/ExpoNotifications » ExpoNotifications-dummy.m
+it/nitrogen/generated/ios/swift/WeatherCondition.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WheelchairUse.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutActivity.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutActivityType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutConfiguration.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutDurationPredicate.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutEvent.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutEventType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutPlan.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/WorkoutProxy.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutQueryOptions.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutQueryOptionsWithAnchor.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutRoute.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutRouteLocation.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutSample.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutSessionLocationType.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ios/WorkoutsModule.swift /Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/nitrogen/generated/ios/swift/WorkoutTotals.swift (in target 'ReactNativeHealthkit' from project 'Pods')
+› Packaging expo-notifications Pods/ExpoNotifications » libExpoNotifications.a
+› Executing expo-notifications Pods/ExpoNotifications » Copy generated compatibility header
+› Compiling expo-haptics Pods/ExpoHaptics » ExpoHaptics-dummy.m
+› Packaging expo-haptics Pods/ExpoHaptics » libExpoHaptics.a
+› Executing expo-haptics Pods/ExpoHaptics » Copy generated compatibility header
+› Compiling expo-router Pods/ExpoHead » LinkPreviewNativeNavigation.mm
+▸ 	Archiving workspace HydraPulse with scheme HydraPulse
+▸ (3 failures)
+› Compiling expo-image-picker Pods/ExpoImagePicker » ExpoImagePicker-dummy.m
+› Packaging expo-image-picker Pods/ExpoImagePicker » libExpoImagePicker.a
+› Compiling expo-router Pods/ExpoHead » ExpoHead-dummy.m
+› Packaging expo-router Pods/ExpoHead » libExpoHead.a
+› Executing expo-image-picker Pods/ExpoImagePicker » Copy generated compatibility header
+› Executing expo-router Pods/ExpoHead » Copy generated compatibility header
+› Executing expo-constants Pods/EXConstants » [CP-User] Generate app.config for prebuilt Constants.manifest
+› Compiling expo-glass-effect Pods/ExpoGlassEffect » ExpoGlassEffect-dummy.m
+› Compiling expo-font Pods/ExpoFont » ExpoFont-dummy.m
+› Packaging expo-glass-effect Pods/ExpoGlassEffect » libExpoGlassEffect.a
+› Packaging expo-font Pods/ExpoFont » libExpoFont.a
+› Compiling expo-blur Pods/ExpoBlur » ExpoBlur-dummy.m
+› Packaging expo-blur Pods/ExpoBlur » libExpoBlur.a
+› Compiling EXImageLoader-dummy.m
+› Compiling expo-image-loader Pods/EXImageLoader » EXImageLoader.m
+› Packaging expo-image-loader Pods/EXImageLoader » libEXImageLoader.a
+› Executing expo-glass-effect Pods/ExpoGlassEffect » Copy generated compatibility header
+› Executing expo-font Pods/ExpoFont » Copy generated compatibility header
+› Compiling expo-image Pods/ExpoImage » ExpoImage-dummy.m
+› Packaging expo-image Pods/ExpoImage » libExpoImage.a
+› Compiling expo-file-system Pods/ExpoFileSystem » EXTaskHandlersManager.m
+› Compiling ExpoFileSystem-dummy.m
+› Compiling expo-file-system Pods/ExpoFileSystem » NSData+EXFileSystem.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionUploadTaskDelegate.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionTaskDelegate.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionTaskDispatcher.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionResumableDownloadTaskDelegate.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionHandler.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionDownloadTaskDelegate.m
+› Compiling expo-file-system Pods/ExpoFileSystem » EXSessionCancelableUploadTaskDelegate.m
+› Executing expo-image Pods/ExpoImage » Copy generated compatibility header
+› Executing expo-blur Pods/ExpoBlur » Copy generated compatibility header
+› Compiling expo Pods/Expo » EXReactRootViewFactory.mm
+› Compiling expo Pods/Expo » EXAppDelegateWrapper.mm
+    Run script build phase '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'hermes-engine' from project 'Pods')
+    Run script build phase '[Expo Dev Launcher] Strip Local Network Keys for Release' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'HydraPulse' from project 'HydraPulse')
+Exit status: 65
+
++---------------------------------------+
+|           Build environment           |
++-------------+-------------------------+
+| xcode_path  | /Applications/Xcode.app |
+| gym_version | 2.228.0                 |
+| sdk         | iPhoneOS26.0.sdk        |
++-------------+-------------------------+
+
+Looks like fastlane ran into a build/archive error with your project
+It's hard to tell what's causing the error, so we wrote some guides on how
+to troubleshoot build and signing issues: https://docs.fastlane.tools/codesigning/getting-started/
+Before submitting an issue on GitHub, please follow the guide above and make
+sure your project is set up correctly.
+fastlane uses `xcodebuild` commands to generate your binary, you can see the
+the full commands printed out in yellow in the above log.
+Make sure to inspect the output above, as usually you'll find more error information there
+[!] Error building the application - see the log above
+Error: The "Run fastlane" step failed because of an error in the Xcode build process. We automatically detected following errors in your Xcode build logs:
+- instead
+- value of type 'AnyMap' has no member 'isBigInt'
+- value of type 'AnyMap' has no member 'getBigInt'
+Refer to "Xcode Logs" below for additional, more detailed logs.

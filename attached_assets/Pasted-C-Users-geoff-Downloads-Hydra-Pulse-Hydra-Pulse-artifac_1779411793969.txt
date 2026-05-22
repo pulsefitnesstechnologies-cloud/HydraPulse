@@ -1,0 +1,54 @@
+C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\artifacts\hydrapulse>eas update --channel preview --message "Watch scan + scheduled scans + alert threshold"
+> npx expo install expo-updates
+[expo-cli] › Installing 1 SDK 54.0.0 compatible native module using pnpm
+[expo-cli] > pnpm add expo-updates@~29.0.17
+[expo-cli] ../..                                    | Progress: resolved 1, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 402, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 1065, reused 0, downloaded 0, added 0
+[expo-cli] WARN  8 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, glob@7.2.3, glob@9.3.5, inflight@1.0.6, rimraf@3.0.2, uuid@3.4.0, uuid@7.0.3
+[expo-cli] ../..                                    | Progress: resolved 1264, reused 0, downloaded 0, added 0, done
+[expo-cli] WARN  Issues with peer dependencies found
+[expo-cli] artifacts/api-server
+[expo-cli] └─┬ esbuild-plugin-pino 2.3.3
+[expo-cli]   └── ✕ unmet peer esbuild@">=0.25.0 <=0.25.8": found 0.27.7
+[expo-cli]
+[expo-cli] artifacts/hydrapulse
+[expo-cli] ├─┬ react-native 0.81.5
+[expo-cli] │ └─┬ @react-native/community-cli-plugin 0.81.5
+[expo-cli] │   └── ✕ missing peer @react-native/metro-config@"*"
+[expo-cli] └─┬ react-native-worklets 0.8.3
+[expo-cli]   └── ✕ missing peer @react-native/metro-config@"*"
+[expo-cli] Peer dependencies that should be installed:
+[expo-cli]   @react-native/metro-config@"*"
+[expo-cli] dependencies:
+[expo-cli] + expo-updates ~29.0.17
+[expo-cli] ../..                                    |   +7 +
+[expo-cli] ../.. preinstall$ node -e "if(!process.env.npm_config_user_agent||!process.env.npm_config_user_agent.startsWith('pnpm/')){console.error('Use pnpm instead');process.exit(1)}"
+[expo-cli] ../.. preinstall: Done
+[expo-cli] Done in 3.6s using pnpm v10.26.1
+√ Installed expo-updates
+[expo-cli] React Compiler enabled
+[expo-cli] Starting Metro Bundler
+[expo-cli] iOS node_modules\.pnpm\expo-router@6.0.23_@types+r_6cd3da6d3f4335c18f6fbe7b2fb6d7c6\node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+[expo-cli] Android node_modules\.pnpm\expo-router@6.0.23_@types+r_6cd3da6d3f4335c18f6fbe7b2fb6d7c6\node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+[expo-cli] iOS Bundling failed 822ms node_modules\.pnpm\expo-router@6.0.23_@types+r_6cd3da6d3f4335c18f6fbe7b2fb6d7c6\node_modules\expo-router\entry.js (1 module)
+[expo-cli] SyntaxError: ..\..\node_modules\.pnpm\expo-router@6.0.23_@types+r_6cd3da6d3f4335c18f6fbe7b2fb6d7c6\node_modules\expo-router\entry.js: Cannot find module 'babel-preset-expo'
+[expo-cli] Require stack:
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\@babel+core@7.29.0\node_modules\@babel\core\lib\config\files\plugins.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\@babel+core@7.29.0\node_modules\@babel\core\lib\config\files\index.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\@babel+core@7.29.0\node_modules\@babel\core\lib\index.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\@expo+metro-config@54.0.15_expo@54.0.34\node_modules\@expo\metro-config\build\transform-worker\metro-transform-worker.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\@expo+metro-config@54.0.15_expo@54.0.34\node_modules\@expo\metro-config\build\transform-worker\transform-worker.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\metro@0.83.3\node_modules\metro\src\DeltaBundler\Worker.flow.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\metro@0.83.3\node_modules\metro\src\DeltaBundler\Worker.js
+[expo-cli] - C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\jest-worker@29.7.0\node_modules\jest-worker\build\workers\processChild.js
+[expo-cli]
+[expo-cli] Make sure that all the Babel plugins and presets you are using
+[expo-cli] are defined as dependencies or devDependencies in your package.json
+[expo-cli] file. It's possible that the missing plugin is loaded by a preset
+[expo-cli] you are using that forgot to add the plugin to its dependencies: you
+[expo-cli] can workaround this problem by explicitly adding the missing package
+[expo-cli] to your top-level package.json.
+× Export failed
+C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\node_modules\.pnpm\expo@54.0.34_@babel+core@7._3cc7b2874fa1147af8a667959c900031\node_modules\expo\bin\cli export --output-dir dist --source-maps --dump-assetmap --platform ios --platform android exited with non-zero code: 1
+    Error: update command failed.

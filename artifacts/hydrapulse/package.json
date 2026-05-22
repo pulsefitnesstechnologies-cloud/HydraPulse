@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@kingstinct/react-native-healthkit": "^12.2.0",
+    "expo-updates": "~29.0.17",
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
     "expo-dev-client": "^56.0.10",

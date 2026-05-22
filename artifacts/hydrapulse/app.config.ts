@@ -377,6 +377,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
 
+      "expo-updates",
       "expo-font",
       "expo-web-browser",
       [

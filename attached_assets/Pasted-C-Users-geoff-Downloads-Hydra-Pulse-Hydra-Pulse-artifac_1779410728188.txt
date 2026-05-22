@@ -1,0 +1,51 @@
+C:\Users\geoff\Downloads\Hydra-Pulse\Hydra-Pulse\artifacts\hydrapulse>eas update --channel preview --message "Watch scan + scheduled scans + alert threshold"
+> npx expo install expo-updates
+[expo-cli] › Installing 1 SDK 54.0.0 compatible native module using pnpm
+[expo-cli] > pnpm add expo-updates@~29.0.17
+[expo-cli] ../..                                    | Progress: resolved 1, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 120, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 130, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 131, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 132, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 311, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 556, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 982, reused 0, downloaded 0, added 0
+[expo-cli] ../..                                    | Progress: resolved 1263, reused 0, downloaded 0, added 0
+[expo-cli] WARN  8 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, glob@7.2.3, glob@9.3.5, inflight@1.0.6, rimraf@3.0.2, uuid@3.4.0, uuid@7.0.3
+[expo-cli] ../..                                    | Progress: resolved 1264, reused 0, downloaded 0, added 0, done
+[expo-cli] WARN  Issues with peer dependencies found
+[expo-cli] artifacts/api-server
+[expo-cli] └─┬ esbuild-plugin-pino 2.3.3
+[expo-cli]   └── ✕ unmet peer esbuild@">=0.25.0 <=0.25.8": found 0.27.7
+[expo-cli]
+[expo-cli] artifacts/hydrapulse
+[expo-cli] ├─┬ react-native 0.81.5
+[expo-cli] │ └─┬ @react-native/community-cli-plugin 0.81.5
+[expo-cli] │   └── ✕ missing peer @react-native/metro-config@"*"
+[expo-cli] └─┬ react-native-worklets 0.8.3
+[expo-cli]   └── ✕ missing peer @react-native/metro-config@"*"
+[expo-cli] Peer dependencies that should be installed:
+[expo-cli]   @react-native/metro-config@"*"
+[expo-cli] dependencies:
+[expo-cli] + expo-updates ~29.0.17
+[expo-cli] ../..                                    |   +7 +
+[expo-cli] ../.. preinstall$ node -e "if(!process.env.npm_config_user_agent||!process.env.npm_config_user_agent.startsWith('pnpm/')){console.error('Use pnpm instead');process.exit(1)}"
+[expo-cli] ../.. preinstall: Done
+[expo-cli] Done in 15.8s using pnpm v10.26.1
+√ Installed expo-updates
+
+It looks like you are using a dynamic configuration! Learn more: https://docs.expo.dev/workflow/configuration/#dynamic-configuration-with-appconfigjs)
+Add the following EAS Update key-values to the project app.config.js:
+Learn more: https://expo.fyi/eas-update-config
+
+{
+  "updates": {
+    "url": "https://u.expo.dev/15fd2666-3b4a-448c-bfe4-efdd1d70f44a"
+  },
+  "runtimeVersion": {
+    "policy": "appVersion"
+  }
+}
+
+Cannot automatically write to dynamic config at: app.config.ts
+    Error: update command failed.

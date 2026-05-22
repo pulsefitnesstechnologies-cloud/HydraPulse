@@ -279,6 +279,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: "HydraPulse",
     slug: "hydrapulse",
     version: "1.0.0",
+    runtimeVersion: {
+      policy: "appVersion",
+    },
+    updates: {
+      url: "https://u.expo.dev/15fd2666-3b4a-448c-bfe4-efdd1d70f44a",
+    },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "hydrapulse",

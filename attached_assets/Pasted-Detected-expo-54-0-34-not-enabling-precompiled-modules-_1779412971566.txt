@@ -1,0 +1,223 @@
+Detected expo=54.0.34; not enabling precompiled modules use because precompiled modules require expo>=55.0.26.
+Using Expo modules
+[Expo] Enabling modular headers for pod ExpoModulesCore
+[Expo] Enabling modular headers for pod React-RCTAppDelegate
+[Expo] Enabling modular headers for pod React-RCTFabric
+[Expo] Enabling modular headers for pod ReactAppDependencyProvider
+[Expo] Enabling modular headers for pod React-Core
+[Expo] Enabling modular headers for pod ReactCodegen
+[Expo] Enabling modular headers for pod RCTRequired
+[Expo] Enabling modular headers for pod RCTTypeSafety
+[Expo] Enabling modular headers for pod ReactCommon
+[Expo] Enabling modular headers for pod React-NativeModulesApple
+[Expo] Enabling modular headers for pod Yoga
+[Expo] Enabling modular headers for pod React-Fabric
+[Expo] Enabling modular headers for pod React-graphics
+[Expo] Enabling modular headers for pod React-utils
+[Expo] Enabling modular headers for pod React-featureflags
+[Expo] Enabling modular headers for pod React-debug
+[Expo] Enabling modular headers for pod React-ImageManager
+[Expo] Enabling modular headers for pod React-rendererdebug
+[Expo] Enabling modular headers for pod React-jsi
+[Expo] Enabling modular headers for pod React-renderercss
+[Expo] Enabling modular headers for pod hermes-engine
+[Expo] Enabling modular headers for pod glog
+[Expo] Enabling modular headers for pod boost
+[Expo] Enabling modular headers for pod DoubleConversion
+[Expo] Enabling modular headers for pod fast_float
+[Expo] Enabling modular headers for pod fmt
+[Expo] Enabling modular headers for pod RCT-Folly
+[Expo] Enabling modular headers for pod SocketRocket
+[Expo] Enabling modular headers for pod ZXingObjC
+[Expo] Enabling modular headers for pod SDWebImage
+[Expo] Enabling modular headers for pod SDWebImageAVIFCoder
+[Expo] Enabling modular headers for pod SDWebImageSVGCoder
+[Expo] Enabling modular headers for pod SDWebImageWebPCoder
+[Expo] Enabling modular headers for pod libavif
+[Expo] Enabling modular headers for pod RNScreens
+[Expo] Enabling modular headers for pod EXStructuredHeaders
+[Expo] Enabling modular headers for pod EXUpdatesInterface
+[Expo] Enabling modular headers for pod EXManifests
+[Expo] Enabling modular headers for pod EASClient
+[Expo] Enabling modular headers for pod ReachabilitySwift
+[NitroModules] 🔥 ReactNativeHealthkit is boosted by nitro!
+[NitroModules] 🔥 Your app is boosted by nitro modules!
+[NitroModules] Found react-native 0.81.5 (81) in /Users/expo/workingdir/build/node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native!
+[VisionCamera] Thank you for using VisionCamera ❤️
+[VisionCamera] If you enjoy using VisionCamera, please consider sponsoring this project: https://github.com/sponsors/mrousavy
+[VisionCamera] $VCEnableLocation is not set, enabling CLLocation APIs by default...
+[VisionCamera] $VCEnableFrameProcessors is not set, enabling Frame Processors if Worklets is installed...
+[VisionCamera] react-native-worklets-core found at /Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core, Frame Processors are enabled!
+Found 14 modules for target `HydraPulse`
+link_native_modules! {:ios_packages=>[{:configurations=>[], :name=>"@kingstinct/react-native-healthkit", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit", :path=>"../../../node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/@kingstinct+react-native-healthkit@12.2.0_react-native-nitro-modules@0.35.6_react-nativ_d9c7f4c699f69a627d094c3061447258/node_modules/@kingstinct/react-native-healthkit/ReactNativeHealthkit.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-nitro-modules", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-nitro-modules@0.35.6_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-nitro-modules", :path=>"../../../node_modules/.pnpm/react-native-nitro-modules@0.35.6_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-nitro-modules", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-nitro-modules@0.35.6_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-nitro-modules/NitroModules.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-reanimated", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-reanimated@4.3.1_react-native-worklets@0.8.3_@babel+core@7.29.0_react-nati_a628e7532ad10fabb16b516cf98ba6e5/node_modules/react-native-reanimated", :path=>"../../../node_modules/.pnpm/react-native-reanimated@4.3.1_react-native-worklets@0.8.3_@babel+core@7.29.0_react-nati_a628e7532ad10fabb16b516cf98ba6e5/node_modules/react-native-reanimated", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-reanimated@4.3.1_react-native-worklets@0.8.3_@babel+core@7.29.0_react-nati_a628e7532ad10fabb16b516cf98ba6e5/node_modules/react-native-reanimated/RNReanimated.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-vision-camera", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-vision-camera@4.7.3_react-native-reanimated@4.3.1_react-native-worklets@0._b67da898d76efc2e4f7981b8b85196bb/node_modules/react-native-vision-camera", :path=>"../../../node_modules/.pnpm/react-native-vision-camera@4.7.3_react-native-reanimated@4.3.1_react-native-worklets@0._b67da898d76efc2e4f7981b8b85196bb/node_modules/react-native-vision-camera", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-vision-camera@4.7.3_react-native-reanimated@4.3.1_react-native-worklets@0._b67da898d76efc2e4f7981b8b85196bb/node_modules/react-native-vision-camera/VisionCamera.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-worklets", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets@0.8.3_@babel+core@7.29.0_react-native@0.81.5_@babel+core@7.29.0_@_f755112899cdd8a00d73c912667a8a6f/node_modules/react-native-worklets", :path=>"../../../node_modules/.pnpm/react-native-worklets@0.8.3_@babel+core@7.29.0_react-native@0.81.5_@babel+core@7.29.0_@_f755112899cdd8a00d73c912667a8a6f/node_modules/react-native-worklets", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets@0.8.3_@babel+core@7.29.0_react-native@0.81.5_@babel+core@7.29.0_@_f755112899cdd8a00d73c912667a8a6f/node_modules/react-native-worklets/RNWorklets.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-worklets-core", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core", :path=>"../../../node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core/react-native-worklets-core.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"vision-camera-resize-plugin", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/vision-camera-resize-plugin@3.2.0_react-native-vision-camera@4.7.3_react-native-reanima_76994c7ff9205880a7f9abb5d425dfa6/node_modules/vision-camera-resize-plugin", :path=>"../../../node_modules/.pnpm/vision-camera-resize-plugin@3.2.0_react-native-vision-camera@4.7.3_react-native-reanima_76994c7ff9205880a7f9abb5d425dfa6/node_modules/vision-camera-resize-plugin", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/vision-camera-resize-plugin@3.2.0_react-native-vision-camera@4.7.3_react-native-reanima_76994c7ff9205880a7f9abb5d425dfa6/node_modules/vision-camera-resize-plugin/vision-camera-resize-plugin.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"expo", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_3cc7b2874fa1147af8a667959c900031/node_modules/expo", :path=>"../../../node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_3cc7b2874fa1147af8a667959c900031/node_modules/expo", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.34_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_3cc7b2874fa1147af8a667959c900031/node_modules/expo/Expo.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"@react-native-async-storage/async-storage", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.81.5_@babel+core@7.29.0__088e8303e028f6e6ca5c16cc3d46621a/node_modules/@react-native-async-storage/async-storage", :path=>"../../../node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.81.5_@babel+core@7.29.0__088e8303e028f6e6ca5c16cc3d46621a/node_modules/@react-native-async-storage/async-storage", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.81.5_@babel+core@7.29.0__088e8303e028f6e6ca5c16cc3d46621a/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-gesture-handler", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.28.0_react-native@0.81.5_@babel+core@7.29.0_@types+react_18db092138149f473db19e5f912d822a/node_modules/react-native-gesture-handler", :path=>"../../../node_modules/.pnpm/react-native-gesture-handler@2.28.0_react-native@0.81.5_@babel+core@7.29.0_@types+react_18db092138149f473db19e5f912d822a/node_modules/react-native-gesture-handler", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.28.0_react-native@0.81.5_@babel+core@7.29.0_@types+react_18db092138149f473db19e5f912d822a/node_modules/react-native-gesture-handler/RNGestureHandler.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-keyboard-controller", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-keyboard-controller@1.18.5_react-native-reanimated@4.3.1_react-native-work_0873bdb98b5a13e85547a589035085f0/node_modules/react-native-keyboard-controller", :path=>"../../../node_modules/.pnpm/react-native-keyboard-controller@1.18.5_react-native-reanimated@4.3.1_react-native-work_0873bdb98b5a13e85547a589035085f0/node_modules/react-native-keyboard-controller", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-keyboard-controller@1.18.5_react-native-reanimated@4.3.1_react-nat
+ive-work_0873bdb98b5a13e85547a589035085f0/node_modules/react-native-keyboard-controller/react-native-keyboard-controller.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-safe-area-context", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.81.5_@babel+core@7.29.0_@types+reac_db7e84308fa9a28cdc0cc9a7b78f5e93/node_modules/react-native-safe-area-context", :path=>"../../../node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.81.5_@babel+core@7.29.0_@types+reac_db7e84308fa9a28cdc0cc9a7b78f5e93/node_modules/react-native-safe-area-context", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.81.5_@babel+core@7.29.0_@types+reac_db7e84308fa9a28cdc0cc9a7b78f5e93/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-screens", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.16.0_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-screens", :path=>"../../../node_modules/.pnpm/react-native-screens@4.16.0_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-screens", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.16.0_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-screens/RNScreens.podspec", :script_phases=>[]}, {:configurations=>[], :name=>"react-native-svg", :root=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-svg@15.12.1_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-svg", :path=>"../../../node_modules/.pnpm/react-native-svg@15.12.1_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-svg", :podspec_path=>"/Users/expo/workingdir/build/node_modules/.pnpm/react-native-svg@15.12.1_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-svg/RNSVG.podspec", :script_phases=>[]}], :ios_project_root_path=>"/Users/expo/workingdir/build/artifacts/hydrapulse/ios", :react_native_path=>"../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native"}
+[NitroModules] 🔥 ReactNativeHealthkit is boosted by nitro!
+[NitroModules] 🔥 Your app is boosted by nitro modules!
+[NitroModules] Found react-native 0.81.5 (81) in /Users/expo/workingdir/build/node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native!
+[VisionCamera] Thank you for using VisionCamera ❤️
+[VisionCamera] If you enjoy using VisionCamera, please consider sponsoring this project: https://github.com/sponsors/mrousavy
+[VisionCamera] $VCEnableLocation is not set, enabling CLLocation APIs by default...
+[VisionCamera] $VCEnableFrameProcessors is not set, enabling Frame Processors if Worklets is installed...
+[VisionCamera] react-native-worklets-core found at /Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core, Frame Processors are enabled!
+Auto-linking React Native modules for target `HydraPulse`: NitroModules, RNCAsyncStorage, RNGestureHandler, RNReanimated, RNSVG, RNScreens, RNWorklets, ReactNativeHealthkit, VisionCamera, react-native-keyboard-controller, react-native-safe-area-context, react-native-worklets-core, and vision-camera-resize-plugin
+Framework build type is static library
+[ReactNativeDependencies] Setting up ReactNativeDependencies...
+[ReactNativeDependencies] Building from source: false
+[ReactNativeDependencies] Using release tarball
+[ReactNativeDependencies] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-dependencies-debug.tar.gz
+% Total    % Received % Xferd  Average Speed   Time
+Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+0 18.3M    0 13780    0     0   411k
+0  0:00:45 --:--:--  0:00:45  407k
+100 18.3M  100 18.3M
+0     0   243M      0 --:--:-- --:--:-- --:--:--  241M
+% Total    % Received % Xferd  Average Speed   Time
+Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100  9.9M  100  9.9M    0
+0   213M      0 --:--:-- --:--:-- --:--:--  217M
+[ReactNativeDependencies] Source: {:http=>"https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-dependencies-debug.tar.gz"}
+[ReactNativeCore] Setting up ReactNativeCore...
+[ReactNativeCore] Building from source: false
+[ReactNativeCore] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-core-debug.tar.gz
+% Total    % Received % Xferd  Average
+Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 78.5M  100 78.5M    0     0   345M      0 --:--:-- --:--:-- --:--:--  347M
+% Total    % Received % Xferd  Average Speed   Ti
+me    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 26.3M  100 26.3M    0     0   361M
+0 --:--:-- --:--:-- --:--:--  365M
+[ReactNativeCore] Source: {:http=>"https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-core-debug.tar.gz"}
+Configuring the target with the New Architecture
+[ReactNativeCore] Using React Native Core and React Native Dependencies prebuilt versions.
+[36m[1m[Codegen][0m Analyzing /Users/expo/workingdir/build/artifacts/hydrapulse/package.json[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in the app.[0m
+[36m[1m[Codegen][0m [33mThe "codegenConfig" field is not defined in package.json. Assuming there is nothing to generate at the app level.[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in react-native.config.js[0m
+[36m[1m[Codegen][0m Found react-native-nitro-modules[0m
+[36m[1m[Codegen][0m Found react-native-reanimated[0m
+[36m[1m[Codegen][0m Found react-native-worklets[0m
+[36m[1m[Codegen][0m Found react-native-worklets-core[0m
+[36m[1m[Codegen][0m Found vision-camera-resize-plugin[0m
+[36m[1m[Codegen][0m Found @react-native-async-storage/async-storage[0m
+[36m[1m[Codegen][0m Found react-native-gesture-handler[0m
+[36m[1m[Codegen][0m Found react-native-keyboard-controller[0m
+[36m[1m[Codegen][0m Found react-native-safe-area-context[0m
+[36m[1m[Codegen][0m Found react-native-screens[0m
+[36m[1m[Codegen][0m Found react-native-svg[0m
+[36m[1m[Codegen][0m Processing NitroModulesSpec[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Processing rnreanimated[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnreanimated[0m
+[36m[1m[Codegen][0m Processing rnworklets[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnworklets[0m
+[36m[1m[Codegen][0m Processing RNWorkletsSpec[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios for RNWorkletsSpec[0m
+[36m[1m[Codegen][0m Processing RNVisionCameraResizePluginSpec[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios for RNVisionCameraResizePluginSpec[0m
+[36m[1m[Codegen][0m Processing rnasyncstorage[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnasyncstorage[0m
+[36m[1m[Codegen][0m Processing rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m Processing reactnativekeyboardcontroller[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios for reactnativekeyboardcontroller[0m
+[36m[1m[Codegen][0m Processing safeareacontext[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for safeareacontext[0m
+[36m[1m[Codegen][0m Processing rnscreens[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, tvos, visionos for rnscreens[0m
+[36m[1m[Codegen][0m Processing rnsvg[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnsvg[0m
+[36m[1m[Codegen][0m Generating Native Code for NitroModulesSpec - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rnreanimated - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rnworklets - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for RNWorkletsSpec - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for RNVisionCameraResizePluginSpec - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rnasyncstorage - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rngesturehandler_codegen - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for reactnativekeyboardcontroller - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for safeareacontext - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rnscreens - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating Native Code for rnsvg - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generating RCTModulesProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTModuleProviders.h[0m
+[36m[1m[Codegen][0m Generating RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generating RCTAppDependencyProvider[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTAppDependencyProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/RCTAppDependencyProvider.mm[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/ReactAppDependencyProvider.podspec[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/expo/workingdir/build/artifacts/hydrapulse/ios/build/generated/ios/ReactCodegen.podspec[0m
+[36m[1m[Codegen][0m [33mDone.[0m
+No modules to process in combine-js-to-schema-cli. If this is unexpected, please check if you set up your NativeComponent correctly. See combine-js-to-schema.js for how codegen finds modules.
+Analyzing dependencies
+[NitroModules] 🔥 Your app is boosted by nitro modules!
+[NitroModules] Found react-native 0.81.5 (81) in /Users/expo/workingdir/build/node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native!
+Fetching podspec for `React-Core-prebuilt` from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/React-Core-prebuilt.podspec`
+[ReactNativeCore] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-core-debug.tar.gz
+Fetching podspec for `ReactNativeDependencies` from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`
+[ReactNativeDependencies] Using release tarball
+[ReactNativeDependencies] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-reactnative-dependencies-debug.tar.gz
+[NitroModules] 🔥 ReactNativeHealthkit is boosted by nitro!
+[VisionCamera] Thank you for using VisionCamera ❤️
+[VisionCamera] If you enjoy using VisionCamera, please consider sponsoring this project: https://github.com/sponsors/mrousavy
+[VisionCamera] $VCEnableLocation is not set, enabling CLLocation APIs by default...
+[VisionCamera] $VCEnableFrameProcessors is not set, enabling Frame Processors if Worklets is installed...
+[VisionCamera] react-native-worklets-core found at /Users/expo/workingdir/build/node_modules/.pnpm/react-native-worklets-core@1.6.3_react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-worklets-core, Frame Processors are enabled!
+Fetching podspec for `hermes-engine` from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@types+react@19.1.17_react@19.1.0/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`
+[Hermes] Using release tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.81.5/react-native-artifacts-0.81.5-hermes-ios-debug.tar.gz
+% Total    % Received % Xferd  Ave
+rage Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 29.0M  100 29.0M    0     0   299M      0 --:--:-- -
+-:--:-- --:--:--  302M
+% Total    % Received % Xferd  Average Speed
+Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 20.3M  100 20.3M    0     0   289M      0 --:--:-- --:--:-- --:--:
+--  290M
+Adding spec repo `trunk` with CDN `https://cdn.cocoapods.org/`
+[!] Unable to find a specification for `EXUpdatesInterface` depended upon by `EXUpdates`
+You have either:
+ * out-of-date source repos which you can update with `pod repo update` or with `pod install --repo-update`.
+ * mistyped the name or version.
+ * not added the source repo that hosts the Podspec to your Podfile.

@@ -21,7 +21,13 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { useHealth } from "@/context/HealthContext";
 import { useHydration } from "@/context/HydrationContext";
 import { useColors } from "@/hooks/useColors";
-import { WATCH_INTERVALS, WatchInterval } from "@/hooks/useWatchMonitor";
+import {
+  ALERT_THRESHOLD_LABELS,
+  ALERT_THRESHOLDS,
+  AlertThreshold,
+  WATCH_INTERVALS,
+  WatchInterval,
+} from "@/hooks/useWatchMonitor";
 
 function SettingsRow({
   icon,
@@ -184,7 +190,6 @@ function WatchIntervalPicker({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-
   const label = (h: WatchInterval) => (h === 0 ? "Off" : `Every ${h}h`);
 
   return (
@@ -205,8 +210,8 @@ function WatchIntervalPicker({
           Watch Monitoring Interval
         </Text>
         <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
-          HydraPulse will read Apple Watch heart rate and HRV at this interval
-          and alert you if hydration appears low.
+          HydraPulse reads your Apple Watch heart rate and HRV at this interval.
+          When the app opens after each interval, a scan is saved automatically.
         </Text>
         {WATCH_INTERVALS.map((h) => (
           <TouchableOpacity
@@ -214,8 +219,7 @@ function WatchIntervalPicker({
             style={[
               styles.intervalOption,
               {
-                backgroundColor:
-                  current === h ? colors.primary + "15" : colors.background,
+                backgroundColor: current === h ? colors.primary + "15" : colors.background,
                 borderColor: current === h ? colors.primary + "60" : colors.border,
               },
             ]}
@@ -243,6 +247,87 @@ function WatchIntervalPicker({
   );
 }
 
+function AlertThresholdPicker({
+  visible,
+  current,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  current: AlertThreshold;
+  onSelect: (v: AlertThreshold) => void;
+  onClose: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  const descriptions: Record<AlertThreshold, string> = {
+    0: "Never send hydration alerts.",
+    1: "Alert only when hydration is Critical (score 1).",
+    2: "Alert when hydration is Low or Critical (score 1-2).",
+    3: "Alert when hydration is Good, Low, or Critical (score 1-3).",
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose} />
+      <View
+        style={[
+          styles.modalSheet,
+          {
+            backgroundColor: colors.card,
+            paddingBottom: insets.bottom + 20,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+        <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+          Hydration Alert Threshold
+        </Text>
+        <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
+          Send a notification when your hydration score drops to or below this level
+          during a scheduled Watch check.
+        </Text>
+        {ALERT_THRESHOLDS.map((v) => (
+          <TouchableOpacity
+            key={v}
+            style={[
+              styles.intervalOption,
+              {
+                backgroundColor: current === v ? colors.primary + "15" : colors.background,
+                borderColor: current === v ? colors.primary + "60" : colors.border,
+              },
+            ]}
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              onSelect(v);
+              onClose();
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.intervalOptionText,
+                  { color: current === v ? colors.primary : colors.foreground },
+                ]}
+              >
+                {ALERT_THRESHOLD_LABELS[v]}
+              </Text>
+              <Text style={[styles.thresholdDesc, { color: colors.mutedForeground }]}>
+                {descriptions[v]}
+              </Text>
+            </View>
+            {current === v && (
+              <Ionicons name="checkmark" size={18} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </Modal>
+  );
+}
+
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -253,14 +338,17 @@ export default function SettingsScreen() {
     healthKitEnabled,
     notificationsEnabled,
     watchInterval,
+    alertThreshold,
     connectHealthKit,
     refreshHealthData,
     setWatchInterval,
+    setAlertThreshold,
     requestNotificationPermission,
   } = useHealth();
 
   const [showReminders, setShowReminders] = useState(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState(false);
+  const [showThresholdPicker, setShowThresholdPicker] = useState(false);
 
   const handleClearHistory = () => {
     if (Platform.OS === "web") {
@@ -302,9 +390,7 @@ export default function SettingsScreen() {
         "HydraPulse can now read your heart rate and HRV from Apple Health."
       );
     } else {
-      const detail = result.error
-        ? `\n\nDiagnostic: ${result.error}`
-        : "";
+      const detail = result.error ? `\n\nDiagnostic: ${result.error}` : "";
       Alert.alert(
         "Health Access Unavailable",
         "HydraPulse could not connect to Apple Health.\n\n" +
@@ -314,10 +400,7 @@ export default function SettingsScreen() {
         detail,
         [
           { text: "Cancel", style: "cancel" },
-          {
-            text: "Open Settings",
-            onPress: () => Linking.openSettings(),
-          },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
         ]
       );
     }
@@ -329,13 +412,28 @@ export default function SettingsScreen() {
       if (!granted) {
         Alert.alert(
           "Notifications Required",
-          "Enable notifications in iPhone Settings so HydraPulse can alert you about low hydration.",
+          "Enable notifications in iPhone Settings so HydraPulse can alert you when it's time to check hydration.",
           [{ text: "OK" }]
         );
         return;
       }
     }
     await setWatchInterval(h);
+  };
+
+  const handleAlertThreshold = async (v: AlertThreshold) => {
+    if (v > 0) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          "Notifications Required",
+          "Enable notifications in iPhone Settings so HydraPulse can send low-hydration alerts.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+    }
+    await setAlertThreshold(v);
   };
 
   const intervalLabel = (h: WatchInterval) => (h === 0 ? "Off" : `Every ${h}h`);
@@ -404,7 +502,7 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="watch-outline"
-            label="Watch Monitoring"
+            label="Watch Auto-Scan"
             value={
               Platform.OS !== "ios"
                 ? "iOS only"
@@ -419,7 +517,7 @@ export default function SettingsScreen() {
                 ? () =>
                     Alert.alert(
                       "Connect Apple Health First",
-                      "Tap Apple Health above to grant permission, then set your monitoring interval.",
+                      "Tap Apple Health above to grant permission, then set your auto-scan interval.",
                       [{ text: "OK" }]
                     )
                 : undefined
@@ -427,6 +525,29 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="notifications-outline"
+            label="Hydration Alert Threshold"
+            value={
+              Platform.OS !== "ios"
+                ? "iOS only"
+                : !healthKitEnabled
+                ? "Requires Health"
+                : ALERT_THRESHOLD_LABELS[alertThreshold]
+            }
+            onPress={
+              Platform.OS === "ios" && healthKitEnabled
+                ? () => setShowThresholdPicker(true)
+                : Platform.OS === "ios" && !healthKitEnabled
+                ? () =>
+                    Alert.alert(
+                      "Connect Apple Health First",
+                      "Tap Apple Health above to grant permission before setting alert thresholds.",
+                      [{ text: "OK" }]
+                    )
+                : undefined
+            }
+          />
+          <SettingsRow
+            icon="alarm-outline"
             label="Smart Reminders"
             value={notificationsEnabled ? "On" : "Off"}
             onPress={() => {
@@ -453,11 +574,7 @@ export default function SettingsScreen() {
         <SectionHeader title="About" />
         <View style={styles.group}>
           <SettingsRow icon="information-circle-outline" label="Version" value="1.0.0" />
-          <SettingsRow
-            icon="code-slash-outline"
-            label="Mode"
-            value="Camera PPG"
-          />
+          <SettingsRow icon="code-slash-outline" label="Mode" value="Camera + Watch PPG" />
         </View>
 
         <View style={{ marginTop: 8 }}>
@@ -470,6 +587,13 @@ export default function SettingsScreen() {
         current={watchInterval}
         onSelect={handleWatchInterval}
         onClose={() => setShowIntervalPicker(false)}
+      />
+
+      <AlertThresholdPicker
+        visible={showThresholdPicker}
+        current={alertThreshold}
+        onSelect={handleAlertThreshold}
+        onClose={() => setShowThresholdPicker(false)}
       />
     </View>
   );
@@ -535,10 +659,7 @@ const styles = StyleSheet.create({
   },
   slotLabel: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   slotTime: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   modalSheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -563,6 +684,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1,
+    gap: 12,
   },
   intervalOptionText: { fontSize: 16, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  thresholdDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 16 },
 });

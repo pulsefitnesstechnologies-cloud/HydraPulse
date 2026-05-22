@@ -10,7 +10,7 @@ import React, {
 export type HydrationScore = 1 | 2 | 3 | 4;
 export type ScoreLabel = "Critical" | "Low" | "Good" | "Excellent";
 // "simulation" retained for backwards compatibility with stored scan records
-export type ScanMethod = "phone" | "simulation";
+export type ScanMethod = "phone" | "simulation" | "watch";
 
 export interface ScanRecord {
   id: string;

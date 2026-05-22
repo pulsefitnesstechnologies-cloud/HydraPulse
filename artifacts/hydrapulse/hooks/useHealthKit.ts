@@ -9,13 +9,6 @@ export interface HealthSnapshot {
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
-// Lazy-require keeps the JS bundle from crashing on Android where the native
-// module is absent. All call sites are guarded by Platform.OS === "ios".
-//
-// @kingstinct/react-native-healthkit v12 uses named exports — all functions
-// (requestAuthorization, queryQuantitySamples, …) are top-level exports, not
-// methods on a default object. Identifiers are string literals like
-// 'HKQuantityTypeIdentifierHeartRate' rather than enum members.
 type HKModule = typeof import("@kingstinct/react-native-healthkit");
 let _hkCache: HKModule | null | undefined;
 let _hkLoadError: string | null = null;
@@ -42,7 +35,6 @@ export function useHealthKit() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Shows the system HealthKit permission sheet.
   const requestAuthorization = useCallback((): Promise<{ ok: boolean; error?: string }> => {
     if (Platform.OS !== "ios") return Promise.resolve({ ok: false, error: "iOS only" });
 
@@ -55,7 +47,6 @@ export function useHealthKit() {
       });
     }
 
-    // v12: requestAuthorization({ toShare?, toRead? }) — single object arg.
     return hk.requestAuthorization({
       toShare: ["HKQuantityTypeIdentifierDietaryWater"],
       toRead: [
@@ -73,17 +64,16 @@ export function useHealthKit() {
       });
   }, []);
 
-  // Read the most recent HR and HRV samples from the last 24 hours.
-  const fetchLatest = useCallback(async () => {
-    if (!isAuthorized || Platform.OS !== "ios") return;
+  // Returns the fresh snapshot so callers can act on it immediately
+  const fetchLatest = useCallback(async (): Promise<HealthSnapshot | null> => {
+    if (!isAuthorized || Platform.OS !== "ios") return null;
     const hk = getHK();
-    if (!hk) return;
+    if (!hk) return null;
     setIsLoading(true);
 
     const startDate = new Date(Date.now() - WINDOW_MS);
     const endDate = new Date();
 
-    // v12: queryQuantitySamples(identifier, { filter: { date: { startDate, endDate } }, limit, ascending? })
     const [hrSamples, hrvSamples] = await Promise.all([
       hk.queryQuantitySamples("HKQuantityTypeIdentifierHeartRate", {
         filter: { date: { startDate, endDate } },
@@ -97,14 +87,14 @@ export function useHealthKit() {
       }).catch(() => [] as readonly import("@kingstinct/react-native-healthkit").QuantitySample[]),
     ]);
 
-    setSnapshot({
-      // Heart rate: HealthKit stores in count/min (BPM).
+    const snap: HealthSnapshot = {
       heartRate: hrSamples.length ? Math.round(hrSamples[0].quantity) : null,
-      // HRV SDNN: HealthKit stores in ms.
       hrv: hrvSamples.length ? Math.round(hrvSamples[0].quantity) : null,
       lastUpdated: new Date().toISOString(),
-    });
+    };
+    setSnapshot(snap);
     setIsLoading(false);
+    return snap;
   }, [isAuthorized]);
 
   useEffect(() => {

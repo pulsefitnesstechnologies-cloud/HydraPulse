@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Platform,
   Pressable,
@@ -46,8 +47,16 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { latestScan, history } = useHydration();
-  const { healthKitEnabled, healthSnapshot, healthLoading, connectHealthKit } = useHealth();
+  const {
+    healthKitEnabled,
+    healthSnapshot,
+    healthLoading,
+    connectHealthKit,
+    runWatchScan,
+  } = useHealth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const [watchScanning, setWatchScanning] = useState(false);
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -62,6 +71,26 @@ export default function HomeScreen() {
 
   const handleConnectHealth = async () => {
     await connectHealthKit();
+  };
+
+  const handleWatchScan = async () => {
+    if (watchScanning) return;
+    setWatchScanning(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    try {
+      const record = await runWatchScan();
+      if (record) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } else {
+        Alert.alert(
+          "No Watch Data",
+          "No heart rate or HRV data was found in the past 24 hours. Make sure your Apple Watch is worn and syncing.",
+          [{ text: "OK" }]
+        );
+      }
+    } finally {
+      setWatchScanning(false);
+    }
   };
 
   const hasHealthData =
@@ -96,6 +125,7 @@ export default function HomeScreen() {
         </View>
 
         <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
+          {/* Main hydration score card */}
           <View
             style={[
               styles.scoreCard,
@@ -136,6 +166,16 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     )}
+                    <View style={styles.metricMini}>
+                      <Ionicons
+                        name={latestScan.method === "watch" ? "watch-outline" : "phone-portrait-outline"}
+                        size={14}
+                        color={colors.mutedForeground}
+                      />
+                      <Text style={[styles.methodLabel, { color: colors.mutedForeground }]}>
+                        {latestScan.method === "watch" ? "Apple Watch" : "Camera PPG"}
+                      </Text>
+                    </View>
                   </>
                 ) : (
                   <View style={styles.noScanHint}>
@@ -148,6 +188,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
+            {/* Camera scan button */}
             <Pressable
               style={({ pressed }) => [
                 styles.scanBtn,
@@ -157,12 +198,12 @@ export default function HomeScreen() {
             >
               <Ionicons name="scan-outline" size={20} color={colors.primaryForeground} />
               <Text style={[styles.scanBtnText, { color: colors.primaryForeground }]}>
-                {latestScan ? "Scan Again" : "Start Scan"}
+                {latestScan ? "Scan Again" : "Start Camera Scan"}
               </Text>
             </Pressable>
           </View>
 
-          {/* Apple Health / Watch Card */}
+          {/* Apple Health / Watch card */}
           {Platform.OS === "ios" && (
             <View
               style={[
@@ -172,9 +213,9 @@ export default function HomeScreen() {
             >
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardHeaderLeft}>
-                  <Ionicons name="heart-outline" size={16} color={colors.destructive} />
+                  <Ionicons name="watch-outline" size={16} color={colors.primary} />
                   <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-                    Apple Health
+                    Apple Watch
                   </Text>
                 </View>
                 {healthKitEnabled && (
@@ -201,47 +242,74 @@ export default function HomeScreen() {
                     Connect Apple Health
                   </Text>
                 </Pressable>
-              ) : healthLoading ? (
-                <View style={styles.healthLoadingRow}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={[styles.healthLoadingText, { color: colors.mutedForeground }]}>
-                    Reading from Apple Watch...
-                  </Text>
-                </View>
-              ) : hasHealthData ? (
-                <View style={styles.healthMetricsRow}>
-                  {healthSnapshot.heartRate !== null && (
-                    <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
-                      <Ionicons name="heart" size={18} color={colors.destructive} />
-                      <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
-                        {healthSnapshot.heartRate}
-                      </Text>
-                      <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
-                        BPM
+              ) : (
+                <>
+                  {healthLoading ? (
+                    <View style={styles.healthLoadingRow}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={[styles.healthLoadingText, { color: colors.mutedForeground }]}>
+                        Reading from Apple Watch...
                       </Text>
                     </View>
-                  )}
-                  {healthSnapshot.hrv !== null && (
-                    <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
-                      <Ionicons name="pulse" size={18} color={colors.accent} />
-                      <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
-                        {healthSnapshot.hrv}
-                      </Text>
-                      <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
-                        HRV ms
-                      </Text>
+                  ) : hasHealthData ? (
+                    <View style={styles.healthMetricsRow}>
+                      {healthSnapshot.heartRate !== null && (
+                        <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
+                          <Ionicons name="heart" size={18} color={colors.destructive} />
+                          <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
+                            {healthSnapshot.heartRate}
+                          </Text>
+                          <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
+                            BPM
+                          </Text>
+                        </View>
+                      )}
+                      {healthSnapshot.hrv !== null && (
+                        <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
+                          <Ionicons name="pulse" size={18} color={colors.accent} />
+                          <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
+                            {healthSnapshot.hrv}
+                          </Text>
+                          <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
+                            HRV ms
+                          </Text>
+                        </View>
+                      )}
+                      {healthSnapshot.lastUpdated && (
+                        <Text style={[styles.healthUpdated, { color: colors.mutedForeground }]}>
+                          {timeAgo(healthSnapshot.lastUpdated)}
+                        </Text>
+                      )}
                     </View>
-                  )}
-                  {healthSnapshot.lastUpdated && (
-                    <Text style={[styles.healthUpdated, { color: colors.mutedForeground }]}>
-                      {timeAgo(healthSnapshot.lastUpdated)}
+                  ) : (
+                    <Text style={[styles.healthEmpty, { color: colors.mutedForeground }]}>
+                      No heart rate data in the last 24 hours. Wear your Apple Watch to collect readings.
                     </Text>
                   )}
-                </View>
-              ) : (
-                <Text style={[styles.healthEmpty, { color: colors.mutedForeground }]}>
-                  No heart rate data in the last 24 hours. Wear your Apple Watch to collect readings.
-                </Text>
+
+                  {/* Watch scan button */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.watchScanBtn,
+                      {
+                        backgroundColor: colors.primary + "15",
+                        borderColor: colors.primary + "40",
+                        opacity: pressed || watchScanning ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={handleWatchScan}
+                    disabled={watchScanning}
+                  >
+                    {watchScanning ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Ionicons name="watch-outline" size={16} color={colors.primary} />
+                    )}
+                    <Text style={[styles.watchScanBtnText, { color: colors.primary }]}>
+                      {watchScanning ? "Reading Watch Data..." : "Scan with Watch"}
+                    </Text>
+                  </Pressable>
+                </>
               )}
             </View>
           )}
@@ -267,6 +335,7 @@ export default function HomeScreen() {
               </View>
               {history.slice(0, 3).map((scan) => {
                 const c = getScoreColor(scan.score);
+                const isWatch = scan.method === "watch";
                 return (
                   <View
                     key={scan.id}
@@ -280,13 +349,16 @@ export default function HomeScreen() {
                         {getScoreLabel(scan.score)}
                       </Text>
                       <Text style={[styles.historyTime, { color: colors.mutedForeground }]}>
-                        {timeAgo(scan.date)} · {scan.method}
+                        {timeAgo(scan.date)} ·{" "}
+                        {isWatch ? "Apple Watch" : "Camera PPG"}
                       </Text>
                     </View>
                     <View style={[styles.confidenceBadge, { backgroundColor: colors.muted }]}>
-                      <Text style={[styles.confidenceText, { color: colors.mutedForeground }]}>
-                        {scan.confidence}%
-                      </Text>
+                      <Ionicons
+                        name={isWatch ? "watch-outline" : "phone-portrait-outline"}
+                        size={12}
+                        color={colors.mutedForeground}
+                      />
                     </View>
                   </View>
                 );
@@ -299,7 +371,7 @@ export default function HomeScreen() {
               <Ionicons name="water-outline" size={48} color={colors.border} />
               <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
               <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-                Run your first scan to see your hydration score and trends here.
+                Run a camera scan or tap "Scan with Watch" to see your hydration score and trends here.
               </Text>
             </View>
           )}
@@ -342,6 +414,7 @@ const styles = StyleSheet.create({
   lastScanTime: { fontSize: 13, fontFamily: "Inter_400Regular" },
   metricMini: { flexDirection: "row", alignItems: "center", gap: 6 },
   metricMiniText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  methodLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
   noScanHint: { alignItems: "center", gap: 8 },
   noScanText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 18 },
   scanBtn: {
@@ -382,6 +455,17 @@ const styles = StyleSheet.create({
   healthMetricUnit: { fontSize: 12, fontFamily: "Inter_400Regular" },
   healthUpdated: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, width: "100%" },
   healthEmpty: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 19 },
+  watchScanBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 2,
+  },
+  watchScanBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   seeAll: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   historyRow: {
     flexDirection: "row",
@@ -400,13 +484,8 @@ const styles = StyleSheet.create({
   scoreChipText: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   historyInfo: { flex: 1, gap: 3 },
   historyLabel: { fontSize: 15, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
-  historyTime: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    textTransform: "capitalize",
-  },
-  confidenceBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  confidenceText: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  historyTime: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  confidenceBadge: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8 },
   emptyState: { alignItems: "center", gap: 12, paddingVertical: 40 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   emptySubtitle: {

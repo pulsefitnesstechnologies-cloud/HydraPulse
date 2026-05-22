@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 
 const INTERVAL_KEY = "@hydrapulse:watchInterval";
 const NOTIF_ID_KEY = "@hydrapulse:watchNotifId";
-const WATCH_CHANNEL = "hydrapulse-watch-monitor";
+const ALERT_KEY = "@hydrapulse:alertThreshold";
+const LAST_AUTO_SCAN_KEY = "@hydrapulse:lastAutoScan";
 
 export function estimateHydrationFromMetrics(
   hr: number | null,
@@ -23,7 +24,6 @@ export function estimateHydrationFromMetrics(
     if (hr <= 88) return 2;
     return 1;
   }
-  // HRV only
   if ((hrv as number) >= 60) return 3;
   if ((hrv as number) >= 30) return 2;
   return 1;
@@ -32,10 +32,22 @@ export function estimateHydrationFromMetrics(
 export const WATCH_INTERVALS = [0, 1, 2, 3, 4, 6, 8, 12, 24] as const;
 export type WatchInterval = (typeof WATCH_INTERVALS)[number];
 
-// Cancel any previously scheduled watch-monitor notification and schedule a
-// fresh repeating one at the given interval.  Passing 0 just cancels.
+export const ALERT_THRESHOLDS = [0, 1, 2, 3] as const;
+export type AlertThreshold = (typeof ALERT_THRESHOLDS)[number];
+export const ALERT_THRESHOLD_LABELS: Record<AlertThreshold, string> = {
+  0: "Off",
+  1: "Critical only",
+  2: "Low or below",
+  3: "Good or below",
+};
+
+const SCORE_LABELS: Record<number, string> = {
+  1: "critical",
+  2: "low",
+  3: "below your target",
+};
+
 async function reschedule(hours: WatchInterval): Promise<void> {
-  // Cancel old notification
   const oldId = await AsyncStorage.getItem(NOTIF_ID_KEY).catch(() => null);
   if (oldId) {
     await Notifications.cancelScheduledNotificationAsync(oldId).catch(() => {});
@@ -61,44 +73,79 @@ async function reschedule(hours: WatchInterval): Promise<void> {
   await AsyncStorage.setItem(NOTIF_ID_KEY, id).catch(() => {});
 }
 
+async function sendThresholdAlert(scoreLabel: string): Promise<void> {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Low Hydration Alert",
+        body: `Your hydration appears ${scoreLabel}. Consider drinking some water soon.`,
+        sound: false,
+        data: { type: "hydration-alert" },
+      },
+      trigger: null,
+    });
+  } catch {}
+}
+
 export function useWatchMonitor(opts?: {
-  onLowHydration?: (score: 1 | 2) => void;
-  getLatestHR: () => number | null;
-  getLatestHRV: () => number | null;
+  // Returns the computed hydration score (1-4) or null if no data
+  onAutoScan?: () => Promise<number | null>;
 }) {
   const [watchInterval, setWatchIntervalState] = useState<WatchInterval>(0);
+  const [alertThreshold, setAlertThresholdState] = useState<AlertThreshold>(0);
 
-  // Load saved interval on mount
+  // Keep the callback ref fresh without recreating the effect
+  const onAutoScanRef = useRef(opts?.onAutoScan);
+  useEffect(() => {
+    onAutoScanRef.current = opts?.onAutoScan;
+  }, [opts?.onAutoScan]);
+
+  // Load persisted values on mount
   useEffect(() => {
     if (Platform.OS === "web") return;
-    AsyncStorage.getItem(INTERVAL_KEY)
-      .then((raw) => {
-        if (raw) {
-          const v = parseInt(raw, 10) as WatchInterval;
-          if ((WATCH_INTERVALS as readonly number[]).includes(v))
-            setWatchIntervalState(v);
+    Promise.all([
+      AsyncStorage.getItem(INTERVAL_KEY),
+      AsyncStorage.getItem(ALERT_KEY),
+    ])
+      .then(([intervalRaw, alertRaw]) => {
+        if (intervalRaw) {
+          const v = parseInt(intervalRaw, 10) as WatchInterval;
+          if ((WATCH_INTERVALS as readonly number[]).includes(v)) setWatchIntervalState(v);
+        }
+        if (alertRaw) {
+          const v = parseInt(alertRaw, 10) as AlertThreshold;
+          if ((ALERT_THRESHOLDS as readonly number[]).includes(v)) setAlertThresholdState(v);
         }
       })
       .catch(() => {});
   }, []);
 
-  // When the app comes to the foreground, read the latest HealthKit snapshot
-  // and notify if hydration appears low.
+  // Auto-scan when app returns to foreground and interval has elapsed
   useEffect(() => {
-    if (Platform.OS === "web" || !opts) return;
+    if (Platform.OS === "web") return;
 
-    const sub = AppState.addEventListener("change", (state) => {
+    const sub = AppState.addEventListener("change", async (state) => {
       if (state !== "active") return;
-      const hr = opts.getLatestHR();
-      const hrv = opts.getLatestHRV();
-      const score = estimateHydrationFromMetrics(hr, hrv);
-      if (score !== null && score <= 2) {
-        opts.onLowHydration?.(score as 1 | 2);
+      if (watchInterval === 0) return;
+
+      const lastRaw = await AsyncStorage.getItem(LAST_AUTO_SCAN_KEY).catch(() => null);
+      const last = lastRaw ? parseInt(lastRaw, 10) : 0;
+      const intervalMs = watchInterval * 3600 * 1000;
+
+      if (Date.now() - last < intervalMs) return;
+
+      const score = await onAutoScanRef.current?.();
+      if (score == null) return;
+
+      await AsyncStorage.setItem(LAST_AUTO_SCAN_KEY, String(Date.now())).catch(() => {});
+
+      if (alertThreshold > 0 && score <= alertThreshold) {
+        await sendThresholdAlert(SCORE_LABELS[score] ?? "low");
       }
     });
 
     return () => sub.remove();
-  }, [opts]);
+  }, [watchInterval, alertThreshold]);
 
   const setWatchInterval = useCallback(async (hours: WatchInterval) => {
     if (Platform.OS === "web") return;
@@ -107,5 +154,11 @@ export function useWatchMonitor(opts?: {
     await reschedule(hours);
   }, []);
 
-  return { watchInterval, setWatchInterval };
+  const setAlertThreshold = useCallback(async (v: AlertThreshold) => {
+    if (Platform.OS === "web") return;
+    setAlertThresholdState(v);
+    await AsyncStorage.setItem(ALERT_KEY, String(v)).catch(() => {});
+  }, []);
+
+  return { watchInterval, setWatchInterval, alertThreshold, setAlertThreshold };
 }

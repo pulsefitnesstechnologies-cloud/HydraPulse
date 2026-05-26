@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 
 import { ScanRecord, getScoreLabel, useHydration } from "@/context/HydrationContext";
 import { HealthSnapshot, useHealthKit } from "@/hooks/useHealthKit";
@@ -82,17 +82,41 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const notif = useNotifications();
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 
+  // Apple Watch records HR roughly every 5-15 min when worn. If the most recent
+  // live sample is older than 15 min the device almost certainly isn't worn.
+  const NOT_WORN_THRESHOLD_MS = 15 * 60 * 1000;
+
   // Auto-scan callback passed to useWatchMonitor for time-based alarm triggers
   const onAutoScan = useCallback(async (): Promise<number | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
     if (!snap || (snap.heartRate === null && snap.hrv === null)) return null;
+
+    // Require a fresh live sample — same guard as manual Watch scan
+    if (
+      snap.mostRecentSampleMs === null ||
+      Date.now() - snap.mostRecentSampleMs > NOT_WORN_THRESHOLD_MS
+    ) {
+      return null; // Watch not worn — skip saving, no score
+    }
+
     const record = buildWatchRecord(snap);
     if (!record) return null;
-    addScanResult(record);
-    // Send immediate result banner so user knows what the auto-scan found
+    await addScanResult(record);
+
+    // Show an in-app alert so the score is immediately visible
+    const hrLine = record.heartRate ? `\nHR: ${record.heartRate} BPM` : "";
+    const hrvLine = record.hrv ? `  ·  HRV: ${record.hrv} ms` : "";
+    Alert.alert(
+      "Scheduled Scan Complete",
+      `Hydration Score: ${record.score}/4 — ${record.label}${hrLine}${hrvLine}`,
+      [{ text: "OK" }]
+    );
+
+    // Also send a result notification for when the phone is locked / Watch only
     await notif.sendScanResultNotification(record.score, record.heartRate ?? null, record.label);
     return record.score;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hk.fetchLatest, addScanResult, notif.sendScanResultNotification]);
 
   const monitor = useWatchMonitor({
@@ -122,10 +146,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     }
     return result;
   }, [hk]);
-
-  // Apple Watch records HR roughly every 5-15 min when worn. If the most recent
-  // sample is older than 30 min the device almost certainly isn't worn.
-  const NOT_WORN_THRESHOLD_MS = 30 * 60 * 1000;
 
   const runWatchScan = useCallback(async (): Promise<ScanRecord | "not-worn" | null> => {
     if (Platform.OS !== "ios") return null;

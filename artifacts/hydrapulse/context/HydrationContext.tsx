@@ -86,6 +86,11 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremiumState] = useState(TESTING_MODE);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
 
+  // historyRef always mirrors the latest history state so callbacks like
+  // addScanResult never capture a stale snapshot via closure.
+  const historyRef = React.useRef<ScanRecord[]>([]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -94,24 +99,28 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.getItem(STORAGE_KEYS.PREMIUM),
           AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
         ]);
-        if (historyRaw) setHistory(JSON.parse(historyRaw));
+        if (historyRaw) {
+          const parsed = JSON.parse(historyRaw) as ScanRecord[];
+          setHistory(parsed);
+          historyRef.current = parsed;
+        }
         if (premiumRaw === "true") setIsPremiumState(true);
         if (onboardedRaw === "true") setHasOnboardedState(true);
       } catch {}
     })();
   }, []);
 
-  const addScanResult = useCallback(
-    async (record: ScanRecord) => {
-      const updated = [record, ...history];
-      setHistory(updated);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.HISTORY,
-        JSON.stringify(updated)
-      ).catch(() => {});
-    },
-    [history]
-  );
+  // Stable callback — never re-created. Always reads the latest history from
+  // historyRef rather than a potentially stale closure variable.
+  const addScanResult = useCallback(async (record: ScanRecord) => {
+    const updated = [record, ...historyRef.current];
+    historyRef.current = updated;
+    setHistory(updated);
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.HISTORY,
+      JSON.stringify(updated)
+    ).catch(() => {});
+  }, []);
 
   const removeScan = useCallback(
     async (id: string) => {

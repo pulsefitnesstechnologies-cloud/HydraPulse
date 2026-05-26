@@ -54,7 +54,7 @@ interface HealthContextType {
   alertThreshold: AlertThreshold;
   connectHealthKit: () => Promise<{ ok: boolean; error?: string }>;
   refreshHealthData: () => void;
-  runWatchScan: () => Promise<ScanRecord | null>;
+  runWatchScan: () => Promise<ScanRecord | "not-worn" | null>;
   requestNotificationPermission: () => Promise<boolean>;
   updateScanAlarm: (index: 0 | 1 | 2, partial: Partial<ScanAlarm>) => Promise<void>;
   updateSmartReminder: (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => Promise<void>;
@@ -113,11 +113,26 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, [hk]);
 
-  // Manual Watch scan: fetch fresh data, build record, save, return it
-  const runWatchScan = useCallback(async (): Promise<ScanRecord | null> => {
+  // Apple Watch records HR roughly every 15 min when worn. If the most recent
+  // sample is older than this threshold the device almost certainly isn't worn.
+  const NOT_WORN_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+
+  // Manual Watch scan: fetch fresh data, build record, save, return it.
+  // Returns "not-worn" when HealthKit data is stale (Watch not currently worn).
+  const runWatchScan = useCallback(async (): Promise<ScanRecord | "not-worn" | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
     if (!snap || (snap.heartRate === null && snap.hrv === null)) return null;
+
+    // Reject stale data — if the newest HR sample is older than 30 min the
+    // Watch was not worn at the time of the scan request.
+    if (
+      snap.mostRecentSampleMs === null ||
+      Date.now() - snap.mostRecentSampleMs > NOT_WORN_THRESHOLD_MS
+    ) {
+      return "not-worn";
+    }
+
     const record = buildWatchRecord(snap);
     if (!record) return null;
     addScanResult(record);

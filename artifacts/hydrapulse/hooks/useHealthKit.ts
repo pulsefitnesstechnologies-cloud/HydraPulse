@@ -6,6 +6,8 @@ export interface HealthSnapshot {
   hrv: number | null;
   sampleCount: number; // how many HR samples were averaged
   lastUpdated: string | null;
+  /** Unix ms of the most recent HR sample recorded by the Watch, or null if no sample found. */
+  mostRecentSampleMs: number | null;
 }
 
 const HR_WINDOW_MS = 60 * 60 * 1000; // 1 hour — keeps data recent & relevant
@@ -42,6 +44,7 @@ export function useHealthKit() {
     hrv: null,
     sampleCount: 0,
     lastUpdated: null,
+    mostRecentSampleMs: null,
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -100,11 +103,17 @@ export function useHealthKit() {
       }).catch(() => [] as readonly import("@kingstinct/react-native-healthkit").QuantitySample[]),
     ]);
 
+    // hrSamples is sorted newest-first (ascending: false), so [0] is the most recent.
+    const mostRecentSampleMs = hrSamples.length > 0
+      ? new Date(hrSamples[0].endDate).getTime()
+      : null;
+
     const snap: HealthSnapshot = {
       heartRate: average(hrSamples.map((s) => s.quantity)),
       hrv: average(hrvSamples.map((s) => s.quantity)),
       sampleCount: hrSamples.length,
       lastUpdated: new Date().toISOString(),
+      mostRecentSampleMs,
     };
     setSnapshot(snap);
     setIsLoading(false);

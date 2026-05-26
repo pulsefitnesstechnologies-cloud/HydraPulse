@@ -175,13 +175,20 @@ export default function HomeScreen() {
     setWatchScanning(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     try {
-      const record = await runWatchScan();
-      if (record) {
+      const result = await runWatchScan();
+      if (result === "not-worn") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        Alert.alert(
+          "Device Not Worn",
+          "Scan cannot be completed. No recent heart rate data was found — please wear your Apple Watch and try again, or use Torch Scan instead.",
+          [{ text: "OK" }]
+        );
+      } else if (result) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } else {
         Alert.alert(
           "No Watch Data",
-          "No heart rate or HRV data was found in the past 24 hours. Make sure your Apple Watch is worn and syncing.",
+          "No heart rate or HRV data was found. Make sure your Apple Watch is paired and has permission to share health data.",
           [{ text: "OK" }]
         );
       }

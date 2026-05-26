@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HealthProvider } from "@/context/HealthContext";
 import { HydrationProvider, useHydration } from "@/context/HydrationContext";
+import { WaterIntakeProvider } from "@/context/WaterIntakeContext";
 import { WorkoutProvider } from "@/context/WorkoutContext";
 
 SplashScreen.preventAutoHideAsync();
@@ -84,6 +85,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <HydrationProvider>
+            <WaterIntakeProvider>
             <HealthProvider>
               <WorkoutProvider>
                 <GestureHandlerRootView>
@@ -93,6 +95,7 @@ export default function RootLayout() {
                 </GestureHandlerRootView>
               </WorkoutProvider>
             </HealthProvider>
+            </WaterIntakeProvider>
           </HydrationProvider>
         </QueryClientProvider>
       </ErrorBoundary>

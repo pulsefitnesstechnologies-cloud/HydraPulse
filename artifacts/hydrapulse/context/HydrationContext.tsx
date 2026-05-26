@@ -31,6 +31,7 @@ interface HydrationContextType {
   isPremium: boolean;
   hasOnboarded: boolean;
   addScanResult: (record: ScanRecord) => void;
+  removeScan: (id: string) => void;
   clearHistory: () => void;
   setIsPremium: (val: boolean) => void;
   setHasOnboarded: (val: boolean) => void;
@@ -112,6 +113,18 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
     [history]
   );
 
+  const removeScan = useCallback(
+    async (id: string) => {
+      const updated = history.filter((r) => r.id !== id);
+      setHistory(updated);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.HISTORY,
+        JSON.stringify(updated)
+      ).catch(() => {});
+    },
+    [history]
+  );
+
   const clearHistory = useCallback(async () => {
     setHistory([]);
     await AsyncStorage.removeItem(STORAGE_KEYS.HISTORY).catch(() => {});
@@ -149,6 +162,7 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
         isPremium,
         hasOnboarded,
         addScanResult,
+        removeScan,
         clearHistory,
         setIsPremium,
         setHasOnboarded,

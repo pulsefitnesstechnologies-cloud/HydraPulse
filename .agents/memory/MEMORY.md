@@ -1,0 +1,2 @@
+- [expo-updates plugin](expo-updates-plugin.md) — removing "expo-updates" from plugins[] in app.config.ts fixes dev-server crash; only needed for EAS production builds.
+- [notification redesign](notification-redesign.md) — ScanAlarm/SmartReminder types live in useNotifications.ts; alarm-based watch auto-scan in useWatchMonitor.ts; HealthContext bridges them.

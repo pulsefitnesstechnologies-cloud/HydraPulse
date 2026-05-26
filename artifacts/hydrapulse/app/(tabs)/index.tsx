@@ -6,16 +6,19 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScoreGauge } from "@/components/ScoreGauge";
+import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import { useHealth } from "@/context/HealthContext";
 import {
@@ -23,6 +26,7 @@ import {
   getScoreLabel,
   useHydration,
 } from "@/context/HydrationContext";
+import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
 
 function greeting() {
@@ -42,6 +46,97 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ─── Water Log Modal ──────────────────────────────────────────────────────────
+
+function nowTimeValue(): TimeValue {
+  const now = new Date();
+  let h = now.getHours();
+  const m = now.getMinutes();
+  const ampm: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return { hour: h, minute: m, ampm };
+}
+
+function WaterLogModal({
+  visible,
+  onClose,
+  onLog,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onLog: (oz: number, time: string) => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [amountText, setAmountText] = useState("");
+  const [timeVal, setTimeVal] = useState<TimeValue>(nowTimeValue());
+
+  const handleLog = () => {
+    const oz = parseFloat(amountText);
+    if (isNaN(oz) || oz <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount in fluid ounces.");
+      return;
+    }
+    const now = new Date();
+    let h = timeVal.hour;
+    if (timeVal.ampm === "AM" && h === 12) h = 0;
+    else if (timeVal.ampm === "PM" && h !== 12) h += 12;
+    now.setHours(h, timeVal.minute, 0, 0);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    onLog(oz, now.toISOString());
+    setAmountText("");
+    setTimeVal(nowTimeValue());
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose} />
+      <View
+        style={[
+          styles.modalSheet,
+          { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom + 20 },
+        ]}
+      >
+        <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+        <Text style={[styles.modalTitle, { color: colors.foreground }]}>Log Water Intake</Text>
+
+        <View style={[styles.amountRow, { borderColor: colors.border, backgroundColor: colors.background }]}>
+          <TextInput
+            style={[styles.amountInput, { color: colors.foreground }]}
+            placeholder="0"
+            placeholderTextColor={colors.mutedForeground}
+            keyboardType="decimal-pad"
+            value={amountText}
+            onChangeText={setAmountText}
+            returnKeyType="done"
+            autoFocus
+          />
+          <Text style={[styles.amountUnit, { color: colors.mutedForeground }]}>fl oz</Text>
+        </View>
+
+        <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>Time Finished Drinking</Text>
+        <View style={[styles.timePickerWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <TimePicker value={timeVal} onChange={setTimeVal} />
+        </View>
+
+        <View style={styles.modalActions}>
+          <Pressable style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+            <Text style={[styles.cancelBtnText, { color: colors.foreground }]}>Cancel</Text>
+          </Pressable>
+          <Pressable style={[styles.logBtn, { backgroundColor: "#0EA5E9" }]} onPress={handleLog}>
+            <Ionicons name="water" size={16} color="#fff" />
+            <Text style={styles.logBtnText}>Log</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Home Screen ──────────────────────────────────────────────────────────────
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -54,9 +149,11 @@ export default function HomeScreen() {
     connectHealthKit,
     runWatchScan,
   } = useHealth();
+  const { todayTotalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [watchScanning, setWatchScanning] = useState(false);
+  const [showWaterLog, setShowWaterLog] = useState(false);
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -200,6 +297,33 @@ export default function HomeScreen() {
               <Text style={[styles.scanBtnText, { color: colors.primaryForeground }]}>
                 {latestScan ? "Scan Again" : "Start Camera Scan"}
               </Text>
+            </Pressable>
+          </View>
+
+          {/* Water Intake card */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Ionicons name="water" size={16} color="#0EA5E9" />
+                <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+                  Water Intake
+                </Text>
+              </View>
+              <Text style={[styles.waterTotal, { color: "#0EA5E9" }]}>
+                {todayTotalOz > 0
+                  ? `${todayTotalOz % 1 === 0 ? todayTotalOz : todayTotalOz.toFixed(1)} oz today`
+                  : "0 oz today"}
+              </Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.logWaterBtn,
+                { backgroundColor: "#0EA5E9", opacity: pressed ? 0.85 : 1 },
+              ]}
+              onPress={() => setShowWaterLog(true)}
+            >
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text style={styles.logWaterBtnText}>Log Water</Text>
             </Pressable>
           </View>
 
@@ -377,6 +501,12 @@ export default function HomeScreen() {
           )}
         </Animated.View>
       </ScrollView>
+
+      <WaterLogModal
+        visible={showWaterLog}
+        onClose={() => setShowWaterLog(false)}
+        onLog={async (oz, time) => { await addWaterLog({ amountOz: oz, time }); }}
+      />
     </View>
   );
 }
@@ -495,4 +625,53 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: 20,
   },
+  // Water card
+  waterTotal: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  logWaterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  logWaterBtnText: { color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  // Water log modal
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
+  modalSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    gap: 16,
+  },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center" },
+  modalTitle: { fontSize: 20, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  modalSub: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const, textTransform: "uppercase", letterSpacing: 0.5 },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  amountInput: { flex: 1, fontSize: 28, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  amountUnit: { fontSize: 18, fontFamily: "Inter_400Regular" },
+  timePickerWrap: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  modalActions: { flexDirection: "row", gap: 12 },
+  cancelBtn: { flex: 1, borderRadius: 14, borderWidth: 1, paddingVertical: 14, alignItems: "center" },
+  cancelBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  logBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  logBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
 });

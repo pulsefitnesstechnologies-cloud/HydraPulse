@@ -3,11 +3,38 @@ import * as Notifications from "expo-notifications";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 
-const INTERVAL_KEY = "@hydrapulse:watchInterval";
-const NOTIF_ID_KEY = "@hydrapulse:watchNotifId";
-const ALERT_KEY = "@hydrapulse:alertThreshold";
-const LAST_AUTO_SCAN_KEY = "@hydrapulse:lastAutoScan";
+import { ScanAlarm } from "@/hooks/useNotifications";
 
+// ─── Constants & types ────────────────────────────────────────────────────────
+
+const ALERT_KEY = "@hydrapulse:alertThreshold";
+const lastAlarmScanKey = (i: number) => `@hydrapulse:lastAlarmScanDate:${i}`;
+
+// Consider an alarm "firing" within this many minutes after its scheduled time.
+// Covers cases where the user opens the app shortly after the alarm notification.
+const ALARM_WINDOW_MIN = 20;
+
+export const ALERT_THRESHOLDS = [0, 1, 2, 3] as const;
+export type AlertThreshold = (typeof ALERT_THRESHOLDS)[number];
+export const ALERT_THRESHOLD_LABELS: Record<AlertThreshold, string> = {
+  0: "Off",
+  1: "Critical only",
+  2: "Low or below",
+  3: "Good or below",
+};
+
+const SCORE_LABELS: Record<number, string> = {
+  1: "critical",
+  2: "low",
+  3: "below your target",
+};
+
+// ─── Hydration estimate ───────────────────────────────────────────────────────
+
+/**
+ * Estimate hydration score (1-4) from averaged Apple Watch HR + HRV samples.
+ * Averaged multi-sample inputs give more stable results than single readings.
+ */
 export function estimateHydrationFromMetrics(
   hr: number | null,
   hrv: number | null
@@ -29,48 +56,15 @@ export function estimateHydrationFromMetrics(
   return 1;
 }
 
-export const WATCH_INTERVALS = [0, 1, 2, 3, 4, 6, 8, 12, 24] as const;
-export type WatchInterval = (typeof WATCH_INTERVALS)[number];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export const ALERT_THRESHOLDS = [0, 1, 2, 3] as const;
-export type AlertThreshold = (typeof ALERT_THRESHOLDS)[number];
-export const ALERT_THRESHOLD_LABELS: Record<AlertThreshold, string> = {
-  0: "Off",
-  1: "Critical only",
-  2: "Low or below",
-  3: "Good or below",
-};
-
-const SCORE_LABELS: Record<number, string> = {
-  1: "critical",
-  2: "low",
-  3: "below your target",
-};
-
-async function reschedule(hours: WatchInterval): Promise<void> {
-  const oldId = await AsyncStorage.getItem(NOTIF_ID_KEY).catch(() => null);
-  if (oldId) {
-    await Notifications.cancelScheduledNotificationAsync(oldId).catch(() => {});
-    await AsyncStorage.removeItem(NOTIF_ID_KEY).catch(() => {});
-  }
-
-  if (hours === 0 || Platform.OS === "web") return;
-
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Hydration Check",
-      body: "Open HydraPulse to read your Apple Watch data and check your hydration level.",
-      sound: false,
-      data: { type: "watch-monitor" },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: hours * 3600,
-      repeats: true,
-    },
-  });
-
-  await AsyncStorage.setItem(NOTIF_ID_KEY, id).catch(() => {});
+function alarmToTodayMs(alarm: ScanAlarm): number {
+  let h = alarm.hour;
+  if (alarm.ampm === "AM" && h === 12) h = 0;
+  else if (alarm.ampm === "PM" && h !== 12) h += 12;
+  const d = new Date();
+  d.setHours(h, alarm.minute, 0, 0);
+  return d.getTime();
 }
 
 async function sendThresholdAlert(scoreLabel: string): Promise<void> {
@@ -87,72 +81,72 @@ async function sendThresholdAlert(scoreLabel: string): Promise<void> {
   } catch {}
 }
 
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useWatchMonitor(opts?: {
-  // Returns the computed hydration score (1-4) or null if no data
   onAutoScan?: () => Promise<number | null>;
+  scanAlarms?: ScanAlarm[];
 }) {
-  const [watchInterval, setWatchIntervalState] = useState<WatchInterval>(0);
   const [alertThreshold, setAlertThresholdState] = useState<AlertThreshold>(0);
 
-  // Keep the callback ref fresh without recreating the effect
   const onAutoScanRef = useRef(opts?.onAutoScan);
-  useEffect(() => {
-    onAutoScanRef.current = opts?.onAutoScan;
-  }, [opts?.onAutoScan]);
+  const scanAlarmsRef = useRef(opts?.scanAlarms ?? []);
 
-  // Load persisted values on mount
+  useEffect(() => { onAutoScanRef.current = opts?.onAutoScan; }, [opts?.onAutoScan]);
+  useEffect(() => { scanAlarmsRef.current = opts?.scanAlarms ?? []; }, [opts?.scanAlarms]);
+
+  // Load persisted alert threshold
   useEffect(() => {
     if (Platform.OS === "web") return;
-    Promise.all([
-      AsyncStorage.getItem(INTERVAL_KEY),
-      AsyncStorage.getItem(ALERT_KEY),
-    ])
-      .then(([intervalRaw, alertRaw]) => {
-        if (intervalRaw) {
-          const v = parseInt(intervalRaw, 10) as WatchInterval;
-          if ((WATCH_INTERVALS as readonly number[]).includes(v)) setWatchIntervalState(v);
-        }
-        if (alertRaw) {
-          const v = parseInt(alertRaw, 10) as AlertThreshold;
-          if ((ALERT_THRESHOLDS as readonly number[]).includes(v)) setAlertThresholdState(v);
-        }
+    AsyncStorage.getItem(ALERT_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const v = parseInt(raw, 10) as AlertThreshold;
+        if ((ALERT_THRESHOLDS as readonly number[]).includes(v)) setAlertThresholdState(v);
       })
       .catch(() => {});
   }, []);
 
-  // Auto-scan when app returns to foreground and interval has elapsed
+  // Time-based auto-scan: fires when app comes to foreground within ALARM_WINDOW_MIN
+  // of any enabled scan alarm time. Each alarm can only fire once per calendar day.
   useEffect(() => {
     if (Platform.OS === "web") return;
 
     const sub = AppState.addEventListener("change", async (state) => {
       if (state !== "active") return;
-      if (watchInterval === 0) return;
+      const alarms = scanAlarmsRef.current;
+      if (!alarms.length) return;
 
-      const lastRaw = await AsyncStorage.getItem(LAST_AUTO_SCAN_KEY).catch(() => null);
-      const last = lastRaw ? parseInt(lastRaw, 10) : 0;
-      const intervalMs = watchInterval * 3600 * 1000;
+      const nowMs = Date.now();
+      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-      if (Date.now() - last < intervalMs) return;
+      for (let i = 0; i < alarms.length; i++) {
+        const alarm = alarms[i];
+        if (!alarm.enabled) continue;
 
-      const score = await onAutoScanRef.current?.();
-      if (score == null) return;
+        const alarmMs = alarmToTodayMs(alarm);
+        const diff = nowMs - alarmMs; // positive = alarm was in the past
 
-      await AsyncStorage.setItem(LAST_AUTO_SCAN_KEY, String(Date.now())).catch(() => {});
+        // Window: [0, ALARM_WINDOW_MIN] minutes after the alarm time
+        if (diff < 0 || diff > ALARM_WINDOW_MIN * 60 * 1000) continue;
 
-      if (alertThreshold > 0 && score <= alertThreshold) {
-        await sendThresholdAlert(SCORE_LABELS[score] ?? "low");
+        // One scan per alarm per calendar day
+        const lastDate = await AsyncStorage.getItem(lastAlarmScanKey(i)).catch(() => null);
+        if (lastDate === todayStr) continue;
+
+        const score = await onAutoScanRef.current?.();
+        if (score != null) {
+          await AsyncStorage.setItem(lastAlarmScanKey(i), todayStr).catch(() => {});
+          if (alertThreshold > 0 && score <= alertThreshold) {
+            await sendThresholdAlert(SCORE_LABELS[score] ?? "low");
+          }
+        }
+        break; // only one auto-scan per foreground event
       }
     });
 
     return () => sub.remove();
-  }, [watchInterval, alertThreshold]);
-
-  const setWatchInterval = useCallback(async (hours: WatchInterval) => {
-    if (Platform.OS === "web") return;
-    setWatchIntervalState(hours);
-    await AsyncStorage.setItem(INTERVAL_KEY, String(hours)).catch(() => {});
-    await reschedule(hours);
-  }, []);
+  }, [alertThreshold]);
 
   const setAlertThreshold = useCallback(async (v: AlertThreshold) => {
     if (Platform.OS === "web") return;
@@ -160,5 +154,5 @@ export function useWatchMonitor(opts?: {
     await AsyncStorage.setItem(ALERT_KEY, String(v)).catch(() => {});
   }, []);
 
-  return { watchInterval, setWatchInterval, alertThreshold, setAlertThreshold };
+  return { alertThreshold, setAlertThreshold };
 }

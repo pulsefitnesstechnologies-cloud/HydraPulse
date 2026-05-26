@@ -4,18 +4,27 @@ import { Platform } from "react-native";
 
 import { ScanRecord, getScoreLabel, useHydration } from "@/context/HydrationContext";
 import { HealthSnapshot, useHealthKit } from "@/hooks/useHealthKit";
-import { DEFAULT_SCHEDULE, ReminderSchedule, useNotifications } from "@/hooks/useNotifications";
+import {
+  AlarmTuple,
+  ReminderTuple,
+  ScanAlarm,
+  SmartReminder,
+  useNotifications,
+} from "@/hooks/useNotifications";
 import {
   AlertThreshold,
-  WatchInterval,
   estimateHydrationFromMetrics,
   useWatchMonitor,
 } from "@/hooks/useWatchMonitor";
 
-const STORAGE_KEYS = {
-  HEALTH_ENABLED: "@hydrapulse:healthEnabled",
-  REMINDER_SCHEDULE: "@hydrapulse:reminderSchedule",
-};
+const HEALTH_ENABLED_KEY = "@hydrapulse:healthEnabled";
+
+// ─── Confidence improves with more averaged HR samples ───────────────────────
+function sampleConfidence(hr: number | null, hrv: number | null, sampleCount: number): number {
+  const base = hr !== null && hrv !== null ? 72 : hr !== null ? 55 : 45;
+  const bonus = Math.min(sampleCount, 8) * 1.5; // up to +12 pts for 8+ samples
+  return Math.min(Math.round(base + bonus), 87);
+}
 
 function buildWatchRecord(snap: HealthSnapshot): ScanRecord | null {
   const score = estimateHydrationFromMetrics(snap.heartRate, snap.hrv);
@@ -26,43 +35,44 @@ function buildWatchRecord(snap: HealthSnapshot): ScanRecord | null {
     score,
     label: getScoreLabel(score),
     method: "watch",
-    confidence: snap.heartRate !== null && snap.hrv !== null ? 75 : 50,
+    confidence: sampleConfidence(snap.heartRate, snap.hrv, snap.sampleCount),
     heartRate: snap.heartRate ?? undefined,
     hrv: snap.hrv ?? undefined,
   };
 }
+
+// ─── Context type ─────────────────────────────────────────────────────────────
 
 interface HealthContextType {
   healthKitAvailable: boolean;
   healthKitEnabled: boolean;
   healthSnapshot: HealthSnapshot;
   healthLoading: boolean;
-  notificationsEnabled: boolean;
-  reminderSchedule: ReminderSchedule;
-  watchInterval: WatchInterval;
+  notificationPermission: boolean;
+  scanAlarms: AlarmTuple;
+  smartReminders: ReminderTuple;
   alertThreshold: AlertThreshold;
   connectHealthKit: () => Promise<{ ok: boolean; error?: string }>;
   refreshHealthData: () => void;
   runWatchScan: () => Promise<ScanRecord | null>;
-  notificationPermission: boolean;
   requestNotificationPermission: () => Promise<boolean>;
-  updateReminderSchedule: (schedule: ReminderSchedule) => Promise<void>;
-  disableNotifications: () => Promise<void>;
-  setWatchInterval: (hours: WatchInterval) => Promise<void>;
+  updateScanAlarm: (index: 0 | 1 | 2, partial: Partial<ScanAlarm>) => Promise<void>;
+  updateSmartReminder: (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => Promise<void>;
   setAlertThreshold: (v: AlertThreshold) => Promise<void>;
+  disableAllNotifications: () => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextType | undefined>(undefined);
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const { addScanResult } = useHydration();
   const hk = useHealthKit();
   const notif = useNotifications();
-
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
-  const [reminderSchedule, setReminderSchedule] = useState<ReminderSchedule>(DEFAULT_SCHEDULE);
 
-  // Auto-scan callback: fetch fresh Watch data, save a scan record, return the score
+  // Auto-scan callback passed to useWatchMonitor for time-based alarm triggers
   const onAutoScan = useCallback(async (): Promise<number | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
@@ -70,24 +80,24 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     const record = buildWatchRecord(snap);
     if (!record) return null;
     addScanResult(record);
+    // Send immediate result banner so user knows what the auto-scan found
+    await notif.sendScanResultNotification(record.score, record.heartRate ?? null, record.label);
     return record.score;
-  }, [hk.fetchLatest, addScanResult]);
+  }, [hk.fetchLatest, addScanResult, notif.sendScanResultNotification]);
 
-  const monitor = useWatchMonitor({ onAutoScan });
+  const monitor = useWatchMonitor({
+    onAutoScan,
+    scanAlarms: notif.scanAlarms,
+  });
 
+  // Restore health connection on mount
   useEffect(() => {
     (async () => {
       try {
-        const [healthRaw, scheduleRaw] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.HEALTH_ENABLED),
-          AsyncStorage.getItem(STORAGE_KEYS.REMINDER_SCHEDULE),
-        ]);
-        if (healthRaw === "true") {
+        const raw = await AsyncStorage.getItem(HEALTH_ENABLED_KEY);
+        if (raw === "true") {
           setHealthKitEnabled(true);
           hk.requestAuthorization();
-        }
-        if (scheduleRaw) {
-          setReminderSchedule(JSON.parse(scheduleRaw));
         }
       } catch {}
     })();
@@ -98,12 +108,12 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     const result = await hk.requestAuthorization();
     if (result.ok) {
       setHealthKitEnabled(true);
-      await AsyncStorage.setItem(STORAGE_KEYS.HEALTH_ENABLED, "true").catch(() => {});
+      await AsyncStorage.setItem(HEALTH_ENABLED_KEY, "true").catch(() => {});
     }
     return result;
   }, [hk]);
 
-  // Manual Watch scan: refresh HK, build a record, save it, return it
+  // Manual Watch scan: fetch fresh data, build record, save, return it
   const runWatchScan = useCallback(async (): Promise<ScanRecord | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
@@ -114,33 +124,9 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     return record;
   }, [hk.fetchLatest, addScanResult]);
 
-  const updateReminderSchedule = useCallback(
-    async (schedule: ReminderSchedule) => {
-      setReminderSchedule(schedule);
-      await notif.scheduleReminders(schedule);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.REMINDER_SCHEDULE,
-        JSON.stringify(schedule)
-      ).catch(() => {});
-    },
-    [notif]
-  );
-
-  const disableNotifications = useCallback(async () => {
+  const disableAllNotifications = useCallback(async () => {
     await notif.cancelAll();
-    const off = DEFAULT_SCHEDULE;
-    setReminderSchedule(off);
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.REMINDER_SCHEDULE,
-      JSON.stringify(off)
-    ).catch(() => {});
   }, [notif]);
-
-  const notificationsEnabled =
-    notif.hasPermission &&
-    (reminderSchedule.morningEnabled ||
-      reminderSchedule.afternoonEnabled ||
-      reminderSchedule.eveningEnabled);
 
   return (
     <HealthContext.Provider
@@ -149,19 +135,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         healthKitEnabled: healthKitEnabled && hk.isAuthorized,
         healthSnapshot: hk.snapshot,
         healthLoading: hk.isLoading,
-        notificationsEnabled,
-        reminderSchedule,
-        watchInterval: monitor.watchInterval,
+        notificationPermission: notif.hasPermission,
+        scanAlarms: notif.scanAlarms,
+        smartReminders: notif.smartReminders,
         alertThreshold: monitor.alertThreshold,
         connectHealthKit,
         refreshHealthData: () => { hk.fetchLatest(); },
         runWatchScan,
-        notificationPermission: notif.hasPermission,
         requestNotificationPermission: notif.requestPermission,
-        updateReminderSchedule,
-        disableNotifications,
-        setWatchInterval: monitor.setWatchInterval,
+        updateScanAlarm: notif.updateScanAlarm,
+        updateSmartReminder: notif.updateSmartReminder,
         setAlertThreshold: monitor.setAlertThreshold,
+        disableAllNotifications,
       }}
     >
       {children}

@@ -4,10 +4,14 @@ import { Platform } from "react-native";
 export interface HealthSnapshot {
   heartRate: number | null;
   hrv: number | null;
+  sampleCount: number; // how many HR samples were averaged
   lastUpdated: string | null;
 }
 
-const WINDOW_MS = 24 * 60 * 60 * 1000;
+const HR_WINDOW_MS = 60 * 60 * 1000; // 1 hour — keeps data recent & relevant
+const HRV_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours — HRV updates less frequently
+const HR_SAMPLE_LIMIT = 10;
+const HRV_SAMPLE_LIMIT = 5;
 
 type HKModule = typeof import("@kingstinct/react-native-healthkit");
 let _hkCache: HKModule | null | undefined;
@@ -25,12 +29,18 @@ function getHK(): HKModule | null {
   return _hkCache;
 }
 
+function average(values: number[]): number | null {
+  if (!values.length) return null;
+  return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
+}
+
 export function useHealthKit() {
   const [isAvailable, setIsAvailable] = useState(Platform.OS === "ios");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [snapshot, setSnapshot] = useState<HealthSnapshot>({
     heartRate: null,
     hrv: null,
+    sampleCount: 0,
     lastUpdated: null,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -64,32 +74,36 @@ export function useHealthKit() {
       });
   }, []);
 
-  // Returns the fresh snapshot so callers can act on it immediately
+  // Fetch multiple recent samples and average them for higher accuracy.
+  // HR: up to 10 samples from the past hour.
+  // HRV: up to 5 samples from the past 2 hours (updates less often).
   const fetchLatest = useCallback(async (): Promise<HealthSnapshot | null> => {
     if (!isAuthorized || Platform.OS !== "ios") return null;
     const hk = getHK();
     if (!hk) return null;
     setIsLoading(true);
 
-    const startDate = new Date(Date.now() - WINDOW_MS);
+    const hrStart = new Date(Date.now() - HR_WINDOW_MS);
+    const hrvStart = new Date(Date.now() - HRV_WINDOW_MS);
     const endDate = new Date();
 
     const [hrSamples, hrvSamples] = await Promise.all([
       hk.queryQuantitySamples("HKQuantityTypeIdentifierHeartRate", {
-        filter: { date: { startDate, endDate } },
-        limit: 1,
-        ascending: false,
+        filter: { date: { startDate: hrStart, endDate } },
+        limit: HR_SAMPLE_LIMIT,
+        ascending: false, // newest first
       }).catch(() => [] as readonly import("@kingstinct/react-native-healthkit").QuantitySample[]),
       hk.queryQuantitySamples("HKQuantityTypeIdentifierHeartRateVariabilitySDNN", {
-        filter: { date: { startDate, endDate } },
-        limit: 1,
+        filter: { date: { startDate: hrvStart, endDate } },
+        limit: HRV_SAMPLE_LIMIT,
         ascending: false,
       }).catch(() => [] as readonly import("@kingstinct/react-native-healthkit").QuantitySample[]),
     ]);
 
     const snap: HealthSnapshot = {
-      heartRate: hrSamples.length ? Math.round(hrSamples[0].quantity) : null,
-      hrv: hrvSamples.length ? Math.round(hrvSamples[0].quantity) : null,
+      heartRate: average(hrSamples.map((s) => s.quantity)),
+      hrv: average(hrvSamples.map((s) => s.quantity)),
+      sampleCount: hrSamples.length,
       lastUpdated: new Date().toISOString(),
     };
     setSnapshot(snap);

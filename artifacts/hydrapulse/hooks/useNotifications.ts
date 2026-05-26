@@ -81,8 +81,11 @@ async function scheduleScanAlarm(alarm: ScanAlarm): Promise<string | null> {
       content: {
         title: "Hydration Scan",
         body: "Time for your scheduled hydration check. Open HydraPulse to scan now.",
-        // Use default system sound so the notification rings on both iPhone and Watch
         sound: "default",
+        // interruptionLevel "timeSensitive" bypasses Focus / Do Not Disturb on
+        // iPhone and Apple Watch — requires the
+        // com.apple.developer.usernotifications.time-sensitive entitlement.
+        interruptionLevel: "timeSensitive",
         data: { type: "scan-alarm" },
       },
       trigger: {
@@ -104,6 +107,7 @@ async function scheduleSmartReminder(reminder: SmartReminder): Promise<string | 
         title: "HydraPulse Reminder",
         body: reminder.message.trim(),
         sound: "default",
+        interruptionLevel: "timeSensitive",
         data: { type: "smart-reminder" },
       },
       trigger: {

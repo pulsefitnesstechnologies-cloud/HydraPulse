@@ -452,6 +452,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   result = withEntitlementsPlist(result, (cfg) => {
     cfg.modResults["com.apple.developer.healthkit"] = true;
     cfg.modResults["com.apple.developer.healthkit.background-delivery"] = true;
+    // Time Sensitive entitlement lets scan alarms and reminders break through
+    // Focus modes (Do Not Disturb, Sleep, Driving, etc.) on both iPhone and
+    // Apple Watch — exactly like alarm and health apps.
+    cfg.modResults["com.apple.developer.usernotifications.time-sensitive"] = true;
     return cfg;
   });
 

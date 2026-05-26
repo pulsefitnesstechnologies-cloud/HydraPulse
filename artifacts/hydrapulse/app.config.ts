@@ -169,37 +169,75 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
         }
       }
 
-      // ── patch 3: react-native-worklets-core invalidate fix ────────────
-      // react-native-worklets-core@1.6.x calls C++ worklet teardown
-      // synchronously inside -[Worklets invalidate], which blocks the JS
-      // thread long enough for RCTTurboModuleManager to time out with
-      // "Timed out waiting for modules to be invalidated" on new arch.
-      // Fix: dispatch the teardown to a background queue so the calling
-      // thread returns immediately and the timeout never fires.
-      const workletsMMPath = path.join(
-        root, "node_modules", "react-native-worklets-core", "ios", "Worklets.mm"
-      );
-      if (fs.existsSync(workletsMMPath)) {
-        let wk = fs.readFileSync(workletsMMPath, "utf-8");
-        if (wk.includes("RNWorklet::JsiWorkletContext::invalidateDefaultInstance();") &&
-            !wk.includes("dispatch_async")) {
-          wk = wk.replace(
-            `- (void)invalidate {
-  RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
-  RNWorklet::JsiWorkletApi::invalidateInstance();
-  _bridge = nil;
-}`,
-            `- (void)invalidate {
-  // HydraPulse patch: dispatch C++ worklet teardown off the calling thread
-  // so RCTTurboModuleManager doesn't time out waiting for invalidation.
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    RNWorklet::JsiWorkletContext::invalidateDefaultInstance();
-    RNWorklet::JsiWorkletApi::invalidateInstance();
-  });
-  _bridge = nil;
-}`
-          );
-          fs.writeFileSync(workletsMMPath, wk);
+      // ── patch 3: react-native-worklets* invalidate fix ───────────────
+      // Both react-native-worklets-core and react-native-worklets call
+      // C++ worklet teardown synchronously inside -[Worklets invalidate],
+      // blocking the JS thread long enough for RCTTurboModuleManager to
+      // time out with "Timed out waiting for modules to be invalidated"
+      // on new arch (iOS). The fix dispatches the teardown to a background
+      // queue so the calling thread returns immediately.
+      //
+      // We use a flexible regex (not a fixed string) so the patch survives
+      // minor version differences in whitespace or surrounding code.
+      const patchWorkletsInvalidate = (mmPath: string): void => {
+        if (!fs.existsSync(mmPath)) return;
+        let src = fs.readFileSync(mmPath, "utf-8");
+        // Skip if already patched or no JsiWorklet teardown present
+        if (src.includes("dispatch_async") && src.includes("JsiWorklet")) return;
+        if (!src.includes("JsiWorklet")) return;
+
+        // Match any ObjC -[* invalidate] method body that contains JsiWorklet calls.
+        // [\s\S]*? is non-greedy so we stop at the first closing brace.
+        const patched = src.replace(
+          /(- \(void\)invalidate \{)([\s\S]*?)(\n\})/g,
+          (_match, open: string, body: string, close: string) => {
+            if (!body.includes("JsiWorklet")) return _match;
+            if (body.includes("dispatch_async")) return _match; // already patched
+
+            // Separate JsiWorklet teardown lines from other lines (e.g. _bridge = nil)
+            const lines = body.split("\n");
+            const teardownLines: string[] = [];
+            const otherLines: string[] = [];
+            for (const line of lines) {
+              if (line.includes("JsiWorklet") || line.includes("invalidateDefaultInstance") || line.includes("invalidateInstance")) {
+                teardownLines.push(line);
+              } else {
+                otherLines.push(line);
+              }
+            }
+            if (teardownLines.length === 0) return _match;
+
+            const asyncBlock =
+              "\n  // HydraPulse patch: dispatch C++ worklet teardown async so\n" +
+              "  // RCTTurboModuleManager doesn't time out waiting for invalidation.\n" +
+              "  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{\n" +
+              teardownLines.join("\n") + "\n" +
+              "  });";
+            return `${open}${asyncBlock}${otherLines.join("\n")}${close}`;
+          }
+        );
+        if (patched !== src) fs.writeFileSync(mmPath, patched);
+      };
+
+      // Patch both worklets packages and look in both the direct symlink
+      // location and the pnpm virtual store (which EAS build servers use).
+      const gitRoot = path.resolve(root, "..", "..");
+      const pnpmStore = path.join(gitRoot, "node_modules", ".pnpm");
+      const workletsPkgs = [
+        "react-native-worklets-core",
+        "react-native-worklets",
+      ];
+      for (const pkg of workletsPkgs) {
+        // Direct symlink (standard node_modules)
+        patchWorkletsInvalidate(path.join(root, "node_modules", pkg, "ios", "Worklets.mm"));
+        // pnpm virtual store
+        if (fs.existsSync(pnpmStore)) {
+          for (const entry of fs.readdirSync(pnpmStore)) {
+            if (!entry.startsWith(pkg.replace("/", "+") + "@")) continue;
+            patchWorkletsInvalidate(
+              path.join(pnpmStore, entry, "node_modules", pkg, "ios", "Worklets.mm")
+            );
+          }
         }
       }
 
@@ -223,9 +261,7 @@ function withNativeModulePodspecPatches(config: ExpoConfig): ExpoConfig {
       };
       // Try direct symlink path first (works when pnpm creates one here)
       patchHkBigInt(path.join(root, "node_modules", "@kingstinct", "react-native-healthkit", "ios", "QuantityTypeModule.swift"));
-      // Search the root pnpm store — git root is two levels above artifacts/hydrapulse
-      const gitRoot = path.resolve(root, "..", "..");
-      const pnpmStore = path.join(gitRoot, "node_modules", ".pnpm");
+      // pnpmStore already declared above (patch 3 shares the same root/pnpmStore)
       if (fs.existsSync(pnpmStore)) {
         const hkPrefix = "@kingstinct+react-native-healthkit@";
         for (const entry of fs.readdirSync(pnpmStore)) {

@@ -19,11 +19,21 @@ import {
 
 const HEALTH_ENABLED_KEY = "@hydrapulse:healthEnabled";
 
-// ─── Confidence improves with more averaged HR samples ───────────────────────
+// ─── Watch confidence ─────────────────────────────────────────────────────────
+//
+// Confidence improves with both the data richness (HR+HRV vs HR-only) and the
+// number of samples that were averaged together. Apple Watch records HR every
+// 5-15 min at rest, so a 3-hour window typically yields 8-20 samples.
+//
+// Formula:
+//   base   — depends on which signals are available (HR+HRV is most reliable)
+//   bonus  — each additional sample up to 18 adds a small increment
+//   max    — hard cap at 96 (acknowledges inherent wrist-PPG limitations)
+//
 function sampleConfidence(hr: number | null, hrv: number | null, sampleCount: number): number {
-  const base = hr !== null && hrv !== null ? 72 : hr !== null ? 55 : 45;
-  const bonus = Math.min(sampleCount, 8) * 1.5; // up to +12 pts for 8+ samples
-  return Math.min(Math.round(base + bonus), 87);
+  const base = hr !== null && hrv !== null ? 80 : hr !== null ? 64 : 52;
+  const bonus = Math.min(sampleCount, 18) * 0.9; // up to +16.2 for 18+ samples
+  return Math.min(Math.round(base + bonus), 96);
 }
 
 function buildWatchRecord(snap: HealthSnapshot): ScanRecord | null {
@@ -113,19 +123,15 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, [hk]);
 
-  // Apple Watch records HR roughly every 15 min when worn. If the most recent
-  // sample is older than this threshold the device almost certainly isn't worn.
-  const NOT_WORN_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+  // Apple Watch records HR roughly every 5-15 min when worn. If the most recent
+  // sample is older than 30 min the device almost certainly isn't worn.
+  const NOT_WORN_THRESHOLD_MS = 30 * 60 * 1000;
 
-  // Manual Watch scan: fetch fresh data, build record, save, return it.
-  // Returns "not-worn" when HealthKit data is stale (Watch not currently worn).
   const runWatchScan = useCallback(async (): Promise<ScanRecord | "not-worn" | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
     if (!snap || (snap.heartRate === null && snap.hrv === null)) return null;
 
-    // Reject stale data — if the newest HR sample is older than 30 min the
-    // Watch was not worn at the time of the scan request.
     if (
       snap.mostRecentSampleMs === null ||
       Date.now() - snap.mostRecentSampleMs > NOT_WORN_THRESHOLD_MS

@@ -20,11 +20,35 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import {
+  HydrationScore,
   ScanRecord,
   getScoreColor,
   getScoreLabel,
   useHydration,
 } from "@/context/HydrationContext";
+
+// ─── Hydration tips by score ───────────────────────────────────────────────────
+
+const SCAN_TIPS: Record<HydrationScore, string[]> = {
+  4: [
+    "Well-hydrated — keep up your current water intake.",
+    "Continue tracking daily to build long-term hydration patterns.",
+  ],
+  3: [
+    "Slightly below optimal — aim for 8–12 fl oz of water in the next hour.",
+    "Try spreading your intake evenly throughout the day.",
+  ],
+  2: [
+    "Low hydration detected — drink 16–20 fl oz of water soon.",
+    "Reduce caffeine and alcohol, which increase fluid loss.",
+    "Set a reminder to drink every 60–90 minutes.",
+  ],
+  1: [
+    "Critical level — drink water immediately and rest.",
+    "Avoid strenuous activity until your next scan shows improvement.",
+    "If symptoms (dizziness, headache) persist, consult a healthcare professional.",
+  ],
+};
 import { WaterLog, useWaterIntake } from "@/context/WaterIntakeContext";
 import { WorkoutRecord, useWorkout } from "@/context/WorkoutContext";
 import { useColors } from "@/hooks/useColors";
@@ -33,7 +57,11 @@ import { useColors } from "@/hooks/useColors";
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function formatTimeOnly(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDuration(mins: number | null): string {
@@ -133,6 +161,17 @@ function ScanDetailModal({
             </Text>
             <Text style={[styles.detailMetricKey, { color: colors.mutedForeground }]}>Confidence</Text>
           </View>
+        </View>
+
+        {/* Hydration Tips */}
+        <View style={[styles.tipsCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+          <Text style={[styles.tipsTitle, { color: colors.mutedForeground }]}>Recommendations</Text>
+          {SCAN_TIPS[scan.score].map((tip, i) => (
+            <View key={i} style={styles.tipRow}>
+              <Ionicons name="water-outline" size={14} color={colors.primary} style={{ marginTop: 2 }} />
+              <Text style={[styles.tipText, { color: colors.foreground }]}>{tip}</Text>
+            </View>
+          ))}
         </View>
 
         {scan.notes ? (
@@ -383,27 +422,67 @@ function ScansTab() {
 
 // ─── Water Tab ────────────────────────────────────────────────────────────────
 
+function startOfDay(d: Date): Date {
+  const r = new Date(d);
+  r.setHours(0, 0, 0, 0);
+  return r;
+}
+
+function endOfDay(d: Date): Date {
+  const r = new Date(d);
+  r.setHours(23, 59, 59, 999);
+  return r;
+}
+
+function formatNavDate(d: Date): string {
+  const today = startOfDay(new Date());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.getTime() === today.getTime()) return "Today";
+  if (d.getTime() === yesterday.getTime()) return "Yesterday";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 function WaterTab() {
   const colors = useColors();
-  const { waterLog, todayTotalOz, addWaterLog, deleteWaterLog } = useWaterIntake();
+  const { waterLog, addWaterLog, deleteWaterLog } = useWaterIntake();
   const [showLogModal, setShowLogModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
+
+  const today = startOfDay(new Date());
+  const isToday = selectedDate.getTime() === today.getTime();
+
+  const goBack = () =>
+    setSelectedDate((d) => {
+      const nd = new Date(d);
+      nd.setDate(nd.getDate() - 1);
+      return nd;
+    });
+
+  const goForward = () => {
+    if (isToday) return;
+    setSelectedDate((d) => {
+      const nd = new Date(d);
+      nd.setDate(nd.getDate() + 1);
+      return nd;
+    });
+  };
+
+  // Logs for the selected calendar day
+  const dayStart = selectedDate;
+  const dayEnd = endOfDay(selectedDate);
+  const dayLogs = waterLog.filter((e) => {
+    const t = new Date(e.time);
+    return t >= dayStart && t <= dayEnd;
+  });
+  const dayTotalOz = dayLogs.reduce((s, e) => s + e.amountOz, 0);
+
+  // All-time stats
+  const allTotalOz = waterLog.reduce((s, e) => s + e.amountOz, 0);
+  const avgPerEntry = waterLog.length > 0 ? allTotalOz / waterLog.length : 0;
 
   const handleLog = async (oz: number, time: string) => {
     await addWaterLog({ amountOz: oz, time });
-  };
-
-  const handleDelete = (id: string) => {
-    Alert.alert("Delete Entry", "Remove this water log entry?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          deleteWaterLog(id);
-        },
-      },
-    ]);
   };
 
   const renderRightActions = (item: WaterLog) => (
@@ -430,7 +509,7 @@ function WaterTab() {
             {item.amountOz % 1 === 0 ? item.amountOz : item.amountOz.toFixed(1)} fl oz
           </Text>
           <Text style={[styles.waterTime, { color: colors.mutedForeground }]}>
-            {formatDate(item.time)}
+            {formatTimeOnly(item.time)}
           </Text>
         </View>
       </View>
@@ -439,24 +518,22 @@ function WaterTab() {
 
   const ListHeader = () => (
     <View style={styles.listHeader}>
+      {/* All-time stats */}
       <View style={styles.statsRow}>
         <StatCard
-          value={todayTotalOz >= 1 ? `${todayTotalOz % 1 === 0 ? todayTotalOz : todayTotalOz.toFixed(1)} oz` : "0 oz"}
-          label="Today"
+          value={dayTotalOz >= 1 ? `${dayTotalOz % 1 === 0 ? dayTotalOz : dayTotalOz.toFixed(1)} oz` : "0 oz"}
+          label={isToday ? "Today" : "Day Total"}
           color="#0EA5E9"
         />
         <StatCard value={waterLog.length} label="Total Logs" color={colors.primary} />
         <StatCard
-          value={
-            waterLog.length > 0
-              ? `${(waterLog.reduce((s, e) => s + e.amountOz, 0) / waterLog.length).toFixed(1)} oz`
-              : "—"
-          }
-          label="Avg Intake"
+          value={avgPerEntry > 0 ? `${avgPerEntry.toFixed(1)} oz` : "—"}
+          label="Avg Entry"
           color={colors.accent}
         />
       </View>
 
+      {/* Log button */}
       <Pressable
         style={({ pressed }) => [
           styles.logWaterBtn,
@@ -468,8 +545,25 @@ function WaterTab() {
         <Text style={styles.logWaterBtnText}>Log Water Intake</Text>
       </Pressable>
 
-      <Text style={[styles.listTitle, { color: colors.foreground }]}>All Entries</Text>
-      {waterLog.length > 0 && (
+      {/* Date navigation */}
+      <View style={[styles.dateNav, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Pressable style={styles.dateNavBtn} onPress={goBack} hitSlop={12}>
+          <Ionicons name="chevron-back" size={22} color={colors.primary} />
+        </Pressable>
+        <Text style={[styles.dateNavLabel, { color: colors.foreground }]}>
+          {formatNavDate(selectedDate)}
+        </Text>
+        <Pressable
+          style={[styles.dateNavBtn, isToday && { opacity: 0.25 }]}
+          onPress={goForward}
+          disabled={isToday}
+          hitSlop={12}
+        >
+          <Ionicons name="chevron-forward" size={22} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      {dayLogs.length > 0 && (
         <Text style={[styles.swipeHint, { color: colors.mutedForeground }]}>Swipe left to delete</Text>
       )}
     </View>
@@ -478,9 +572,13 @@ function WaterTab() {
   const ListEmpty = () => (
     <View style={styles.empty}>
       <Ionicons name="water-outline" size={48} color={colors.border} />
-      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No entries yet</Text>
+      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+        No entries for {formatNavDate(selectedDate).toLowerCase()}
+      </Text>
       <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-        Log your water intake to track daily hydration.
+        {isToday
+          ? "Tap Log Water Intake to start tracking today's hydration."
+          : "No water was logged on this day."}
       </Text>
     </View>
   );
@@ -488,7 +586,7 @@ function WaterTab() {
   return (
     <>
       <FlatList
-        data={waterLog}
+        data={dayLogs}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={ListHeader}
@@ -840,6 +938,30 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   detailDeleteBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  // Date navigation
+  dateNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  dateNavBtn: { padding: 4 },
+  dateNavLabel: { fontSize: 17, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  // Tips card
+  tipsCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 10 },
+  tipsTitle: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  tipRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  tipText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
   // Water log modal
   logTitle: { fontSize: 20, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   logRow: { flexDirection: "row", alignItems: "center", gap: 12 },

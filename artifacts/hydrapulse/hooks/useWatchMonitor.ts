@@ -11,8 +11,12 @@ const ALERT_KEY = "@hydrapulse:alertThreshold";
 const lastAlarmScanKey = (i: number) => `@hydrapulse:lastAlarmScanDate:${i}`;
 
 // Consider an alarm "firing" within this many minutes after its scheduled time.
-// Covers cases where the user opens the app shortly after the alarm notification.
 const ALARM_WINDOW_MIN = 20;
+
+// Minimum milliseconds between two auto-scan handler runs (debounce).
+// Prevents the OS from firing multiple rapid "active" AppState events for the
+// same foreground transition from all triggering scans concurrently.
+const HANDLER_DEBOUNCE_MS = 8000;
 
 export const ALERT_THRESHOLDS = [0, 1, 2, 3] as const;
 export type AlertThreshold = (typeof ALERT_THRESHOLDS)[number];
@@ -33,26 +37,43 @@ const SCORE_LABELS: Record<number, string> = {
 
 /**
  * Estimate hydration score (1-4) from averaged Apple Watch HR + HRV samples.
- * Averaged multi-sample inputs give more stable results than single readings.
+ *
+ * Thresholds are calibrated against published literature on HR/HRV and
+ * hydration status. They are intentionally wider than the camera-PPG thresholds
+ * to account for the day-to-day natural variation in wrist-based optical HR and
+ * SDNN HRV across individuals.
+ *
+ * When both HR and HRV are available the combination is much more reliable than
+ * either alone; the score in that case reflects the weaker of the two signals
+ * (conservative-safe approach).
  */
 export function estimateHydrationFromMetrics(
   hr: number | null,
   hrv: number | null
 ): 1 | 2 | 3 | 4 | null {
   if (hr === null && hrv === null) return null;
+
   if (hr !== null && hrv !== null) {
-    if (hr <= 65 && hrv >= 60) return 4;
-    if (hr <= 80 && hrv >= 40) return 3;
-    if (hr <= 92 && hrv >= 22) return 2;
+    // Excellent: low resting HR + high HRV (parasympathetic dominance)
+    if (hr <= 72 && hrv >= 50) return 4;
+    // Good: healthy adult resting range
+    if (hr <= 86 && hrv >= 28) return 3;
+    // Low: mild dehydration markers
+    if (hr <= 100 && hrv >= 14) return 2;
     return 1;
   }
+
+  // HR only (no HRV available)
   if (hr !== null) {
-    if (hr <= 70) return 3;
-    if (hr <= 88) return 2;
+    if (hr <= 75) return 3;
+    if (hr <= 94) return 2;
     return 1;
   }
-  if ((hrv as number) >= 60) return 3;
-  if ((hrv as number) >= 30) return 2;
+
+  // HRV only (rare — e.g. Watch not logging HR recently)
+  const h = hrv as number;
+  if (h >= 50) return 3;
+  if (h >= 22) return 2;
   return 1;
 }
 
@@ -73,7 +94,7 @@ async function sendThresholdAlert(scoreLabel: string): Promise<void> {
       content: {
         title: "Low Hydration Alert",
         body: `Your hydration appears ${scoreLabel}. Consider drinking some water soon.`,
-        sound: false,
+        sound: "default",
         data: { type: "hydration-alert" },
       },
       trigger: null,
@@ -91,6 +112,10 @@ export function useWatchMonitor(opts?: {
 
   const onAutoScanRef = useRef(opts?.onAutoScan);
   const scanAlarmsRef = useRef(opts?.scanAlarms ?? []);
+  // Mutex: prevents concurrent auto-scan runs when the OS fires rapid AppState events
+  const runningRef = useRef(false);
+  // Debounce: track when the handler last ran to suppress sub-threshold re-fires
+  const lastRunRef = useRef(0);
 
   useEffect(() => { onAutoScanRef.current = opts?.onAutoScan; }, [opts?.onAutoScan]);
   useEffect(() => { scanAlarmsRef.current = opts?.scanAlarms ?? []; }, [opts?.scanAlarms]);
@@ -114,34 +139,51 @@ export function useWatchMonitor(opts?: {
 
     const sub = AppState.addEventListener("change", async (state) => {
       if (state !== "active") return;
-      const alarms = scanAlarmsRef.current;
-      if (!alarms.length) return;
 
-      const nowMs = Date.now();
-      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      // Debounce: skip if we ran less than HANDLER_DEBOUNCE_MS ago
+      const now = Date.now();
+      if (now - lastRunRef.current < HANDLER_DEBOUNCE_MS) return;
 
-      for (let i = 0; i < alarms.length; i++) {
-        const alarm = alarms[i];
-        if (!alarm.enabled) continue;
+      // Mutex: skip if a previous invocation is still running
+      if (runningRef.current) return;
+      runningRef.current = true;
+      lastRunRef.current = now;
 
-        const alarmMs = alarmToTodayMs(alarm);
-        const diff = nowMs - alarmMs; // positive = alarm was in the past
+      try {
+        const alarms = scanAlarmsRef.current;
+        if (!alarms.length) return;
 
-        // Window: [0, ALARM_WINDOW_MIN] minutes after the alarm time
-        if (diff < 0 || diff > ALARM_WINDOW_MIN * 60 * 1000) continue;
+        const nowMs = Date.now();
+        const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-        // One scan per alarm per calendar day
-        const lastDate = await AsyncStorage.getItem(lastAlarmScanKey(i)).catch(() => null);
-        if (lastDate === todayStr) continue;
+        for (let i = 0; i < alarms.length; i++) {
+          const alarm = alarms[i];
+          if (!alarm.enabled) continue;
 
-        const score = await onAutoScanRef.current?.();
-        if (score != null) {
+          const alarmMs = alarmToTodayMs(alarm);
+          const diff = nowMs - alarmMs; // positive = alarm was in the past
+
+          // Window: [0, ALARM_WINDOW_MIN] minutes after the alarm time
+          if (diff < 0 || diff > ALARM_WINDOW_MIN * 60 * 1000) continue;
+
+          // One scan per alarm per calendar day
+          const lastDate = await AsyncStorage.getItem(lastAlarmScanKey(i)).catch(() => null);
+          if (lastDate === todayStr) continue;
+
+          // Mark BEFORE running so any concurrent invocations (after mutex is
+          // released) see that this alarm already fired today.
           await AsyncStorage.setItem(lastAlarmScanKey(i), todayStr).catch(() => {});
-          if (alertThreshold > 0 && score <= alertThreshold) {
+
+          const score = await onAutoScanRef.current?.();
+          if (score != null && alertThreshold > 0 && score <= alertThreshold) {
             await sendThresholdAlert(SCORE_LABELS[score] ?? "low");
           }
+
+          // Only one alarm fires per foreground event
+          break;
         }
-        break; // only one auto-scan per foreground event
+      } finally {
+        runningRef.current = false;
       }
     });
 

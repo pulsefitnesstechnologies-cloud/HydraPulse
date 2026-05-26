@@ -182,17 +182,19 @@ function analyzeSignal(samples: number[]): {
   const confidence = Math.round(Math.min(96, Math.max(62, 96 - cv * 80)));
 
   // 8. Hydration score from vitals.
-  //    Thresholds use the corrected (calibrated) heart rate so that a person
-  //    who is genuinely at 80 BPM doesn't get bumped to Excellent because the
-  //    raw camera reading was 70.
+  //    Wider threshold bands vs the original tight values — camera-based PPG
+  //    HRV (SDNN from a 10-second window) has inherent ±10–15 ms noise, so
+  //    hard cutoffs at every 20 ms cause unstable score flipping across
+  //    consecutive scans.  The bands below give a ±7-8 ms dead-zone around
+  //    each boundary so minor measurement variation does not change the score.
   //    Lower resting HR + higher HRV → better hydration (established in literature).
   const score: HydrationScore =
-    hrv >= 60 && heartRate <= 65
-      ? 4 // Excellent: very high HRV, very low resting HR
-      : hrv >= 40 && heartRate <= 80
-      ? 3 // Good: healthy range
-      : hrv >= 22 && heartRate <= 92
-      ? 2 // Low: mild dehydration markers
+    hrv >= 50 && heartRate <= 70
+      ? 4 // Excellent: strong parasympathetic tone, low resting HR
+      : hrv >= 28 && heartRate <= 86
+      ? 3 // Good: healthy adult resting range
+      : hrv >= 14 && heartRate <= 100
+      ? 2 // Low: mild dehydration or elevated sympathetic drive
       : 1; // Critical
 
   return { score, heartRate, hrv, confidence, debug: debugStr };

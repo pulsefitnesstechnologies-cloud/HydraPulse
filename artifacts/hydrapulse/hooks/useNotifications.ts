@@ -48,13 +48,15 @@ const SCAN_ALARMS_KEY = "@hydrapulse:scanAlarms";
 const SMART_REMINDERS_KEY = "@hydrapulse:smartReminders";
 
 // ─── Notification handler (set once at module level) ─────────────────────────
+// Controls behaviour when a notification arrives while the app is FOREGROUND.
+// Sound enabled so banners appear with audio both on iPhone and Apple Watch.
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
@@ -78,8 +80,9 @@ async function scheduleScanAlarm(alarm: ScanAlarm): Promise<string | null> {
     return await Notifications.scheduleNotificationAsync({
       content: {
         title: "Hydration Scan",
-        body: "Open HydraPulse to run your scheduled Watch hydration check.",
-        sound: false,
+        body: "Time for your scheduled hydration check. Open HydraPulse to scan now.",
+        // Use default system sound so the notification rings on both iPhone and Watch
+        sound: "default",
         data: { type: "scan-alarm" },
       },
       trigger: {
@@ -100,7 +103,7 @@ async function scheduleSmartReminder(reminder: SmartReminder): Promise<string | 
       content: {
         title: "HydraPulse Reminder",
         body: reminder.message.trim(),
-        sound: false,
+        sound: "default",
         data: { type: "smart-reminder" },
       },
       trigger: {
@@ -154,9 +157,22 @@ export function useNotifications() {
     })();
   }, []);
 
+  /**
+   * Request notification permissions. On iOS we explicitly ask for alerts,
+   * sounds, and badges — this is required for notifications to appear on both
+   * iPhone and Apple Watch. Without the sound permission the Watch will not
+   * mirror the notification.
+   */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === "web") return false;
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+        allowProvisional: false,
+      },
+    });
     const granted = status === "granted";
     setHasPermission(granted);
     return granted;
@@ -202,7 +218,7 @@ export function useNotifications() {
         content: {
           title: `Hydration: ${label}`,
           body: `Score ${score}/4${hrPart}`,
-          sound: false,
+          sound: "default",
           data: { type: "scan-result" },
         },
         trigger: null,

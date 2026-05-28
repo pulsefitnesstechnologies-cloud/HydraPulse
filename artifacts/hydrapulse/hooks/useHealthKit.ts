@@ -20,9 +20,15 @@ export interface HealthSnapshot {
   baselineHRV: number | null;
 }
 
-// Live HR window: 3 hours gives 10–20 samples for a stable weighted average.
+// Live HR window: 3 hours — only used to detect whether the Watch is worn.
 const HR_WINDOW_MS = 3 * 60 * 60 * 1000;
 const HR_SAMPLE_LIMIT = 24;
+
+// HRV comparison window: 48 hours ensures we always capture at least one
+// overnight sleep reading. Apple Watch records HRV (SDNN) during sleep only,
+// so a 3-hour daytime window almost always returns empty, producing null HRV
+// and forcing the algorithm into a lower-quality HR-only scoring path.
+const HRV_RECENT_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 // Baseline window: 30 days of Apple-computed resting HR and HRV.
 // Recent samples (first few) are used for the current reading blend;
@@ -154,7 +160,7 @@ export function useHealthKit() {
         ascending: false,
       }).catch(() => empty),
       hk.queryQuantitySamples("HKQuantityTypeIdentifierHeartRateVariabilitySDNN", {
-        filter: { date: { startDate: hrStart, endDate } }, // recent window for current HRV
+        filter: { date: { startDate: new Date(Date.now() - HRV_RECENT_WINDOW_MS), endDate } },
         limit: 12,
         ascending: false,
       }).catch(() => empty),

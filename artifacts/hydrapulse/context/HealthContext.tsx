@@ -88,10 +88,11 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const notif = useNotifications();
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 
-  // Apple Watch records live HR every 5-15 min when worn. A 20-min gap
-  // reliably indicates the Watch was removed (15 min was occasionally too
-  // tight when the user was completely still for an extended period).
-  const NOT_WORN_THRESHOLD_MS = 20 * 60 * 1000;
+  // Apple Watch background HR monitoring fires every 10–30 min during rest.
+  // 20 min was too tight — normal resting gaps were triggering false warnings.
+  // 60 min is the practical floor: no reading for a full hour reliably means
+  // the Watch was removed, not just that the user was sitting still.
+  const NOT_WORN_THRESHOLD_MS = 60 * 60 * 1000;
 
   // Auto-scan callback passed to useWatchMonitor for time-based alarm triggers
   const onAutoScan = useCallback(async (): Promise<number | null> => {

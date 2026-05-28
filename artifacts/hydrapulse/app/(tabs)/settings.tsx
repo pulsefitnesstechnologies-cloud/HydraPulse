@@ -145,9 +145,9 @@ function AlertThresholdModal({
   const insets = useSafeAreaInsets();
   const descriptions: Record<AlertThreshold, string> = {
     0: "Never send hydration alerts.",
-    1: "Alert when hydration is Critical (score 1).",
-    2: "Alert when hydration is Low or Critical (score 1–2).",
-    3: "Alert when hydration is Good, Low, or Critical (score 1–3).",
+    1: "Alert when auto-scan detects hydration at level 1 (Critical).",
+    2: "Alert when auto-scan detects hydration at level 2 (Low) or below.",
+    3: "Alert when auto-scan detects hydration at level 3 (Good) or below.",
   };
 
   return (
@@ -160,9 +160,9 @@ function AlertThresholdModal({
         ]}
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
-        <Text style={[styles.sheetTitle, { color: colors.foreground }]}>Hydration Alert Threshold</Text>
+        <Text style={[styles.sheetTitle, { color: colors.foreground }]}>Hydration Alert Level</Text>
         <Text style={[styles.sheetSub, { color: colors.mutedForeground }]}>
-          Sends a banner notification when your hydration score drops to or below this level.
+          Choose the score level at which you want an alert. When an auto-scan detects your hydration has dropped to that level or below, you'll receive a notification on your phone and Watch.
         </Text>
         {ALERT_THRESHOLDS.map((v) => (
           <TouchableOpacity
@@ -477,7 +477,7 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="notifications-outline"
-            label="Hydration Alert Threshold"
+            label="Hydration Alert Level"
             value={Platform.OS !== "ios" ? "iOS only" : ALERT_THRESHOLD_LABELS[alertThreshold]}
             onPress={Platform.OS === "ios" ? () => setShowThreshold(true) : undefined}
           />

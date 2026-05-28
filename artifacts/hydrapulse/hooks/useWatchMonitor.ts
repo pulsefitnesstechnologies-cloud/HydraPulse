@@ -22,15 +22,17 @@ export const ALERT_THRESHOLDS = [0, 1, 2, 3] as const;
 export type AlertThreshold = (typeof ALERT_THRESHOLDS)[number];
 export const ALERT_THRESHOLD_LABELS: Record<AlertThreshold, string> = {
   0: "Off",
-  1: "Critical only",
-  2: "Low or below",
-  3: "Good or below",
+  1: "Alert at Hydration 1",
+  2: "Alert at Hydration 2",
+  3: "Alert at Hydration 3",
 };
 
-const SCORE_LABELS: Record<number, string> = {
-  1: "critical",
-  2: "low",
-  3: "below your target",
+// Full score names used in notifications and descriptions
+export const SCORE_LEVEL_NAMES: Record<number, string> = {
+  1: "Critical",
+  2: "Low",
+  3: "Good",
+  4: "Excellent",
 };
 
 // ─── Hydration estimate ───────────────────────────────────────────────────────
@@ -126,14 +128,21 @@ function alarmToTodayMs(alarm: ScanAlarm): number {
   return d.getTime();
 }
 
-async function sendThresholdAlert(scoreLabel: string): Promise<void> {
+async function sendThresholdAlert(score: number): Promise<void> {
+  const levelName = SCORE_LEVEL_NAMES[score] ?? "Low";
+  const tips: Record<number, string> = {
+    1: "Drink water immediately — your hydration is critically low.",
+    2: "Your hydration has dropped. Drink some water soon.",
+    3: "Your hydration level has dipped. Consider drinking some water.",
+  };
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Low Hydration Alert",
-        body: `Your hydration appears ${scoreLabel}. Consider drinking some water soon.`,
+        title: `Hydration Level ${score} — ${levelName}`,
+        body: tips[score] ?? "Your hydration level changed. Consider drinking some water.",
         sound: "default",
-        data: { type: "hydration-alert" },
+        interruptionLevel: "timeSensitive",
+        data: { type: "hydration-alert", score },
       },
       trigger: null,
     });
@@ -214,7 +223,7 @@ export function useWatchMonitor(opts?: {
 
           const score = await onAutoScanRef.current?.();
           if (score != null && alertThreshold > 0 && score <= alertThreshold) {
-            await sendThresholdAlert(SCORE_LABELS[score] ?? "low");
+            await sendThresholdAlert(score);
           }
 
           // Only one alarm fires per foreground event

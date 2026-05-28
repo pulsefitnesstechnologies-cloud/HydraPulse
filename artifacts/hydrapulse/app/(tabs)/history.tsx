@@ -143,7 +143,7 @@ function ScanDetailModal({
             <Text style={[styles.detailMetricVal, { color: colors.foreground }]}>
               {scan.heartRate ?? "—"} {scan.method === "watch" ? "RHR" : "BPM"}
             </Text>
-            <Text style={[styles.detailMetricKey, { color: colors.mutedForeground }]}>Heart Rate</Text>
+            <Text style={[styles.detailMetricKey, { color: colors.mutedForeground }]}>{scan.method === "watch" ? "Resting Heart Rate" : "Heart Rate"}</Text>
           </View>
           <View style={[styles.detailDivider, { backgroundColor: colors.border }]} />
           <View style={styles.detailMetricItem}>

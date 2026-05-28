@@ -113,7 +113,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     await addScanResult(record);
 
     // Show an in-app alert so the score is immediately visible
-    const hrLine = record.heartRate ? `\nHR: ${record.heartRate} BPM` : "";
+    const hrLine = record.heartRate ? `\nResting Heart Rate: ${record.heartRate}` : "";
     const hrvLine = record.hrv ? `  ·  HRV: ${record.hrv} ms` : "";
     Alert.alert(
       "Scheduled Scan Complete",

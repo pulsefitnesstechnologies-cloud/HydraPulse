@@ -165,29 +165,23 @@ export function useHealthKit() {
       }).catch(() => empty),
     ]);
 
-    // Newest live HR sample timestamp (used for "is Watch worn?" check)
+    // Newest live HR sample timestamp (used for "is Watch worn?" check only —
+    // live HR is NOT used for scoring because it includes post-exercise readings).
     const mostRecentSampleMs = hrSamples.length > 0
       ? new Date(hrSamples[0].endDate).getTime()
       : null;
 
-    // Current HR: exponential weighted average of live samples
-    const liveHR = weightedAverage(hrSamples.map((s) => s.quantity));
-
-    // Blend in Apple's resting HR when live sample count is low.
-    // Use only the most recent 3 resting HR values for the current-reading blend.
-    const recentRestingHRValues = restingHRSamples.slice(0, 3).map((s) => s.quantity);
-    let heartRate: number | null = liveHR;
-    if (recentRestingHRValues.length > 0) {
-      const restingHR = weightedAverage(recentRestingHRValues);
-      if (restingHR !== null) {
-        if (liveHR === null) {
-          heartRate = restingHR;
-        } else if (hrSamples.length < 4) {
-          const liveWeight = 0.6 + hrSamples.length * 0.05; // 0.65–0.80
-          heartRate = Math.round(liveHR * liveWeight + restingHR * (1 - liveWeight));
-        }
-      }
-    }
+    // Comparison HR: Apple's most recent Resting Heart Rate (index 0 = newest,
+    // since we query ascending: false). Apple computes this daily by filtering
+    // out all active periods — exercise, walking, standing — so it reflects
+    // true resting physiology and is not confounded by a recent workout.
+    // Fall back to a weighted average of live samples only if no resting HR
+    // data exists yet (e.g. Watch paired less than one day ago).
+    const mostRecentRestingHR = restingHRSamples.length > 0
+      ? restingHRSamples[0].quantity
+      : null;
+    const heartRate: number | null =
+      mostRecentRestingHR ?? weightedAverage(hrSamples.map((s) => s.quantity));
 
     // Personal baselines — simple (unweighted) averages over 30 days so short-
     // term fluctuations don't skew the reference point.

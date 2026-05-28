@@ -84,8 +84,13 @@ export function estimateHydrationFromMetrics(
     else if (hrvDev >= -0.30) hrvScore = 2; // 17–30% below — moderate suppression
     else                      hrvScore = 1; // > 30% below — significant suppression
 
-    // Use the weaker of the two signals (conservative-safe)
-    return Math.min(hrScore, hrvScore) as 1 | 2 | 3 | 4;
+    // Weighted blend: HR 60% + HRV 40%.
+    // HR (resting, filtered by Apple) is the more direct hydration proxy;
+    // HRV is a valuable secondary signal but varies with sleep quality,
+    // stress, and measurement noise unrelated to hydration. Blending
+    // prevents a single suppressed overnight HRV from dominating the score.
+    const blended = 0.6 * hrScore + 0.4 * hrvScore;
+    return Math.min(4, Math.max(1, Math.round(blended))) as 1 | 2 | 3 | 4;
   }
 
   // HR only + personal HR baseline

@@ -18,6 +18,12 @@ export interface HealthSnapshot {
    * Used by the personalized hydration algorithm instead of population thresholds.
    */
   baselineHRV: number | null;
+  /**
+   * Weighted average of raw live HR samples from the last 3 hours.
+   * NOT used for hydration scoring (confounded by exercise) — display only.
+   * Shows the Watch's current real-time reading on the results screen.
+   */
+  liveHeartRate: number | null;
 }
 
 // Live HR window: 3 hours — only used to detect whether the Watch is worn.
@@ -88,6 +94,7 @@ export function useHealthKit() {
     mostRecentSampleMs: null,
     baselineRestingHR: null,
     baselineHRV: null,
+    liveHeartRate: null,
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -202,6 +209,7 @@ export function useHealthKit() {
       mostRecentSampleMs,
       baselineRestingHR,
       baselineHRV,
+      liveHeartRate: weightedAverage(hrSamples.map((s) => s.quantity)),
     };
     setSnapshot(snap);
     setIsLoading(false);

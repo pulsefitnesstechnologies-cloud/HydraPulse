@@ -13,6 +13,8 @@ export type ScoreLabel = "Critical" | "Low" | "Good" | "Excellent";
 export type ScanMethod = "phone" | "simulation" | "watch";
 
 export interface ScanRecord {
+  /** Current live HR at scan time — display only, not used for hydration scoring. */
+  liveHeartRate?: number;
   id: string;
   date: string;
   score: HydrationScore;

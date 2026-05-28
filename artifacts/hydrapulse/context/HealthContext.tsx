@@ -53,6 +53,7 @@ function buildWatchRecord(snap: HealthSnapshot): ScanRecord | null {
     confidence: sampleConfidence(snap.heartRate, snap.hrv, snap.sampleCount),
     heartRate: snap.heartRate ?? undefined,
     hrv: snap.hrv ?? undefined,
+    liveHeartRate: snap.liveHeartRate ?? undefined,
   };
 }
 

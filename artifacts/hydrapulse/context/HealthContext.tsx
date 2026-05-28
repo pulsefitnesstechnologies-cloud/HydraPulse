@@ -37,7 +37,12 @@ function sampleConfidence(hr: number | null, hrv: number | null, sampleCount: nu
 }
 
 function buildWatchRecord(snap: HealthSnapshot): ScanRecord | null {
-  const score = estimateHydrationFromMetrics(snap.heartRate, snap.hrv);
+  const score = estimateHydrationFromMetrics(
+    snap.heartRate,
+    snap.hrv,
+    snap.baselineRestingHR,
+    snap.baselineHRV,
+  );
   if (score === null) return null;
   return {
     id: `watch-${Date.now()}`,
@@ -82,9 +87,10 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const notif = useNotifications();
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 
-  // Apple Watch records HR roughly every 5-15 min when worn. If the most recent
-  // live sample is older than 15 min the device almost certainly isn't worn.
-  const NOT_WORN_THRESHOLD_MS = 15 * 60 * 1000;
+  // Apple Watch records live HR every 5-15 min when worn. A 20-min gap
+  // reliably indicates the Watch was removed (15 min was occasionally too
+  // tight when the user was completely still for an extended period).
+  const NOT_WORN_THRESHOLD_MS = 20 * 60 * 1000;
 
   // Auto-scan callback passed to useWatchMonitor for time-based alarm triggers
   const onAutoScan = useCallback(async (): Promise<number | null> => {

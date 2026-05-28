@@ -23,18 +23,22 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function NavigationGuard() {
-  const { hasOnboarded } = useHydration();
+  const { hasOnboarded, isLoaded } = useHydration();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
+    // Don't route until AsyncStorage has finished loading — otherwise the
+    // guard fires with hasOnboarded=false (default) before the persisted value
+    // is read, which sends onboarded users back to the onboarding screen.
+    if (!isLoaded) return;
     const inOnboarding = segments[0] === "onboarding";
     if (!hasOnboarded && !inOnboarding) {
       router.replace("/onboarding");
     } else if (hasOnboarded && inOnboarding) {
       router.replace("/(tabs)");
     }
-  }, [hasOnboarded, segments]);
+  }, [hasOnboarded, isLoaded, segments]);
 
   return null;
 }

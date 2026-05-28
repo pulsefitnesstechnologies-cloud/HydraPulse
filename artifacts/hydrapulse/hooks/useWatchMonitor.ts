@@ -36,41 +36,79 @@ const SCORE_LABELS: Record<number, string> = {
 // ─── Hydration estimate ───────────────────────────────────────────────────────
 
 /**
- * Estimate hydration score (1-4) from averaged Apple Watch HR + HRV samples.
+ * Estimate hydration score (1–4) from Apple Watch HR + HRV samples.
  *
- * Thresholds are calibrated against published literature on HR/HRV and
- * hydration status. They are intentionally wider than the camera-PPG thresholds
- * to account for the day-to-day natural variation in wrist-based optical HR and
- * SDNN HRV across individuals.
+ * PERSONALIZED MODE (preferred): when the user's personal 30-day baseline is
+ * available, scoring is based on how much the current reading deviates from
+ * their own norm — not a population average. This is far more accurate because
+ * resting HR and HRV vary enormously between individuals. A resting HR of 78
+ * is completely normal for one person and high for another.
  *
- * When both HR and HRV are available the combination is much more reliable than
- * either alone; the score in that case reflects the weaker of the two signals
- * (conservative-safe approach).
+ * Physiological basis:
+ *   • Dehydration reduces plasma volume → heart compensates by beating faster
+ *     (elevated HR) and with less autonomic flexibility (suppressed HRV).
+ *   • A 10–18% HR elevation above personal baseline corresponds roughly to
+ *     1–2% body weight fluid loss (mild-moderate dehydration).
+ *   • HRV suppression of 15–30% below baseline is a robust marker of the same.
+ *
+ * POPULATION FALLBACK: used on first launch before 30 days of resting-HR
+ * history accumulates. Thresholds are intentionally wide to reduce false
+ * positives across the normal population range.
  */
 export function estimateHydrationFromMetrics(
   hr: number | null,
-  hrv: number | null
+  hrv: number | null,
+  baselineHR?: number | null,
+  baselineHRV?: number | null,
 ): 1 | 2 | 3 | 4 | null {
   if (hr === null && hrv === null) return null;
 
+  // ── Personalized scoring ─────────────────────────────────────────────────
+  if (hr !== null && hrv !== null && baselineHR && baselineHRV) {
+    // Positive hrDev  = HR elevated above personal baseline (dehydration signal)
+    // Negative hrvDev = HRV suppressed below personal baseline (dehydration signal)
+    const hrDev  = (hr  - baselineHR)  / baselineHR;
+    const hrvDev = (hrv - baselineHRV) / baselineHRV;
+
+    let hrScore: 1 | 2 | 3 | 4;
+    if      (hrDev <= 0.04) hrScore = 4; // at/below baseline — well hydrated
+    else if (hrDev <= 0.10) hrScore = 3; // ≤ 10% elevated — mild stress
+    else if (hrDev <= 0.18) hrScore = 2; // 10–18% elevated — likely dehydrated
+    else                    hrScore = 1; // > 18% — significant dehydration
+
+    let hrvScore: 1 | 2 | 3 | 4;
+    if      (hrvDev >= -0.06) hrvScore = 4; // within 6% of baseline — normal variation
+    else if (hrvDev >= -0.17) hrvScore = 3; // 6–17% below — mild autonomic stress
+    else if (hrvDev >= -0.30) hrvScore = 2; // 17–30% below — moderate suppression
+    else                      hrvScore = 1; // > 30% below — significant suppression
+
+    // Use the weaker of the two signals (conservative-safe)
+    return Math.min(hrScore, hrvScore) as 1 | 2 | 3 | 4;
+  }
+
+  // HR only + personal HR baseline
+  if (hr !== null && baselineHR && !hrv) {
+    const hrDev = (hr - baselineHR) / baselineHR;
+    if      (hrDev <= 0.05) return 3;
+    else if (hrDev <= 0.16) return 2;
+    return 1;
+  }
+
+  // ── Population-average fallback (no personal baseline yet) ───────────────
   if (hr !== null && hrv !== null) {
-    // Excellent: low resting HR + high HRV (parasympathetic dominance)
     if (hr <= 72 && hrv >= 50) return 4;
-    // Good: healthy adult resting range
     if (hr <= 86 && hrv >= 28) return 3;
-    // Low: mild dehydration markers
     if (hr <= 100 && hrv >= 14) return 2;
     return 1;
   }
 
-  // HR only (no HRV available)
   if (hr !== null) {
     if (hr <= 75) return 3;
     if (hr <= 94) return 2;
     return 1;
   }
 
-  // HRV only (rare — e.g. Watch not logging HR recently)
+  // HRV only (rare)
   const h = hrv as number;
   if (h >= 50) return 3;
   if (h >= 22) return 2;

@@ -30,6 +30,8 @@ interface HydrationContextType {
   scansThisWeek: number;
   isPremium: boolean;
   hasOnboarded: boolean;
+  /** True once AsyncStorage has finished loading — NavigationGuard waits for this. */
+  isLoaded: boolean;
   addScanResult: (record: ScanRecord) => void;
   removeScan: (id: string) => void;
   clearHistory: () => void;
@@ -85,6 +87,7 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<ScanRecord[]>([]);
   const [isPremium, setIsPremiumState] = useState(TESTING_MODE);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // historyRef always mirrors the latest history state so callbacks like
   // addScanResult never capture a stale snapshot via closure.
@@ -92,21 +95,29 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { historyRef.current = history; }, [history]);
 
   useEffect(() => {
+    // Each key is loaded independently so a corrupted history value cannot
+    // prevent the onboarded flag from being read (which would lock the user
+    // out of the app with no way back in).
     (async () => {
-      try {
-        const [historyRaw, premiumRaw, onboardedRaw] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.HISTORY),
-          AsyncStorage.getItem(STORAGE_KEYS.PREMIUM),
-          AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
-        ]);
-        if (historyRaw) {
-          const parsed = JSON.parse(historyRaw) as ScanRecord[];
+      await AsyncStorage.getItem(STORAGE_KEYS.HISTORY)
+        .then((raw) => {
+          if (!raw) return;
+          const parsed = JSON.parse(raw) as ScanRecord[];
           setHistory(parsed);
           historyRef.current = parsed;
-        }
-        if (premiumRaw === "true") setIsPremiumState(true);
-        if (onboardedRaw === "true") setHasOnboardedState(true);
-      } catch {}
+        })
+        .catch(() => {}); // corrupted history → keep empty array, never crash
+
+      await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM)
+        .then((raw) => { if (raw === "true") setIsPremiumState(true); })
+        .catch(() => {});
+
+      await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED)
+        .then((raw) => { if (raw === "true") setHasOnboardedState(true); })
+        .catch(() => {});
+
+      // Signal that routing decisions can now be made safely
+      setIsLoaded(true);
     })();
   }, []);
 
@@ -170,6 +181,7 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
         scansThisWeek,
         isPremium,
         hasOnboarded,
+        isLoaded,
         addScanResult,
         removeScan,
         clearHistory,

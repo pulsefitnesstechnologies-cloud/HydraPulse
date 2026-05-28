@@ -223,6 +223,8 @@ export function useNotifications() {
           title: `Hydration: ${label}`,
           body: `Score ${score}/4${hrPart}`,
           sound: "default",
+          // Time Sensitive bypasses Focus / DND — same level as scan alarms
+          interruptionLevel: "timeSensitive",
           data: { type: "scan-result" },
         },
         trigger: null,

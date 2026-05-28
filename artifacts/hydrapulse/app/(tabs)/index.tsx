@@ -179,8 +179,8 @@ export default function HomeScreen() {
       if (result === "not-worn") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         Alert.alert(
-          "Device Not Worn",
-          "Scan cannot be completed. No recent heart rate data was found — please wear your Apple Watch and try again, or use Torch Scan instead.",
+          "No Health Data Found",
+          "HydraPulse couldn't read any heart rate or HRV data from Apple Health. Make sure your Apple Watch is paired, Health access is enabled in Settings, and try again.",
           [{ text: "OK" }]
         );
       } else if (result) {

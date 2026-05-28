@@ -158,17 +158,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const runWatchScan = useCallback(async (): Promise<ScanRecord | "not-worn" | null> => {
     if (Platform.OS !== "ios") return null;
     const snap = await hk.fetchLatest();
-    if (!snap || (snap.heartRate === null && snap.hrv === null)) return null;
 
-    if (
-      snap.mostRecentSampleMs === null ||
-      Date.now() - snap.mostRecentSampleMs > NOT_WORN_THRESHOLD_MS
-    ) {
-      return "not-worn";
-    }
+    // No data at all from HealthKit — permissions missing or Watch never paired.
+    if (!snap || (snap.heartRate === null && snap.hrv === null)) return "not-worn";
 
+    // For manual scans we do NOT gate on mostRecentSampleMs. Live HR sampling
+    // frequency drops to every 10–30 min during rest, so a gap > 60 min is
+    // normal and does not mean the Watch is off. Scoring uses Resting HR
+    // (Apple's daily computation), which is valid regardless of when the last
+    // live sample was taken. The timestamp gate is kept only for auto-scans
+    // where we genuinely need a recent live reading to confirm the Watch is on.
     const record = buildWatchRecord(snap);
-    if (!record) return null;
+    if (!record) return "not-worn";
     addScanResult(record);
     return record;
   }, [hk.fetchLatest, addScanResult]);

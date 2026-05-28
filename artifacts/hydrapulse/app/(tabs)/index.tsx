@@ -185,6 +185,10 @@ export default function HomeScreen() {
         );
       } else if (result) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        router.push({
+          pathname: "/results",
+          params: { score: result.score, label: result.label },
+        });
       } else {
         Alert.alert(
           "No Watch Data",

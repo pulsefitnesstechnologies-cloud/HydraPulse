@@ -141,7 +141,7 @@ function ScanDetailModal({
           <View style={styles.detailMetricItem}>
             <Ionicons name="heart" size={18} color={colors.destructive} />
             <Text style={[styles.detailMetricVal, { color: colors.foreground }]}>
-              {scan.heartRate ?? "—"} BPM
+              {scan.heartRate ?? "—"} {scan.method === "watch" ? "Resting HR" : "BPM"}
             </Text>
             <Text style={[styles.detailMetricKey, { color: colors.mutedForeground }]}>Heart Rate</Text>
           </View>
@@ -342,7 +342,7 @@ function ScansTab() {
             {item.heartRate && (
               <View style={styles.metricsRow}>
                 <Ionicons name="heart" size={12} color={colors.destructive} />
-                <Text style={[styles.metricText, { color: colors.mutedForeground }]}>{item.heartRate} BPM</Text>
+                <Text style={[styles.metricText, { color: colors.mutedForeground }]}>{item.heartRate} {item.method === "watch" ? "Resting HR" : "BPM"}</Text>
                 {item.hrv ? (
                   <>
                     <Text style={[styles.metricDot, { color: colors.border }]}>·</Text>

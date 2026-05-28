@@ -22,7 +22,6 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { useHealth } from "@/context/HealthContext";
 import { useHydration } from "@/context/HydrationContext";
-import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
 import { ScanAlarm, SmartReminder } from "@/hooks/useNotifications";
 import {
@@ -349,8 +348,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { scansThisWeek, history, clearHistory } = useHydration();
-  const { clearWaterLog } = useWaterIntake();
+  const { scansThisWeek, history } = useHydration();
   const {
     healthKitAvailable,
     healthKitEnabled,
@@ -402,24 +400,6 @@ export default function SettingsScreen() {
       }
     }
     await setAlertThreshold(v);
-  };
-
-  const handleClearHistory = () => {
-    Alert.alert(
-      "Clear All Data",
-      "This will permanently delete all scan history and water intake logs. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            await Promise.all([clearHistory(), clearWaterLog()]);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          },
-        },
-      ]
-    );
   };
 
   return (
@@ -542,7 +522,6 @@ export default function SettingsScreen() {
         <View style={styles.group}>
           <SettingsRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => {}} />
           <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => {}} />
-          <SettingsRow icon="trash-outline" label="Clear All History" onPress={handleClearHistory} destructive />
         </View>
 
         {/* About */}

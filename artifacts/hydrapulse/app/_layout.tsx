@@ -31,6 +31,9 @@ function NavigationGuard() {
     // Don't route until AsyncStorage has finished loading — otherwise the
     // guard fires with hasOnboarded=false (default) before the persisted value
     // is read, which sends onboarded users back to the onboarding screen.
+    // Segments is intentionally NOT a dependency: the guard should only re-run
+    // when auth state changes, not on every navigation, which would cause
+    // spurious redirects during route transitions.
     if (!isLoaded) return;
     const inOnboarding = segments[0] === "onboarding";
     if (!hasOnboarded && !inOnboarding) {
@@ -38,7 +41,8 @@ function NavigationGuard() {
     } else if (hasOnboarded && inOnboarding) {
       router.replace("/(tabs)");
     }
-  }, [hasOnboarded, isLoaded, segments]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasOnboarded, isLoaded]);
 
   return null;
 }

@@ -114,11 +114,11 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
         .then((raw) => { if (raw === "true") setIsPremiumState(true); })
         .catch(() => {});
 
-      await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED)
-        .then((raw) => { if (raw === "true") setHasOnboardedState(true); })
-        .catch(() => {});
-
-      // Signal that routing decisions can now be made safely
+      // Read ONBOARDED and set both flags in the same synchronous block so
+      // React 18 batches them into one render. This prevents NavigationGuard
+      // from ever seeing isLoaded=true while hasOnboarded is still false.
+      const onboardedRaw = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED).catch(() => null);
+      if (onboardedRaw === "true") setHasOnboardedState(true);
       setIsLoaded(true);
     })();
   }, []);

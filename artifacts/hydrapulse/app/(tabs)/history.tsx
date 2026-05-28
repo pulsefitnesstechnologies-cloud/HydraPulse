@@ -296,9 +296,27 @@ function WaterLogModal({
 
 function ScansTab() {
   const colors = useColors();
-  const { history, removeScan } = useHydration();
+  const { history, removeScan, clearHistory } = useHydration();
   const router = useRouter();
   const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null);
+
+  const handleClearScans = () => {
+    Alert.alert(
+      "Clear All Scans",
+      "This will permanently delete your entire scan history. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            clearHistory();
+          },
+        },
+      ]
+    );
+  };
 
   const totalScans = history.length;
   const avgScore =
@@ -374,7 +392,14 @@ function ScansTab() {
           <TrendChart history={history} width={320} height={110} />
         </View>
       )}
-      <Text style={[styles.listTitle, { color: colors.foreground }]}>All Scans</Text>
+      <View style={styles.listTitleRow}>
+        <Text style={[styles.listTitle, { color: colors.foreground }]}>All Scans</Text>
+        {history.length > 0 && (
+          <Pressable onPress={handleClearScans} hitSlop={8}>
+            <Text style={[styles.clearBtn, { color: colors.destructive }]}>Clear All</Text>
+          </Pressable>
+        )}
+      </View>
       {history.length > 0 && (
         <Text style={[styles.swipeHint, { color: colors.mutedForeground }]}>
           Swipe left to delete · Tap to view details
@@ -445,9 +470,27 @@ function formatNavDate(d: Date): string {
 
 function WaterTab() {
   const colors = useColors();
-  const { waterLog, addWaterLog, deleteWaterLog } = useWaterIntake();
+  const { waterLog, addWaterLog, deleteWaterLog, clearWaterLog } = useWaterIntake();
   const [showLogModal, setShowLogModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()));
+
+  const handleClearWater = () => {
+    Alert.alert(
+      "Clear Water Log",
+      "This will permanently delete all water intake entries. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            clearWaterLog();
+          },
+        },
+      ]
+    );
+  };
 
   const today = startOfDay(new Date());
   const isToday = selectedDate.getTime() === today.getTime();
@@ -563,6 +606,14 @@ function WaterTab() {
         </Pressable>
       </View>
 
+      <View style={styles.listTitleRow}>
+        <Text style={[styles.listTitle, { color: colors.foreground }]}>Log</Text>
+        {waterLog.length > 0 && (
+          <Pressable onPress={handleClearWater} hitSlop={8}>
+            <Text style={[styles.clearBtn, { color: colors.destructive }]}>Clear All</Text>
+          </Pressable>
+        )}
+      </View>
       {dayLogs.length > 0 && (
         <Text style={[styles.swipeHint, { color: colors.mutedForeground }]}>Swipe left to delete</Text>
       )}
@@ -607,8 +658,26 @@ function WaterTab() {
 
 function WorkoutsTab() {
   const colors = useColors();
-  const { workouts } = useWorkout();
+  const { workouts, clearWorkouts } = useWorkout();
   const router = useRouter();
+
+  const handleClearWorkouts = () => {
+    Alert.alert(
+      "Clear Workout Log",
+      "This will permanently delete all workout and sweat loss records. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            clearWorkouts();
+          },
+        },
+      ]
+    );
+  };
   const finished = workouts.filter((w) => w.endDate !== null);
 
   const totalSweatOz = finished.reduce((s, w) => s + (w.sweatLossOz ?? 0), 0);
@@ -681,7 +750,14 @@ function WorkoutsTab() {
         <StatCard value={totalSweatOz >= 1 ? `${totalSweatOz.toFixed(1)} oz` : "—"} label="Total Sweat" color="#0EA5E9" />
         <StatCard value={avgDuration !== null ? formatDuration(avgDuration) : "—"} label="Avg Duration" color={colors.accent} />
       </View>
-      <Text style={[styles.listTitle, { color: colors.foreground }]}>Sweat Loss Log</Text>
+      <View style={styles.listTitleRow}>
+        <Text style={[styles.listTitle, { color: colors.foreground }]}>Sweat Loss Log</Text>
+        {finished.length > 0 && (
+          <Pressable onPress={handleClearWorkouts} hitSlop={8}>
+            <Text style={[styles.clearBtn, { color: colors.destructive }]}>Clear All</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 
@@ -814,7 +890,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
+  listTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   listTitle: { fontSize: 20, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  clearBtn: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   swipeHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -8 },
   scanRow: {
     flexDirection: "row",

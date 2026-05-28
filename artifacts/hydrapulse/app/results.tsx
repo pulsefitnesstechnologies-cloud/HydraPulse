@@ -183,10 +183,12 @@ export default function ResultsScreen() {
               <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="heart-outline" size={16} color={colors.primary} />
                 <Text style={[styles.metricVal, { color: colors.foreground }]}>
-                  {latestScan.liveHeartRate ?? latestScan.heartRate}
+                  {latestScan.method === "watch"
+                    ? (latestScan.heartRate ?? latestScan.liveHeartRate)
+                    : (latestScan.liveHeartRate ?? latestScan.heartRate)}
                 </Text>
                 <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>
-                  {latestScan.liveHeartRate != null && latestScan.method === "watch" ? "Current BPM" : "BPM"}
+                  {latestScan.method === "watch" ? "Resting HR" : "BPM"}
                 </Text>
               </View>
             )}

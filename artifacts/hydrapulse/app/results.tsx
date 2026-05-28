@@ -188,7 +188,7 @@ export default function ResultsScreen() {
                     : (latestScan.liveHeartRate ?? latestScan.heartRate)}
                 </Text>
                 <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>
-                  {latestScan.method === "watch" ? "Resting HR" : "BPM"}
+                  {latestScan.method === "watch" ? "RHR" : "BPM"}
                 </Text>
               </View>
             )}

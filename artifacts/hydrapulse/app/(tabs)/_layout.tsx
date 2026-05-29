@@ -7,6 +7,8 @@ import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
 
+export { ErrorBoundary } from "@/components/ErrorBoundary";
+
 export default function TabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();

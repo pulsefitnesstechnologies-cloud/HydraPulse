@@ -17,7 +17,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+export { ErrorBoundary } from "@/components/ErrorBoundary";
+
 import { ScoreGauge } from "@/components/ScoreGauge";
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import { useHealth } from "@/context/HealthContext";
@@ -135,13 +138,43 @@ function WaterLogModal({
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function HomeLoadingSkeleton() {
+  const colors = useColors();
+  return (
+    <View style={{ gap: 16 }}>
+      <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <SkeletonBlock width={130} height={13} borderRadius={6} />
+        <View style={[styles.gaugeRow, { marginTop: 12 }]}>
+          <SkeletonBlock width={180} height={180} borderRadius={90} />
+          <View style={{ flex: 1, paddingLeft: 8, gap: 10 }}>
+            <SkeletonBlock width="75%" height={22} borderRadius={11} />
+            <SkeletonBlock width="55%" height={13} borderRadius={6} />
+            <SkeletonBlock width="65%" height={13} borderRadius={6} />
+          </View>
+        </View>
+        <SkeletonBlock height={46} borderRadius={10} style={{ marginTop: 12 }} />
+      </View>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <SkeletonBlock width={110} height={13} borderRadius={6} />
+        <SkeletonBlock height={46} borderRadius={10} style={{ marginTop: 12 }} />
+      </View>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <SkeletonBlock width={90} height={13} borderRadius={6} />
+        <SkeletonBlock height={110} borderRadius={8} style={{ marginTop: 12 }} />
+      </View>
+    </View>
+  );
+}
+
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { latestScan, history } = useHydration();
+  const { latestScan, history, isLoaded } = useHydration();
   const {
     healthKitEnabled,
     healthSnapshot,
@@ -232,7 +265,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
+        {!isLoaded ? (
+          <HomeLoadingSkeleton />
+        ) : (
+          <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
           {/* Main hydration score card */}
           <View
             style={[
@@ -510,7 +546,8 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-        </Animated.View>
+          </Animated.View>
+        )}
       </ScrollView>
 
       <WaterLogModal

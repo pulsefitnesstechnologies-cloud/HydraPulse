@@ -1,3 +1,5 @@
+export { ErrorBoundary } from "@/components/ErrorBoundary";
+
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";

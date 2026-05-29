@@ -51,6 +51,9 @@ const SCAN_TIPS: Record<HydrationScore, string[]> = {
 };
 import { WaterLog, useWaterIntake } from "@/context/WaterIntakeContext";
 import { WorkoutRecord, useWorkout } from "@/context/WorkoutContext";
+export { ErrorBoundary } from "@/components/ErrorBoundary";
+
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { useColors } from "@/hooks/useColors";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -292,11 +295,47 @@ function WaterLogModal({
   );
 }
 
+// ─── Scans Loading Skeleton ───────────────────────────────────────────────────
+
+function ScansLoadingSkeleton() {
+  const colors = useColors();
+  return (
+    <View style={styles.listContent}>
+      <View style={styles.statsRow}>
+        {[0, 1, 2].map((i) => (
+          <View
+            key={i}
+            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <SkeletonBlock width={40} height={24} borderRadius={6} />
+            <SkeletonBlock width={60} height={11} borderRadius={5} style={{ marginTop: 6 }} />
+          </View>
+        ))}
+      </View>
+      {[0, 1, 2, 3].map((i) => (
+        <View
+          key={i}
+          style={[
+            styles.scanRow,
+            { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 8 },
+          ]}
+        >
+          <SkeletonBlock width={44} height={44} borderRadius={22} />
+          <View style={{ flex: 1, paddingLeft: 12, gap: 8 }}>
+            <SkeletonBlock width="60%" height={14} borderRadius={6} />
+            <SkeletonBlock width="45%" height={11} borderRadius={5} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Scans Tab ────────────────────────────────────────────────────────────────
 
 function ScansTab() {
   const colors = useColors();
-  const { history, removeScan, clearHistory } = useHydration();
+  const { history, removeScan, clearHistory, isLoaded } = useHydration();
   const router = useRouter();
   const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null);
 
@@ -423,6 +462,10 @@ function ScansTab() {
       </Pressable>
     </View>
   );
+
+  if (!isLoaded) {
+    return <ScansLoadingSkeleton />;
+  }
 
   return (
     <>

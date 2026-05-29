@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -20,6 +21,8 @@ import {
 } from "react-native-vision-camera";
 import { useResizePlugin } from "vision-camera-resize-plugin";
 import { useRunOnJS } from "react-native-worklets-core";
+
+export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { WaveformPreview } from "@/components/WaveformPreview";
@@ -231,6 +234,7 @@ export default function ScanScreen() {
   const [signalQuality, setSignalQuality] = useState<SignalQuality>("none");
   const [result, setResult] = useState<ReturnType<typeof analyzeSignal>>(null);
   const [failReason, setFailReason] = useState<string>("");
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sampleBuffer = useRef<number[]>([]);
@@ -373,8 +377,12 @@ export default function ScanScreen() {
       setState("requesting");
       const granted = await requestPermission();
       setState("idle");
-      if (!granted) return;
+      if (!granted) {
+        setPermissionDenied(true);
+        return;
+      }
     }
+    setPermissionDenied(false);
     beginScanning();
   }, [hasPermission, requestPermission, beginScanning]);
 
@@ -616,21 +624,46 @@ export default function ScanScreen() {
             <Animated.View
               style={[
                 styles.fingerTarget,
-                { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
+                {
+                  borderColor: permissionDenied ? "#EF4444" : colors.primary,
+                  transform: [{ scale: pulseAnim }],
+                },
               ]}
             >
-              <Ionicons name="camera-outline" size={64} color={colors.primary} />
+              <Ionicons
+                name={permissionDenied ? "lock-closed-outline" : "camera-outline"}
+                size={64}
+                color={permissionDenied ? "#EF4444" : colors.primary}
+              />
             </Animated.View>
             <Text style={[styles.instruction, { color: colors.foreground }]}>
               {state === "requesting"
                 ? "Requesting camera access..."
+                : permissionDenied
+                ? "Camera access denied"
                 : "Camera access needed"}
             </Text>
             <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
               {state === "requesting"
                 ? "Please allow camera permission in the system prompt."
+                : permissionDenied
+                ? "HydraPulse needs camera access to read your pulse. Open Settings and enable camera permission for HydraPulse."
                 : "HydraPulse needs camera access to activate the torch and read your pulse. Tap Start Scan to grant permission."}
             </Text>
+            {permissionDenied && state !== "requesting" && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, marginTop: 8 },
+                ]}
+                onPress={() => Linking.openSettings()}
+              >
+                <Ionicons name="settings-outline" size={22} color={colors.primaryForeground} />
+                <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+                  Open Settings
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 

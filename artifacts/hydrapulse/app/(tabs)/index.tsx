@@ -255,6 +255,11 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ backgroundColor: "red", padding: 8, borderRadius: 6, marginBottom: 8 }}>
+          <Text style={{ color: "white", fontWeight: "bold", textAlign: "center" }}>
+            RELOAD TEST v2 — if you see this, bundle updated
+          </Text>
+        </View>
         <View style={styles.headerRow}>
           <View>
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>

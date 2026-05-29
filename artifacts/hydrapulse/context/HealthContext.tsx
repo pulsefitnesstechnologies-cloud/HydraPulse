@@ -76,7 +76,7 @@ interface HealthContextType {
   updateSmartReminder: (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => Promise<void>;
   setAlertThreshold: (v: AlertThreshold) => Promise<void>;
   disableAllNotifications: () => Promise<void>;
-  writeWaterLog: (oz: number, date: string) => Promise<void>;
+  writeWaterLog: (oz: number, date: string) => Promise<boolean>;
 }
 
 const HealthContext = createContext<HealthContextType | undefined>(undefined);
@@ -179,10 +179,9 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     await notif.cancelAll();
   }, [notif]);
 
-  const writeWaterLog = useCallback(async (oz: number, dateStr: string): Promise<void> => {
-    if (!healthKitEnabled) return;
-    await hk.writeWater(oz, new Date(dateStr));
-  }, [healthKitEnabled, hk]);
+  const writeWaterLog = useCallback(async (oz: number, dateStr: string): Promise<boolean> => {
+    return hk.writeWater(oz, new Date(dateStr));
+  }, [hk]);
 
   return (
     <HealthContext.Provider

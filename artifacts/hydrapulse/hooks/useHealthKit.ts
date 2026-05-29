@@ -225,18 +225,23 @@ export function useHealthKit() {
    * Silently no-ops when HealthKit is unavailable or unauthorised.
    * The unit is US fluid ounces to match the rest of the app.
    */
-  const writeWater = useCallback(async (oz: number, date: Date): Promise<void> => {
-    if (!isAuthorized || Platform.OS !== "ios") return;
+  /**
+   * Returns true on success, false if unauthorized / unavailable, throws on
+   * any other HealthKit error so the caller can surface a message to the user.
+   */
+  const writeWater = useCallback(async (oz: number, date: Date): Promise<boolean> => {
+    if (Platform.OS !== "ios") return false;
     const hk = getHK();
-    if (!hk) return;
-    await hk.saveQuantitySample(
+    if (!hk) return false;
+    if (!isAuthorized) return false;
+    return await hk.saveQuantitySample(
       "HKQuantityTypeIdentifierDietaryWater",
       "fl_oz_us",
       oz,
       date,
       date,
       {}
-    ).catch(() => {});
+    );
   }, [isAuthorized]);
 
   return {

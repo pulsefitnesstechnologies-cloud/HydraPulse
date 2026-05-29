@@ -231,7 +231,7 @@ export function useHealthKit() {
     if (!hk) return;
     await hk.saveQuantitySample(
       "HKQuantityTypeIdentifierDietaryWater",
-      "fl_oz",
+      "fl_oz_us",
       oz,
       date,
       date,

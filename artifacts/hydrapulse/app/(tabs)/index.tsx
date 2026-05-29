@@ -556,23 +556,21 @@ export default function HomeScreen() {
         onClose={() => setShowWaterLog(false)}
         onLog={async (oz, time) => {
           await addWaterLog({ amountOz: oz, time });
-          if (healthKitEnabled) {
-            try {
-              const ok = await writeWaterLog(oz, time);
-              if (!ok) {
-                Alert.alert(
-                  "Health App Sync",
-                  "Water was saved in HydraPulse but couldn't be written to Apple Health.\n\nTo fix this: go to Settings → Health → Data Access & Devices → HydraPulse and make sure Water is enabled under 'Allow HydraPulse to Write'.",
-                  [{ text: "OK" }]
-                );
-              }
-            } catch (e) {
+          try {
+            const ok = await writeWaterLog(oz, time);
+            if (!ok) {
               Alert.alert(
-                "Health App Sync Error",
-                `Unexpected error writing to Apple Health: ${e instanceof Error ? e.message : String(e)}`,
+                "Health App Sync",
+                "Water was saved in HydraPulse but couldn't be written to Apple Health.\n\nTo fix this: go to Settings → Health → Data Access & Devices → HydraPulse and make sure Water is enabled under 'Allow HydraPulse to Write'.",
                 [{ text: "OK" }]
               );
             }
+          } catch (e) {
+            Alert.alert(
+              "Health App Sync Error",
+              `Unexpected error writing to Apple Health: ${e instanceof Error ? e.message : String(e)}`,
+              [{ text: "OK" }]
+            );
           }
         }}
       />

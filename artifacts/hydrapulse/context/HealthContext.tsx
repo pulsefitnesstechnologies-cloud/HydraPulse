@@ -180,6 +180,11 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   }, [notif]);
 
   const writeWaterLog = useCallback(async (oz: number, dateStr: string): Promise<boolean> => {
+    if (Platform.OS !== "ios") return false;
+    // Always re-request before writing — no-op if already granted, ensures
+    // auth state is current even if the user granted permissions in iOS Settings
+    // without going through the in-app connect flow.
+    await hk.requestAuthorization();
     return hk.writeWater(oz, new Date(dateStr));
   }, [hk]);
 

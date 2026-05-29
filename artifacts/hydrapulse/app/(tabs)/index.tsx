@@ -554,26 +554,16 @@ export default function HomeScreen() {
       <WaterLogModal
         visible={showWaterLog}
         onClose={() => setShowWaterLog(false)}
-        onLog={async (oz, time) => {
-          await addWaterLog({ amountOz: oz, time });
-          Alert.alert("HK Debug", "Attempting HealthKit write...");
-          try {
-            const ok = await writeWaterLog(oz, time);
+        onLog={(oz, time) => {
+          Alert.alert("HK Debug", `onLog called: ${oz} oz`);
+          addWaterLog({ amountOz: oz, time }).catch((e) => {
+            Alert.alert("addWaterLog error", String(e));
+          });
+          writeWaterLog(oz, time).then((ok) => {
             Alert.alert("HK Debug", `writeWaterLog returned: ${String(ok)}`);
-            if (!ok) {
-              Alert.alert(
-                "Health App Sync",
-                "Water was saved in HydraPulse but couldn't be written to Apple Health.\n\nTo fix this: go to Settings → Health → Data Access & Devices → HydraPulse and make sure Water is enabled under 'Allow HydraPulse to Write'.",
-                [{ text: "OK" }]
-              );
-            }
-          } catch (e) {
-            Alert.alert(
-              "HK Debug Error",
-              `${e instanceof Error ? e.message : String(e)}`,
-              [{ text: "OK" }]
-            );
-          }
+          }).catch((e) => {
+            Alert.alert("HK Debug Error", String(e));
+          });
         }}
       />
     </View>

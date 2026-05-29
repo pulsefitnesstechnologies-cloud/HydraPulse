@@ -220,6 +220,25 @@ export function useHealthKit() {
     if (isAuthorized) fetchLatest();
   }, [isAuthorized, fetchLatest]);
 
+  /**
+   * Writes a dietary water sample to HealthKit.
+   * Silently no-ops when HealthKit is unavailable or unauthorised.
+   * The unit is US fluid ounces to match the rest of the app.
+   */
+  const writeWater = useCallback(async (oz: number, date: Date): Promise<void> => {
+    if (!isAuthorized || Platform.OS !== "ios") return;
+    const hk = getHK();
+    if (!hk) return;
+    await hk.saveQuantitySample(
+      "HKQuantityTypeIdentifierDietaryWater",
+      "fl_oz",
+      oz,
+      date,
+      date,
+      {}
+    ).catch(() => {});
+  }, [isAuthorized]);
+
   return {
     isAvailable,
     isAuthorized,
@@ -227,5 +246,6 @@ export function useHealthKit() {
     isLoading,
     requestAuthorization,
     fetchLatest,
+    writeWater,
   };
 }

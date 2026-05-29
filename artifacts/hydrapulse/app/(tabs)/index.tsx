@@ -181,6 +181,7 @@ export default function HomeScreen() {
     healthLoading,
     connectHealthKit,
     runWatchScan,
+    writeWaterLog,
   } = useHealth();
   const { todayTotalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -553,7 +554,10 @@ export default function HomeScreen() {
       <WaterLogModal
         visible={showWaterLog}
         onClose={() => setShowWaterLog(false)}
-        onLog={async (oz, time) => { await addWaterLog({ amountOz: oz, time }); }}
+        onLog={async (oz, time) => {
+          await addWaterLog({ amountOz: oz, time });
+          writeWaterLog(oz, time).catch(() => {});
+        }}
       />
     </View>
   );

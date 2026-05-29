@@ -1,0 +1,33 @@
+A. Real camera PPG — Yes, possible. High effort, nuanced payoff.
+
+react-native-vision-camera v4 with Frame Processors is the right tool and it works. The PPG algorithm itself (red channel intensity → bandpass filter → pulse waveform → HR/HRV) is well-established and implementable in a JS worklet.
+
+The catch: this requires a full custom native build every time (no OTA updates for the camera pipeline), and it adds a significant new dependency that's historically finicky with EAS. Plan for 1-2 build debugging sessions.
+
+The bigger nuance: camera PPG gives you real HR and HRV — but those feed the same hydration scoring algorithm the Watch already uses. The Watch version of that is actually more accurate because Apple's hardware and filters are better than a phone camera. So "real PPG" makes the torch scan legitimate rather than a demo, but it won't necessarily score more accurately than the Watch scan already does.
+
+Still worth doing — right now torch scan is fake, which is a credibility problem.
+
+B. Error boundaries + loading states — Easy win, do it.
+
+You already have an ErrorBoundary component. Skeleton loaders and camera permission handling are straightforward polish. Low risk, high trust improvement.
+
+C. Zustand/Redux — I'd skip it for now.
+
+Context is working fine at this scale. Migrating to Zustand is a large refactor with no user-visible benefit until the app is significantly larger or you're hitting measurable re-render performance problems. Save this for when you have a specific pain point.
+
+D. HealthKit + Watch — Already done.
+
+This is the item that's most complete. The Watch scan reads real resting heart rate and HRV from HealthKit and scores from it. The only thing missing is writing hydration data back to HealthKit (so it shows up in the Health app), which is a nice-to-have.
+
+E. Performance cleanup — Do alongside A.
+
+Only becomes relevant once the camera pipeline is real. Pre-optimizing a simulated scan isn't worth the time.
+
+My suggested order:
+
+B — quick, safe, makes the app more stable for testing
+A — the core legitimacy upgrade; schedule a dedicated build session for it
+HealthKit write-back (small addition to D)
+Everything else when the product is more mature
+Want me to start on any of these?

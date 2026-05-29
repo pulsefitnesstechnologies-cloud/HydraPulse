@@ -556,8 +556,10 @@ export default function HomeScreen() {
         onClose={() => setShowWaterLog(false)}
         onLog={async (oz, time) => {
           await addWaterLog({ amountOz: oz, time });
+          Alert.alert("HK Debug", "Attempting HealthKit write...");
           try {
             const ok = await writeWaterLog(oz, time);
+            Alert.alert("HK Debug", `writeWaterLog returned: ${String(ok)}`);
             if (!ok) {
               Alert.alert(
                 "Health App Sync",
@@ -567,8 +569,8 @@ export default function HomeScreen() {
             }
           } catch (e) {
             Alert.alert(
-              "Health App Sync Error",
-              `Unexpected error writing to Apple Health: ${e instanceof Error ? e.message : String(e)}`,
+              "HK Debug Error",
+              `${e instanceof Error ? e.message : String(e)}`,
               [{ text: "OK" }]
             );
           }

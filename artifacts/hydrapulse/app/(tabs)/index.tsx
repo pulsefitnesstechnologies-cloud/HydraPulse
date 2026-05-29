@@ -555,15 +555,17 @@ export default function HomeScreen() {
         visible={showWaterLog}
         onClose={() => setShowWaterLog(false)}
         onLog={(oz, time) => {
-          Alert.alert("HK Debug", `onLog called: ${oz} oz`);
-          addWaterLog({ amountOz: oz, time }).catch((e) => {
-            Alert.alert("addWaterLog error", String(e));
-          });
-          writeWaterLog(oz, time).then((ok) => {
-            Alert.alert("HK Debug", `writeWaterLog returned: ${String(ok)}`);
-          }).catch((e) => {
-            Alert.alert("HK Debug Error", String(e));
-          });
+          addWaterLog({ amountOz: oz, time }).catch(() => {});
+          // Delay all alerts until after the modal slide-close animation finishes,
+          // otherwise iOS dismisses them along with the modal's view controller.
+          setTimeout(() => {
+            Alert.alert("HK Debug", `onLog called: ${oz} oz — now writing...`);
+            writeWaterLog(oz, time).then((ok) => {
+              setTimeout(() => Alert.alert("HK Result", `returned: ${String(ok)}`), 300);
+            }).catch((e) => {
+              setTimeout(() => Alert.alert("HK Error", String(e)), 300);
+            });
+          }, 700);
         }}
       />
     </View>

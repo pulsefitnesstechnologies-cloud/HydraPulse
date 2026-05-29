@@ -187,7 +187,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     <HealthContext.Provider
       value={{
         healthKitAvailable: hk.isAvailable,
-        healthKitEnabled: healthKitEnabled && hk.isAuthorized,
+        healthKitEnabled: healthKitEnabled,
         healthSnapshot: hk.snapshot,
         healthLoading: hk.isLoading,
         notificationPermission: notif.hasPermission,

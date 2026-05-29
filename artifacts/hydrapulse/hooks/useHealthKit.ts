@@ -233,7 +233,9 @@ export function useHealthKit() {
     if (Platform.OS !== "ios") return false;
     const hk = getHK();
     if (!hk) return false;
-    if (!isAuthorized) return false;
+    // Don't gate on isAuthorized — HealthKit itself rejects with an error if
+    // write permission is missing, which the caller can surface to the user.
+    // Gating on isAuthorized causes silent skips when state hasn't resolved yet.
     return await hk.saveQuantitySample(
       "HKQuantityTypeIdentifierDietaryWater",
       "fl_oz_us",
@@ -242,7 +244,7 @@ export function useHealthKit() {
       date,
       {}
     );
-  }, [isAuthorized]);
+  }, []);
 
   return {
     isAvailable,

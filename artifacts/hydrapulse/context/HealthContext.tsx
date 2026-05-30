@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { Alert, Platform } from "react-native";
 
 import { ScanRecord, getScoreLabel, useHydration } from "@/context/HydrationContext";
+import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { HealthSnapshot, useHealthKit } from "@/hooks/useHealthKit";
 import {
   AlarmTuple,
@@ -11,6 +12,11 @@ import {
   SmartReminder,
   useNotifications,
 } from "@/hooks/useNotifications";
+import {
+  SmartScheduleHook,
+  SmartScheduleTime,
+  useSmartSchedule,
+} from "@/hooks/useSmartSchedule";
 import {
   AlertThreshold,
   estimateHydrationFromMetrics,
@@ -68,6 +74,14 @@ interface HealthContextType {
   scanAlarms: AlarmTuple;
   smartReminders: ReminderTuple;
   alertThreshold: AlertThreshold;
+  // Smart schedule
+  smartScheduleEnabled: boolean;
+  smartScheduledTimes: SmartScheduleTime[];
+  lastScheduledDate: string | null;
+  isScheduling: boolean;
+  enableSmartSchedule: () => Promise<void>;
+  disableSmartSchedule: () => Promise<void>;
+  refreshSmartSchedule: () => Promise<void>;
   connectHealthKit: () => Promise<{ ok: boolean; error?: string }>;
   refreshHealthData: () => void;
   runWatchScan: () => Promise<ScanRecord | "not-worn" | null>;
@@ -84,7 +98,8 @@ const HealthContext = createContext<HealthContextType | undefined>(undefined);
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
-  const { addScanResult } = useHydration();
+  const { addScanResult, history } = useHydration();
+  const { waterLog } = useWaterIntake();
   const hk = useHealthKit();
   const notif = useNotifications();
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
@@ -131,6 +146,13 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const monitor = useWatchMonitor({
     onAutoScan,
     scanAlarms: notif.scanAlarms,
+  });
+
+  const smartSchedule = useSmartSchedule({
+    waterLog,
+    history,
+    updateSmartReminder: notif.updateSmartReminder,
+    hasPermission: notif.hasPermission,
   });
 
   // Restore health connection on mount
@@ -195,6 +217,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         scanAlarms: notif.scanAlarms,
         smartReminders: notif.smartReminders,
         alertThreshold: monitor.alertThreshold,
+        // Smart schedule
+        smartScheduleEnabled: smartSchedule.smartScheduleEnabled,
+        smartScheduledTimes: smartSchedule.smartScheduledTimes,
+        lastScheduledDate: smartSchedule.lastScheduledDate,
+        isScheduling: smartSchedule.isScheduling,
+        enableSmartSchedule: smartSchedule.enableSmartSchedule,
+        disableSmartSchedule: smartSchedule.disableSmartSchedule,
+        refreshSmartSchedule: smartSchedule.refreshSmartSchedule,
         connectHealthKit,
         refreshHealthData: () => { hk.fetchLatest(); },
         runWatchScan,

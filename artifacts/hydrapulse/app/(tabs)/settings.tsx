@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Modal,
@@ -357,6 +358,13 @@ export default function SettingsScreen() {
     scanAlarms,
     smartReminders,
     alertThreshold,
+    smartScheduleEnabled,
+    smartScheduledTimes,
+    lastScheduledDate,
+    isScheduling,
+    enableSmartSchedule,
+    disableSmartSchedule,
+    refreshSmartSchedule,
     connectHealthKit,
     refreshHealthData,
     requestNotificationPermission,
@@ -503,20 +511,123 @@ export default function SettingsScreen() {
         <View style={[styles.sectionBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.boxTitle, { color: colors.foreground }]}>Daily Reminders</Text>
           <Text style={[styles.boxSub, { color: colors.mutedForeground }]}>
-            Each reminder fires a banner notification at the set time with your custom
-            message. Use it to prompt yourself to drink water or check your hydration.
+            {smartScheduleEnabled
+              ? "HydraPulse is learning your drinking patterns and automatically scheduling reminders during your natural hydration gaps."
+              : "Set reminders manually, or turn on Auto-Schedule to let HydraPulse learn your habits and fill in the gaps automatically."}
           </Text>
-          <View style={styles.slotGroup}>
-            {smartReminders.map((reminder, i) => (
-              <ReminderSlotCard
-                key={i}
-                index={i}
-                reminder={reminder}
-                onUpdate={(p) => updateSmartReminder(i as 0 | 1 | 2, p)}
-                onRequestPermission={requestNotificationPermission}
-              />
-            ))}
+
+          {/* Auto-Schedule toggle */}
+          <View style={[styles.autoScheduleRow, { backgroundColor: colors.accent + "10", borderColor: colors.accent + "30" }]}>
+            <View style={[styles.alarmIconWrap, { backgroundColor: colors.accent + "20" }]}>
+              <Ionicons name="sparkles-outline" size={16} color={colors.accent} />
+            </View>
+            <View style={styles.alarmMiddle}>
+              <Text style={[styles.alarmLabel, { color: colors.foreground }]}>Auto-Schedule</Text>
+              <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground }]}>
+                Learns your patterns, picks the best times
+              </Text>
+            </View>
+            <Switch
+              value={smartScheduleEnabled}
+              onValueChange={async (on) => {
+                Haptics.selectionAsync().catch(() => {});
+                if (on) {
+                  const granted = await requestNotificationPermission();
+                  if (!granted) {
+                    Alert.alert(
+                      "Notifications Required",
+                      "Enable notifications in iPhone Settings to use Smart Reminders.",
+                      [{ text: "OK" }]
+                    );
+                    return;
+                  }
+                  await enableSmartSchedule();
+                } else {
+                  await disableSmartSchedule();
+                }
+              }}
+              trackColor={{ false: colors.border, true: colors.accent + "80" }}
+              thumbColor={smartScheduleEnabled ? colors.accent : colors.mutedForeground}
+            />
           </View>
+
+          {smartScheduleEnabled ? (
+            /* ── Auto-schedule view ── */
+            <View style={styles.slotGroup}>
+              {isScheduling ? (
+                <View style={[styles.schedulingRow, { borderColor: colors.border }]}>
+                  <ActivityIndicator size="small" color={colors.accent} />
+                  <Text style={[styles.schedulingText, { color: colors.mutedForeground }]}>
+                    Analyzing your patterns...
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {(smartScheduledTimes.length > 0
+                    ? smartScheduledTimes
+                    : [
+                        { displayTime: "9:00 AM", message: "" },
+                        { displayTime: "1:00 PM", message: "" },
+                        { displayTime: "6:00 PM", message: "" },
+                      ]
+                  ).map((slot, i) => (
+                    <View
+                      key={i}
+                      style={[styles.scheduledSlot, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    >
+                      <View style={[styles.alarmIconWrap, { backgroundColor: colors.accent + "15" }]}>
+                        <Ionicons name="alarm-outline" size={15} color={colors.accent} />
+                      </View>
+                      <View style={styles.alarmMiddle}>
+                        <Text style={[styles.alarmLabel, { color: colors.mutedForeground }]}>
+                          Reminder {i + 1}
+                        </Text>
+                        <Text style={[styles.alarmTime, { color: colors.accent }]}>
+                          {slot.displayTime}
+                        </Text>
+                      </View>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.accent + "80"} />
+                    </View>
+                  ))}
+
+                  {/* Last updated + refresh */}
+                  <View style={styles.scheduleFooter}>
+                    <Text style={[styles.scheduleLastRun, { color: colors.mutedForeground }]}>
+                      {lastScheduledDate
+                        ? `Updated ${new Date(lastScheduledDate).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${new Date(lastScheduledDate).toLocaleDateString([], { month: "short", day: "numeric" })}`
+                        : "Not yet scheduled"}
+                    </Text>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.refreshBtn,
+                        { backgroundColor: colors.accent + "15", borderColor: colors.accent + "30", opacity: pressed ? 0.7 : 1 },
+                      ]}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        refreshSmartSchedule();
+                      }}
+                    >
+                      <Ionicons name="refresh-outline" size={14} color={colors.accent} />
+                      <Text style={[styles.refreshBtnText, { color: colors.accent }]}>Refresh Now</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+            </View>
+          ) : (
+            /* ── Manual slot cards ── */
+            <View style={styles.slotGroup}>
+              {smartReminders.map((reminder, i) => (
+                <ReminderSlotCard
+                  key={i}
+                  index={i}
+                  reminder={reminder}
+                  onUpdate={(p) => updateSmartReminder(i as 0 | 1 | 2, p)}
+                  onRequestPermission={requestNotificationPermission}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Privacy & Data */}
@@ -655,4 +766,52 @@ const styles = StyleSheet.create({
   },
   optionText: { fontSize: 16, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   optionDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 16 },
+  // Smart schedule
+  autoScheduleRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  autoScheduleSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  schedulingRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  schedulingText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  scheduledSlot: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  scheduleFooter: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    gap: 8,
+    paddingTop: 2,
+  },
+  scheduleLastRun: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular" },
+  refreshBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  refreshBtnText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 });

@@ -37,6 +37,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"

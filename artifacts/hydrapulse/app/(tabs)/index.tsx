@@ -557,20 +557,10 @@ export default function HomeScreen() {
         onLog={(oz, time) => {
           addWaterLog({ amountOz: oz, time }).catch(() => {});
           writeWaterLog(oz, time).then((ok) => {
-            if (!ok) {
-              Alert.alert(
-                "Apple Health Not Updated",
-                "Water was saved in HydraPulse but couldn't be written to Apple Health.\n\nGo to: Settings → Health → Data Access & Devices → HydraPulse → and make sure Water is toggled on under 'Allow HydraPulse to Write'.",
-                [{ text: "OK" }]
-              );
-            }
+            Alert.alert("HK Result", ok ? "Returned TRUE — wrote to Health" : "Returned FALSE — write rejected");
           }).catch((e: unknown) => {
             const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert(
-              "Apple Health Error",
-              `Could not write to Apple Health:\n\n${msg}\n\nGo to: Settings → Health → Data Access & Devices → HydraPulse → and check Write permissions.`,
-              [{ text: "OK" }]
-            );
+            Alert.alert("HK Error", msg);
           });
         }}
       />

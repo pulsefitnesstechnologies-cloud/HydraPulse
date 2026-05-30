@@ -556,12 +556,7 @@ export default function HomeScreen() {
         onClose={() => setShowWaterLog(false)}
         onLog={(oz, time) => {
           addWaterLog({ amountOz: oz, time }).catch(() => {});
-          writeWaterLog(oz, time).then((ok) => {
-            Alert.alert("HK Result", ok ? "Returned TRUE — wrote to Health" : "Returned FALSE — write rejected");
-          }).catch((e: unknown) => {
-            const msg = e instanceof Error ? e.message : String(e);
-            Alert.alert("HK Error", msg);
-          });
+          writeWaterLog(oz, time).catch(() => {});
         }}
       />
     </View>

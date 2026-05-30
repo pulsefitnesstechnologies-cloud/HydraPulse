@@ -255,11 +255,6 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ backgroundColor: "red", padding: 8, borderRadius: 6, marginBottom: 8 }}>
-          <Text style={{ color: "white", fontWeight: "bold", textAlign: "center" }}>
-            RELOAD TEST v2 — if you see this, bundle updated
-          </Text>
-        </View>
         <View style={styles.headerRow}>
           <View>
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
@@ -561,16 +556,7 @@ export default function HomeScreen() {
         onClose={() => setShowWaterLog(false)}
         onLog={(oz, time) => {
           addWaterLog({ amountOz: oz, time }).catch(() => {});
-          // Delay all alerts until after the modal slide-close animation finishes,
-          // otherwise iOS dismisses them along with the modal's view controller.
-          setTimeout(() => {
-            Alert.alert("HK Debug", `onLog called: ${oz} oz — now writing...`);
-            writeWaterLog(oz, time).then((ok) => {
-              setTimeout(() => Alert.alert("HK Result", `returned: ${String(ok)}`), 300);
-            }).catch((e) => {
-              setTimeout(() => Alert.alert("HK Error", String(e)), 300);
-            });
-          }, 700);
+          writeWaterLog(oz, time).catch(() => {});
         }}
       />
     </View>

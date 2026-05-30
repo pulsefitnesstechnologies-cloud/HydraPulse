@@ -1,2 +1,3 @@
 - [expo-updates plugin](expo-updates-plugin.md) — removing "expo-updates" from plugins[] in app.config.ts fixes dev-server crash; only needed for EAS production builds.
 - [notification redesign](notification-redesign.md) — ScanAlarm/SmartReminder types live in useNotifications.ts; alarm-based watch auto-scan in useWatchMonitor.ts; HealthContext bridges them.
+- [replit-proxy-device-timeout](replit-proxy-device-timeout.md) — Expo dev client on physical device cannot load Metro bundle through Replit proxy; proxy times out before 12 MB iOS bundle downloads. Code changes require a new EAS dev build to reach the device.

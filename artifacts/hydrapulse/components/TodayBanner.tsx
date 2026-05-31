@@ -14,7 +14,6 @@ import Svg, {
   Defs,
   G,
   Path,
-  Rect,
 } from "react-native-svg";
 
 import { useColors } from "@/hooks/useColors";
@@ -44,13 +43,16 @@ function buildDropPath(): string {
   );
 }
 
-// A wave-fill path (from y=amp surface down to DROP_H+20, full width)
+// Wave-fill path: extends 24 px beyond each side so translateX slosh
+// never exposes a gap inside the drop clip.
 function buildWaveFill(amp: number): string {
-  const W = DROP_W;
+  const L = -24;              // left overhang
+  const R = DROP_W + 24;      // right overhang
+  const mid = DROP_W / 2;
   return [
-    `M 0 ${amp}`,
-    `C ${W * 0.25} 0 ${W * 0.75} ${amp * 2} ${W} ${amp}`,
-    `V ${DROP_H + 20} H 0 Z`,
+    `M ${L} ${amp}`,
+    `C ${mid * 0.5} 0 ${mid * 1.5} ${amp * 2} ${R} ${amp}`,
+    `V ${DROP_H + 20} H ${L} Z`,
   ].join(" ");
 }
 
@@ -132,30 +134,43 @@ export function TodayBanner({
     outputRange: [`translate(0, -6)`, `translate(0, ${DROP_H - 6})`],
   });
 
-  // ── Vertical bob after fill completes ──────────────────────────────────────
-  const bobAnim = useRef(new Animated.Value(0)).current;
+  // ── Horizontal water slosh after fill completes ────────────────────────────
+  // sloshAnim: -14 (left) ↔ +14 (right), applied only to wave paths inside
+  // the drop clip — the drop shape itself stays completely still.
+  const sloshAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(bobAnim, {
-            toValue: -4,
-            duration: 1400,
+          Animated.timing(sloshAnim, {
+            toValue: 14,
+            duration: 1800,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false, // SVG transform — no native driver
           }),
-          Animated.timing(bobAnim, {
-            toValue: 0,
-            duration: 1400,
+          Animated.timing(sloshAnim, {
+            toValue: -14,
+            duration: 1800,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       ).start();
     }, 1700);
     return () => clearTimeout(timer);
   }, []);
+
+  // String-based translateX for SVG AnimatedG
+  const slosh1Transform = sloshAnim.interpolate({
+    inputRange:  [-14, 14],
+    outputRange: [`translate(-14, 0)`, `translate(14, 0)`],
+  });
+  // Wave 2 lags slightly (10 px amplitude) for a more natural sloshing look
+  const slosh2Transform = sloshAnim.interpolate({
+    inputRange:  [-14, 14],
+    outputRange: [`translate(-10, 0)`, `translate(10, 0)`],
+  });
 
   const streakEmoji = currentStreak > 0 &&
     [30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0)
@@ -170,9 +185,7 @@ export function TodayBanner({
       <View style={styles.content}>
 
         {/* ── Drop hero: fill animation + ring ─────────────────────────── */}
-        <Animated.View
-          style={[styles.dropHero, { transform: [{ translateY: bobAnim }] }]}
-        >
+        <View style={styles.dropHero}>
           {/* SVG: drop background + clipped water fill */}
           <Svg width={DROP_W} height={DROP_H}>
             <Defs>
@@ -184,19 +197,27 @@ export function TodayBanner({
             {/* Empty drop background */}
             <Path d={dropPath} fill={`${waterColor}16`} />
 
-            {/* Water fill, clipped to drop shape */}
+            {/* Water fill, clipped to drop shape.
+                Each wave has two transforms stacked:
+                  - outer AnimatedG: vertical rise (follows fill level)
+                  - inner AnimatedG: horizontal slosh (water moves side-to-side)
+                The drop outline and ring are NOT animated. */}
             <G clipPath="url(#drop-clip-tb)">
-              {/* Wave 2 (behind) */}
+              {/* Wave 2 — behind, smaller slosh amplitude */}
               <AnimatedG transform={wave2Transform}>
-                <Path d={waveFill2} fill={`${waterColor}40`} />
+                <AnimatedG transform={slosh2Transform}>
+                  <Path d={waveFill2} fill={`${waterColor}40`} />
+                </AnimatedG>
               </AnimatedG>
-              {/* Wave 1 (front) */}
+              {/* Wave 1 — front, full slosh amplitude */}
               <AnimatedG transform={wave1Transform}>
-                <Path d={waveFill1} fill={`${waterColor}70`} />
+                <AnimatedG transform={slosh1Transform}>
+                  <Path d={waveFill1} fill={`${waterColor}70`} />
+                </AnimatedG>
               </AnimatedG>
             </G>
 
-            {/* Drop border */}
+            {/* Drop border — static */}
             <Path
               d={dropPath}
               fill="none"
@@ -246,7 +267,7 @@ export function TodayBanner({
               </Text>
             </View>
           </View>
-        </Animated.View>
+        </View>
 
         {/* ── Percentage ────────────────────────────────────────────────── */}
         <Text style={[styles.pctText, { color: waterColor }]}>{pct}%</Text>

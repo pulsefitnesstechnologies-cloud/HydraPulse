@@ -2,4 +2,6 @@
 - [notification redesign](notification-redesign.md) — ScanAlarm/SmartReminder types live in useNotifications.ts; alarm-based watch auto-scan in useWatchMonitor.ts; HealthContext bridges them.
 - [replit-proxy-device-timeout](replit-proxy-device-timeout.md) — Expo dev client on physical device cannot load Metro bundle through Replit proxy; proxy times out before 12 MB iOS bundle downloads. Code changes require a new EAS dev build to reach the device.
 - [healthkit-water-write](healthkit-water-write.md) — HealthKit water write confirmed working on preview build; unit fl_oz_us, type HKQuantityTypeIdentifierDietaryWater; diagnostic alert removed after confirmation.
-- [eas-update-workflow](eas-update-workflow.md) — push JS changes to device: EAS_SKIP_AUTO_FINGERPRINT=1 EAS_NO_VCS=1, channel=development, EXPO_TOKEN secret saved.
+- [eas-update-workflow](eas-update-workflow.md) — push JS changes to device: EAS_SKIP_AUTO_FINGERPRINT=1 EAS_NO_VCS=1, channel=preview, runtimeVersion=1.0.0; Metro rebuild from scratch exceeds 120s tool limit — avoid clearing node_modules/.cache; use warm cache runs.
+- [rn-svg-animation](rn-svg-animation.md) — G transform string does not update reliably on native; only leaf-element props (Path d, Circle strokeDashoffset) update correctly via state/Animated.
+- [healthkit-stale-closure](healthkit-stale-closure.md) — runWatchScan useCallback captures isAuthorized at creation (stale false); fix by exposing isAuthorizedRef from useHealthKit and reading .current in the stable callback.

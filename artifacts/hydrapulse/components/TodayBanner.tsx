@@ -137,10 +137,10 @@ export function TodayBanner({
   const [wave, setWave] = useState({ x1: 0, y1: DROP_H, x2: 0, y2: DROP_H + 6 });
 
   // Keep target in sync with the latest fill level.
-  // Always show a minimum 15% visual fill so the wave is perceptible even
-  // before any water is logged — the wave animation proves the code is running.
+  // Minimum 25% keeps the wave in the wide circular region of the teardrop
+  // so the fill + slosh are always clearly visible.
   useEffect(() => {
-    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.15));
+    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.25));
   }, [progress]);
 
   // Single perpetual RAF loop started once on mount
@@ -159,9 +159,9 @@ export function TodayBanner({
       waveRef.current.y1 = y1;
       waveRef.current.y2 = y2;
 
-      // ── Slosh: continuous sine, delayed 1.7 s from mount so fill settles first
-      const sloshMs = Math.max(elapsed - 1700, 0);
-      const x1 = 14 * Math.sin((sloshMs / 1800) * Math.PI);
+      // ── Slosh: continuous sine, delayed 1.2 s from mount so fill settles first
+      const sloshMs = Math.max(elapsed - 1200, 0);
+      const x1 = 24 * Math.sin((sloshMs / 1800) * Math.PI);
       const x2 = x1 * 0.71; // wave-2 has slightly narrower slosh for depth
 
       setWave({ x1, y1, x2, y2 });
@@ -267,9 +267,6 @@ export function TodayBanner({
         <Text style={[styles.pctSub, { color: colors.mutedForeground }]}>
           of daily goal
         </Text>
-        {/* DIAGNOSTIC — remove after confirming update applies */}
-        <View style={styles.diagDot} />
-
         {/* ── Stats row ─────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
           <View style={styles.statLeft}>
@@ -409,15 +406,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bestText: { fontSize: 11, fontFamily: "Inter_400Regular" },
-
-  // Diagnostic dot — bright orange, remove once confirmed update applies
-  diagDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#FF6B35",
-    marginTop: -6,
-  },
 
   // Log Water button
   logBtn: {

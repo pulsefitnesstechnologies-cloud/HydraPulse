@@ -260,6 +260,9 @@ export function useHealthKit() {
   return {
     isAvailable,
     isAuthorized,
+    /** Always-current authorization status — use this ref in stable callbacks
+     *  (useCallback with empty deps) to avoid stale-closure false-negatives. */
+    isAuthorizedRef,
     snapshot,
     isLoading,
     requestAuthorization,

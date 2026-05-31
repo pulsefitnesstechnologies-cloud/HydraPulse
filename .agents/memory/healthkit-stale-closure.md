@@ -20,7 +20,14 @@ if (!hk.isAuthorizedRef.current) {
 }
 ```
 
-## Why
-`runWatchScan` in HealthContext is a stable `useCallback` with deps `[hk.fetchLatest, addScanResult]`. It does NOT include `hk.isAuthorized`, so it always reads the initial value (false). On every tap it entered the re-auth path; if `requestAuthorization` threw (already-determined HealthKit state), it returned `{ok: false}` → "Scan Unavailable" flash before the scan completed.
+**Why:** `runWatchScan` in HealthContext is a stable `useCallback` with deps `[hk.fetchLatest, addScanResult]`. It does NOT include `hk.isAuthorized`, so it always reads the initial value (false). Exposed `isAuthorizedRef` so the always-current value can be read without adding the state to deps.
 
-**How to apply:** Any stable callback (empty or minimal deps) in HealthContext that gates on authorization must read `hk.isAuthorizedRef.current`, not `hk.isAuthorized`.
+## Watch Scan "Scan Unavailable" flash — real cause
+The flash was NOT due to the stale ref. It was a modal animation artifact:
+- On scan success: `watchPhase` goes `"scanning" → "idle"`
+- `visible = watchPhase !== "idle"` → Modal starts its fade-out animation
+- During the fade, inner JSX re-renders: `watchPhase === "scanning"` is now false → "Scan Unavailable" content renders while modal is still fading out and visible
+
+**Fix:** Change inner conditional from `watchPhase === "scanning"` to `watchPhase !== "failed"`. The spinner renders for both "scanning" and "idle" states, so the fade-out shows the spinner disappearing, not an error flash.
+
+**How to apply:** Any modal that shows different content based on state AND uses a fade/slide animation: make the "normal" branch the default and the "error" branch the explicit check. Never make error the default else-branch when a success-to-hidden transition can pass through it.

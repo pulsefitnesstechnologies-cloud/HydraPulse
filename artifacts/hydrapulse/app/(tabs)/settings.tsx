@@ -21,6 +21,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import * as Updates from "expo-updates";
+
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { useHealth } from "@/context/HealthContext";
@@ -403,6 +405,37 @@ export default function SettingsScreen() {
     }
   };
 
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "checking" | "downloading" | "up-to-date" | "error">("idle");
+
+  const handleCheckUpdate = async () => {
+    if (Platform.OS === "web") {
+      Alert.alert("Not available", "Updates are only available on device builds.");
+      return;
+    }
+    setUpdateStatus("checking");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const check = await Updates.checkForUpdateAsync();
+      if (check.isAvailable) {
+        setUpdateStatus("downloading");
+        await Updates.fetchUpdateAsync();
+        Alert.alert(
+          "Update ready",
+          "A new version has been downloaded. The app will now restart to apply it.",
+          [{ text: "Restart now", onPress: () => Updates.reloadAsync() }]
+        );
+      } else {
+        setUpdateStatus("up-to-date");
+        Alert.alert("Up to date", "You're already running the latest version.");
+        setTimeout(() => setUpdateStatus("idle"), 3000);
+      }
+    } catch {
+      setUpdateStatus("error");
+      Alert.alert("Update check failed", "Could not check for updates. Make sure you're connected to the internet.");
+      setTimeout(() => setUpdateStatus("idle"), 3000);
+    }
+  };
+
   const handleSetGoal = () => {
     const opts = [48, 64, 80, 96, 128];
     Alert.alert(
@@ -673,6 +706,18 @@ export default function SettingsScreen() {
         <View style={styles.group}>
           <SettingsRow icon="information-circle-outline" label="Version" value="1.0.0" />
           <SettingsRow icon="code-slash-outline" label="Mode" value="Camera + Watch PPG" />
+          <SettingsRow
+            icon="cloud-download-outline"
+            label="Check for Updates"
+            value={
+              updateStatus === "checking" ? "Checking..." :
+              updateStatus === "downloading" ? "Downloading..." :
+              updateStatus === "up-to-date" ? "Up to date" :
+              updateStatus === "error" ? "Failed" :
+              ""
+            }
+            onPress={updateStatus === "idle" || updateStatus === "up-to-date" || updateStatus === "error" ? handleCheckUpdate : undefined}
+          />
         </View>
 
         <View style={{ marginTop: 8 }}>

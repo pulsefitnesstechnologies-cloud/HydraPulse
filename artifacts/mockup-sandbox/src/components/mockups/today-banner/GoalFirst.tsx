@@ -8,33 +8,26 @@ const RING_SIZE = 190;
 const RING_STROKE = 10;
 const DROP_W = 280;
 const DROP_H = 300;
-const DROP_R = DROP_W / 2;         // 140 — bottom circle radius
+const DROP_R = DROP_W / 2;         // 140
 const DROP_CX = DROP_W / 2;        // 140
-const CIRCLE_CY = DROP_H - DROP_R; // 160 — centre Y of bottom circle
+const CIRCLE_CY = DROP_H - DROP_R; // 160
 
-// ── Smooth teardrop shape ─────────────────────────────────────────────────────
-// Key: P2 of each cubic is directly above the arc tangent point (same X) so
-// the curve arrives vertically, joining the circle with zero kink.
+// ── Smooth teardrop — P2 of each bezier lands directly above arc tangent ──────
 function buildDropPath(): string {
-  const cx = DROP_CX; // 140
-  const W  = DROP_W;  // 280
-  const H  = DROP_H;  // 300
-  const cy = CIRCLE_CY; // 160
-  const r  = DROP_R;    // 140
-
+  const cx = DROP_CX;
+  const W  = DROP_W;
+  const H  = DROP_H;
+  const cy = CIRCLE_CY;
+  const r  = DROP_R;
   return (
     `M ${cx} 8 ` +
-    // right side: tip → right tangent of circle. P2 must be (W, something) so
-    // the bezier arrives with a vertical tangent matching the circle.
     `C ${W * 0.70} ${H * 0.06}, ${W} ${H * 0.26}, ${W} ${cy} ` +
-    // bottom semicircle
     `A ${r} ${r} 0 0 1 0 ${cy} ` +
-    // left side: left tangent → tip. P1 is (0, *) for vertical departure.
     `C 0 ${H * 0.26}, ${W * 0.30} ${H * 0.06}, ${cx} 8 Z`
   );
 }
 
-// ── Wave path: 2× drop width so SMIL horizontal loop is seamless ──────────────
+// ── Wave path — 2× drop width so horizontal SMIL loop is seamless ─────────────
 function buildWave(y: number, amp: number): string {
   const W = DROP_W;
   return (
@@ -45,7 +38,6 @@ function buildWave(y: number, amp: number): string {
   );
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export function GoalFirst() {
   const normalizedRadius = RING_SIZE / 2 - RING_STROKE;
   const circumference    = normalizedRadius * 2 * Math.PI;
@@ -54,14 +46,18 @@ export function GoalFirst() {
   const dropPath = buildDropPath();
   const waveY    = DROP_H * (1 - PROGRESS); // 120 at 60 %
 
-  // Wave paths: start flat at the very bottom of the drop, end at fill level
-  const waveFlat = buildWave(DROP_H + 20, 0); // invisible starting position
-  const wave1End = buildWave(waveY,     9);
-  const wave2End = buildWave(waveY + 8, 7);
-  const wave3End = buildWave(waveY + 4, 5);
+  // Wave paths at their FINAL resting position — they always scroll horizontally.
+  // The bottom-to-top reveal is handled entirely by a rising SVG <mask>.
+  const wave1 = buildWave(waveY,     9);
+  const wave2 = buildWave(waveY + 8, 7);
+  const wave3 = buildWave(waveY + 4, 5);
 
-  const RISE = "1.8s";
-  const EASE = "0.22 0.1 0.25 1"; // fast-out ease
+  // How far the mask rect must travel: starts below the entire drop, ends at waveY
+  const maskStartY = DROP_H + 20;
+  const maskEndY   = waveY - 12;         // slightly above waveY so the surface is visible
+  const maskEndH   = DROP_H - maskEndY + 20;
+  const RISE       = "1.8s";
+  const EASE       = "0.22 0.1 0.25 1";
 
   return (
     <div
@@ -83,18 +79,37 @@ export function GoalFirst() {
       >
         <svg width={DROP_W} height={DROP_H} style={{ overflow: "visible" }}>
           <defs>
+            {/* Hard clip for wave content */}
             <clipPath id="gf-clip">
               <path d={dropPath} />
             </clipPath>
 
-            {/* Radial gradient — bright cyan core fading out */}
+            {/* Rising mask — a rect that grows upward from the bottom of the drop.
+                This is the ONLY thing controlling the bottom-to-top fill reveal.
+                Waves inside simply scroll left continuously at their final Y. */}
+            <mask id="gf-fill-mask">
+              <rect x="-5" width={DROP_W + 10} fill="white">
+                <animate
+                  attributeName="y"
+                  from={maskStartY} to={maskEndY}
+                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze"
+                />
+                <animate
+                  attributeName="height"
+                  from="5" to={maskEndH}
+                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze"
+                />
+              </rect>
+            </mask>
+
+            {/* Radial gradient — bright cyan core fading to transparent edges */}
             <radialGradient id="gf-grad" cx="50%" cy="45%" r="55%">
               <stop offset="0%"   stopColor="#38BDF8" stopOpacity="0.18" />
               <stop offset="55%"  stopColor="#0EA5E9" stopOpacity="0.10" />
               <stop offset="100%" stopColor="#075985" stopOpacity="0.02" />
             </radialGradient>
 
-            {/* Feather filter — drawn outside clip so edges bleed softly */}
+            {/* Feather filter — no clip, so glow bleeds into background */}
             <filter id="gf-feather" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="14" />
             </filter>
@@ -106,60 +121,44 @@ export function GoalFirst() {
             </radialGradient>
           </defs>
 
-          {/* 1. Feathered outer glow — no clip, intentionally bleeds */}
+          {/* 1. Feathered outer glow — drawn outside clip, bleeds softly */}
           <path d={dropPath} fill="#0EA5E9" fillOpacity="0.09" filter="url(#gf-feather)" />
 
-          {/* 2. Radial-gradient base fill */}
+          {/* 2. Radial-gradient ambient fill */}
           <path d={dropPath} fill="url(#gf-grad)" />
 
-          {/* 3. Rising fill — bottom → 60 % level, then horizontal wave */}
-          <g clipPath="url(#gf-clip)">
+          {/* 3. Fill content: clip to drop shape AND mask by rising rect */}
+          <g clipPath="url(#gf-clip)" mask="url(#gf-fill-mask)">
 
-            {/* Static fill rect that rises with the water */}
-            <rect x="0" width={DROP_W} fill="#0EA5E914">
-              <animate attributeName="y"
-                from={DROP_H + 20} to={waveY}
-                dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
-              <animate attributeName="height"
-                from="0" to={DROP_H - waveY + 10}
-                dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
-            </rect>
+            {/* Static base fill rectangle at the fill level */}
+            <rect x="0" y={waveY} width={DROP_W} height={DROP_H - waveY + 10} fill="#0EA5E914" />
 
-            {/* Wave 1 — rises then scrolls left */}
-            <g>
-              <animateTransform attributeName="transform" type="translate"
+            {/* Primary wave — scrolls left continuously */}
+            <path d={wave1} fill="#0EA5E932">
+              <animateTransform
+                attributeName="transform" type="translate"
                 from="0 0" to={`-${DROP_W} 0`}
-                begin={RISE} dur="4s" repeatCount="indefinite" />
-              <path fill="#0EA5E932">
-                <animate attributeName="d"
-                  from={waveFlat} to={wave1End}
-                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
-              </path>
-            </g>
+                dur="4s" repeatCount="indefinite"
+              />
+            </path>
 
-            {/* Wave 2 — slightly offset phase for depth */}
-            <g>
-              <animateTransform attributeName="transform" type="translate"
+            {/* Secondary wave — offset phase */}
+            <path d={wave2} fill="#38BDF822">
+              <animateTransform
+                attributeName="transform" type="translate"
                 from={`-${DROP_W * 0.4} 0`} to={`-${DROP_W * 1.4} 0`}
-                begin={RISE} dur="6.5s" repeatCount="indefinite" />
-              <path fill="#38BDF822">
-                <animate attributeName="d"
-                  from={waveFlat} to={wave2End}
-                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
-              </path>
-            </g>
+                dur="6.5s" repeatCount="indefinite"
+              />
+            </path>
 
-            {/* Wave 3 — micro layer */}
-            <g>
-              <animateTransform attributeName="transform" type="translate"
+            {/* Tertiary micro wave */}
+            <path d={wave3} fill="#7DD3FC1A">
+              <animateTransform
+                attributeName="transform" type="translate"
                 from={`-${DROP_W * 0.7} 0`} to={`-${DROP_W * 1.7} 0`}
-                begin={RISE} dur="5s" repeatCount="indefinite" />
-              <path fill="#7DD3FC1A">
-                <animate attributeName="d"
-                  from={waveFlat} to={wave3End}
-                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
-              </path>
-            </g>
+                dur="5s" repeatCount="indefinite"
+              />
+            </path>
           </g>
 
           {/* 4. Caustic shimmer highlight */}
@@ -198,15 +197,13 @@ export function GoalFirst() {
                     }}
                     r={normalizedRadius} cx={RING_SIZE / 2} cy={RING_SIZE / 2} />
           </svg>
-
-          {/* Centre: oz */}
           <div className="flex flex-col items-center text-center gap-0.5">
             <span className="font-extrabold text-white" style={{ fontSize: 30, lineHeight: 1 }}>48</span>
             <span className="text-slate-400 font-medium" style={{ fontSize: 12 }}>/ 80 oz</span>
           </div>
         </div>
 
-        {/* % — below ring */}
+        {/* % label */}
         <div className="flex flex-col items-center" style={{ marginBottom: 18 }}>
           <span className="font-extrabold text-[#38BDF8]"
                 style={{ fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em",

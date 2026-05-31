@@ -340,19 +340,80 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Camera scan button */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.scanBtn,
-                { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-              ]}
-              onPress={handleScan}
-            >
-              <Ionicons name="scan-outline" size={20} color={colors.primaryForeground} />
-              <Text style={[styles.scanBtnText, { color: colors.primaryForeground }]}>
-                {latestScan ? "Scan Again" : "Start Camera Scan"}
-              </Text>
-            </Pressable>
+            {/* Two scan buttons: Camera + Watch */}
+            <View style={styles.scanBtnsRow}>
+              {/* Camera Scan */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.scanBtnHalf,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={handleScan}
+              >
+                <Ionicons name="scan-outline" size={20} color={colors.primaryForeground} />
+                <Text style={[styles.scanBtnHalfTitle, { color: colors.primaryForeground }]}>
+                  Camera Scan
+                </Text>
+                <Text style={[styles.scanBtnHalfSub, { color: colors.primaryForeground + "bb" }]}>
+                  Live PPG reading
+                </Text>
+              </Pressable>
+
+              {/* Watch Scan */}
+              {Platform.OS === "ios" ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.scanBtnHalf,
+                    {
+                      backgroundColor: colors.card,
+                      borderWidth: 1,
+                      borderColor: healthKitEnabled ? colors.primary + "50" : colors.border,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                  onPress={() => {
+                    if (!healthKitEnabled) { handleConnectHealth(); return; }
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                    router.push("/scan");
+                  }}
+                >
+                  <Ionicons
+                    name={healthKitEnabled ? "watch-outline" : "link-outline"}
+                    size={20}
+                    color={healthKitEnabled ? colors.primary : colors.mutedForeground}
+                  />
+                  <Text style={[styles.scanBtnHalfTitle, { color: healthKitEnabled ? colors.foreground : colors.mutedForeground }]}>
+                    {healthKitEnabled ? "Watch Scan" : "Connect Watch"}
+                  </Text>
+                  {healthKitEnabled ? (
+                    healthLoading ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : hasHealthData ? (
+                      <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
+                        {[
+                          healthSnapshot.heartRate ? `${healthSnapshot.heartRate} RHR` : null,
+                          healthSnapshot.hrv ? `${healthSnapshot.hrv}ms HRV` : null,
+                        ].filter(Boolean).join(" · ")}
+                      </Text>
+                    ) : (
+                      <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
+                        Resting baseline
+                      </Text>
+                    )
+                  ) : (
+                    <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
+                      Apple Health
+                    </Text>
+                  )}
+                </Pressable>
+              ) : (
+                <View style={[styles.scanBtnHalf, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, opacity: 0.45 }]}>
+                  <Ionicons name="watch-outline" size={20} color={colors.mutedForeground} />
+                  <Text style={[styles.scanBtnHalfTitle, { color: colors.mutedForeground }]}>Watch Scan</Text>
+                  <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>iOS only</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Score Comparison card — only shown when both scan types have data */}
@@ -410,111 +471,6 @@ export default function HomeScreen() {
             );
           })()}
 
-          {/* Apple Health / Watch card */}
-          {Platform.OS === "ios" && (
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.cardHeaderLeft}>
-                  <Ionicons name="watch-outline" size={16} color={colors.primary} />
-                  <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-                    Apple Watch
-                  </Text>
-                </View>
-                {healthKitEnabled && (
-                  <View style={[styles.connectedBadge, { backgroundColor: "#10B981" + "20" }]}>
-                    <Text style={[styles.connectedText, { color: "#10B981" }]}>Connected</Text>
-                  </View>
-                )}
-              </View>
-
-              {!healthKitEnabled ? (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.connectBtn,
-                    {
-                      backgroundColor: colors.primary + "15",
-                      borderColor: colors.primary + "40",
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                  onPress={handleConnectHealth}
-                >
-                  <Ionicons name="link-outline" size={16} color={colors.primary} />
-                  <Text style={[styles.connectBtnText, { color: colors.primary }]}>
-                    Connect Apple Health
-                  </Text>
-                </Pressable>
-              ) : (
-                <>
-                  {healthLoading ? (
-                    <View style={styles.healthLoadingRow}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={[styles.healthLoadingText, { color: colors.mutedForeground }]}>
-                        Reading from Apple Watch...
-                      </Text>
-                    </View>
-                  ) : hasHealthData ? (
-                    <View style={styles.healthMetricsRow}>
-                      {healthSnapshot.heartRate !== null && (
-                        <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
-                          <Ionicons name="heart" size={18} color={colors.destructive} />
-                          <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
-                            {healthSnapshot.heartRate}
-                          </Text>
-                          <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
-                            BPM
-                          </Text>
-                        </View>
-                      )}
-                      {healthSnapshot.hrv !== null && (
-                        <View style={[styles.healthMetric, { backgroundColor: colors.muted }]}>
-                          <Ionicons name="pulse" size={18} color={colors.accent} />
-                          <Text style={[styles.healthMetricValue, { color: colors.foreground }]}>
-                            {healthSnapshot.hrv}
-                          </Text>
-                          <Text style={[styles.healthMetricUnit, { color: colors.mutedForeground }]}>
-                            HRV ms
-                          </Text>
-                        </View>
-                      )}
-                      {healthSnapshot.lastUpdated && (
-                        <Text style={[styles.healthUpdated, { color: colors.mutedForeground }]}>
-                          {timeAgo(healthSnapshot.lastUpdated)}
-                        </Text>
-                      )}
-                    </View>
-                  ) : (
-                    <Text style={[styles.healthEmpty, { color: colors.mutedForeground }]}>
-                      No heart rate data in the last 24 hours. Wear your Apple Watch to collect readings.
-                    </Text>
-                  )}
-
-                  {/* Prompt to use the Scan tab for Watch scans */}
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.watchScanBtn,
-                      {
-                        backgroundColor: colors.primary + "15",
-                        borderColor: colors.primary + "40",
-                        opacity: pressed ? 0.7 : 1,
-                      },
-                    ]}
-                    onPress={() => router.push("/scan")}
-                  >
-                    <Ionicons name="watch-outline" size={16} color={colors.primary} />
-                    <Text style={[styles.watchScanBtnText, { color: colors.primary }]}>
-                      Scan with Watch
-                    </Text>
-                  </Pressable>
-                </>
-              )}
-            </View>
-          )}
 
           {history.length > 0 && (
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -713,6 +669,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   scanBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  scanBtnsRow: { flexDirection: "row" as const, gap: 10 },
+  scanBtnHalf: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: 14,
+    minHeight: 80,
+  },
+  scanBtnHalfTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const, textAlign: "center" as const },
+  scanBtnHalfSub: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center" as const, lineHeight: 15 },
   cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   connectedBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -243,9 +243,10 @@ export default function ScanScreen() {
   const [failReason, setFailReason] = useState<string>("");
   const [permissionDenied, setPermissionDenied] = useState(false);
 
-  // ── Scan mode ──────────────────────────────────────────────────────────────
+  // ── Scan mode — seed from route param so buttons deep-link to a mode ──────
   type ScanMode = "camera" | "watch";
-  const [mode, setMode] = useState<ScanMode>("camera");
+  const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
+  const [mode, setMode] = useState<ScanMode>(modeParam === "watch" ? "watch" : "camera");
 
   // ── Watch scan state ───────────────────────────────────────────────────────
   type WatchScanState = "idle" | "scanning" | "done" | "failed";

@@ -219,9 +219,9 @@ export default function HomeScreen() {
 
   const scoreColor = latestScan ? getScoreColor(latestScan.score) : colors.primary;
 
-  const handleScan = () => {
+  const handleScan = (scanMode: "camera" | "watch" = "camera") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push("/scan");
+    router.push({ pathname: "/scan", params: { mode: scanMode } });
   };
 
   const handleConnectHealth = async () => {
@@ -348,7 +348,7 @@ export default function HomeScreen() {
                   styles.scanBtnHalf,
                   { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
                 ]}
-                onPress={handleScan}
+                onPress={() => handleScan("camera")}
               >
                 <Ionicons name="scan-outline" size={20} color={colors.primaryForeground} />
                 <Text style={[styles.scanBtnHalfTitle, { color: colors.primaryForeground }]}>
@@ -373,8 +373,7 @@ export default function HomeScreen() {
                   ]}
                   onPress={() => {
                     if (!healthKitEnabled) { handleConnectHealth(); return; }
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                    router.push("/scan");
+                    handleScan("watch");
                   }}
                 >
                   <Ionicons

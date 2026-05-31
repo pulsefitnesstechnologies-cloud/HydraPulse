@@ -138,6 +138,11 @@ export function TodayBanner({
                 streak
               </Text>
             </View>
+            <Text style={styles.streakEmoji}>
+              {[30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0 && currentStreak > 0)
+                ? "🌊"
+                : "💧"}
+            </Text>
           </View>
           <Text style={[styles.bestText, { color: colors.mutedForeground }]}>
             Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
@@ -233,6 +238,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 17,
+  },
+  streakEmoji: {
+    fontSize: 24,
+    lineHeight: 28,
+    marginLeft: 2,
   },
   bestText: {
     fontSize: 12,

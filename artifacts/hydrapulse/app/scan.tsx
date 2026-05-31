@@ -547,8 +547,8 @@ export default function ScanScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* ── Mode toggle (iOS only — Watch Scan requires Apple Watch) ── */}
-      {Platform.OS === "ios" && (
+      {/* ── Mode toggle: only shown when opened without a specific mode param ── */}
+      {Platform.OS === "ios" && !modeParam && (
         <View style={styles.modeToggle}>
           {(["camera", "watch"] as const).map((m) => (
             <Pressable

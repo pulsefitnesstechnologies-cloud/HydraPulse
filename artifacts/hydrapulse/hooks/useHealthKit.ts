@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
 export interface HealthSnapshot {
@@ -86,6 +86,9 @@ function simpleAverage(values: number[]): number | null {
 export function useHealthKit() {
   const [isAvailable, setIsAvailable] = useState(Platform.OS === "ios");
   const [isAuthorized, setIsAuthorized] = useState(false);
+  // Ref keeps authorization status always-current so fetchLatest (which is a
+  // stable useCallback with no isAuthorized dep) never reads a stale closure.
+  const isAuthorizedRef = useRef(false);
   const [snapshot, setSnapshot] = useState<HealthSnapshot>({
     heartRate: null,
     hrv: null,
@@ -119,6 +122,7 @@ export function useHealthKit() {
       ],
     })
       .then(() => {
+        isAuthorizedRef.current = true; // update ref immediately (no batching delay)
         setIsAuthorized(true);
         return { ok: true as const };
       })
@@ -139,7 +143,9 @@ export function useHealthKit() {
    * the live sample count is low.
    */
   const fetchLatest = useCallback(async (): Promise<HealthSnapshot | null> => {
-    if (!isAuthorized || Platform.OS !== "ios") return null;
+    // Use the ref — not the `isAuthorized` state — so this callback is stable
+    // and never returns a stale false-negative after requestAuthorization resolves.
+    if (!isAuthorizedRef.current || Platform.OS !== "ios") return null;
     const hk = getHK();
     if (!hk) return null;
     setIsLoading(true);
@@ -214,11 +220,16 @@ export function useHealthKit() {
     setSnapshot(snap);
     setIsLoading(false);
     return snap;
-  }, [isAuthorized]);
+  // No isAuthorized dep — we read the ref instead, keeping this callback stable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isAuthorized) fetchLatest();
-  }, [isAuthorized, fetchLatest]);
+  // fetchLatest is now stable (no isAuthorized dep), so this fires correctly
+  // whenever isAuthorized flips true.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthorized]);
 
   /**
    * Writes a dietary water sample to HealthKit.

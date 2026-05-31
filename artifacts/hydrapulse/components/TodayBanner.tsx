@@ -1,14 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
   Pressable,
   StyleSheet,
-  StyleProp,
   Text,
   View,
-  ViewStyle,
 } from "react-native";
 import Svg, {
   Circle,
@@ -58,17 +56,9 @@ function buildWaveFill(amp: number): string {
   ].join(" ");
 }
 
-// ─── Animated components ───────────────────────────────────────────────────────
+// ─── Animated components (ring only — waves are driven by RAF state) ──────────
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-// react-native-svg's GProps doesn't declare `style`, but the native
-// implementation honours React Native style transforms at runtime.
-// Cast through unknown so TypeScript doesn't block the valid style prop.
-const AnimatedG = Animated.createAnimatedComponent(G) as unknown as React.ComponentType<{
-  style?: StyleProp<ViewStyle>;
-  children?: React.ReactNode;
-}>;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -120,62 +110,54 @@ export function TodayBanner({
     outputRange: [circumference, 0],
   });
 
-  // ── Drop fill: wave Y positions use direct Animated.Values (numeric props
-  //    on AnimatedG — string transform interpolation is not reliably animated
-  //    in react-native-svg, but numeric x/y props are).
-  //    wave1YAnim / wave2YAnim: start at bottom (empty), rise to fill level.
-  //    sloshAnim: oscillates -14 → +14 → -14 for horizontal slosh.
-  const wave1YAnim = useRef(new Animated.Value(DROP_H - 12)).current;
-  const wave2YAnim = useRef(new Animated.Value(DROP_H - 6)).current;
+  // ── Drop fill + slosh: state-driven via requestAnimationFrame ───────────────
+  //
+  // react-native-svg's G element does NOT support React Native Animated values
+  // on either x/y props or style.transform — those are View-only in RN. The
+  // only reliable way to animate SVG children is to write the SVG `transform`
+  // attribute as a plain string and update it via React state.
+  //
+  // We keep a mutable ref for the running animation values (avoids stale
+  // closures inside the RAF callback), and batch all three wave params into
+  // one setState call per frame so there is exactly ONE re-render per tick.
 
+  const targetYRef = useRef(DROP_H);                // updated whenever progress changes
+  const waveRef    = useRef({ y1: DROP_H, y2: DROP_H + 6, mountTime: Date.now() });
+  const [wave, setWave] = useState({ x1: 0, y1: DROP_H, x2: 0, y2: DROP_H + 6 });
+
+  // Keep target in sync with the latest fill level
   useEffect(() => {
-    const target = DROP_H * (1 - Math.max(progress, 0.04));
-    Animated.parallel([
-      Animated.timing(wave1YAnim, {
-        toValue: target - 12,
-        duration: 1600,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(wave2YAnim, {
-        toValue: target - 6,
-        duration: 1600,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-    ]).start();
+    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.04));
   }, [progress]);
 
-  // ── Horizontal slosh: starts 100 ms after fill completes ──────────────────
-  const sloshAnim = useRef(new Animated.Value(0)).current;
-
+  // Single perpetual RAF loop started once on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(sloshAnim, {
-            toValue: 14,
-            duration: 1800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(sloshAnim, {
-            toValue: -14,
-            duration: 1800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-        ])
-      ).start();
-    }, 1700);
-    return () => clearTimeout(timer);
-  }, []);
+    let rafId: ReturnType<typeof requestAnimationFrame>;
 
-  // Wave 2 uses a slightly smaller slosh amplitude for depth
-  const slosh2Anim = sloshAnim.interpolate({
-    inputRange:  [-14, 14],
-    outputRange: [-10, 10],
-  });
+    const tick = () => {
+      const elapsed = Date.now() - waveRef.current.mountTime;
+
+      // ── Fill: smooth lerp towards current target (fast enough to look like
+      //    a 1-2 second ease-out, adapts to target changes without restarting)
+      const target = targetYRef.current;
+      const LERP   = 0.055; // ~95 % of distance covered in ≈50 frames (0.83 s at 60 fps)
+      const y1     = waveRef.current.y1 + (target       - waveRef.current.y1) * LERP;
+      const y2     = waveRef.current.y2 + ((target + 6) - waveRef.current.y2) * LERP;
+      waveRef.current.y1 = y1;
+      waveRef.current.y2 = y2;
+
+      // ── Slosh: continuous sine, delayed 1.7 s from mount so fill settles first
+      const sloshMs = Math.max(elapsed - 1700, 0);
+      const x1 = 14 * Math.sin((sloshMs / 1800) * Math.PI);
+      const x2 = x1 * 0.71; // wave-2 has slightly narrower slosh for depth
+
+      setWave({ x1, y1, x2, y2 });
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []); // starts once, runs until unmount
 
   const streakEmoji = currentStreak > 0 &&
     [30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0)
@@ -203,32 +185,17 @@ export function TodayBanner({
             <Path d={dropPath} fill={`${waterColor}16`} />
 
             {/* Water fill clipped to drop shape.
-                AnimatedG uses style.transform (React Native animation path) —
-                x/y SVG attributes are NOT animated by Animated.Value in
-                react-native-svg; style transforms are. */}
+                Plain G with a transform string updated from RAF state — the
+                only approach that actually animates in react-native-svg. */}
             <G clipPath="url(#drop-clip-tb)">
-              {/* Wave 2 — behind, smaller x-slosh amplitude */}
-              <AnimatedG
-                style={{
-                  transform: [
-                    { translateX: slosh2Anim as unknown as number },
-                    { translateY: wave2YAnim as unknown as number },
-                  ],
-                }}
-              >
+              {/* Wave 2 — behind, 71 % slosh amplitude for depth */}
+              <G transform={`translate(${wave.x2.toFixed(1)},${wave.y2.toFixed(1)})`}>
                 <Path d={waveFill2} fill={`${waterColor}40`} />
-              </AnimatedG>
-              {/* Wave 1 — front, full x-slosh amplitude */}
-              <AnimatedG
-                style={{
-                  transform: [
-                    { translateX: sloshAnim as unknown as number },
-                    { translateY: wave1YAnim as unknown as number },
-                  ],
-                }}
-              >
+              </G>
+              {/* Wave 1 — front, full slosh amplitude */}
+              <G transform={`translate(${wave.x1.toFixed(1)},${wave.y1.toFixed(1)})`}>
                 <Path d={waveFill1} fill={`${waterColor}70`} />
-              </AnimatedG>
+              </G>
             </G>
 
             {/* Drop border — static */}

@@ -111,32 +111,33 @@ export function TodayBanner({
     outputRange: [circumference, 0],
   });
 
-  // ── Drop fill: fillTopAnim goes from DROP_H (empty) → target level ─────────
-  const fillTopAnim = useRef(new Animated.Value(DROP_H)).current;
+  // ── Drop fill: wave Y positions use direct Animated.Values (numeric props
+  //    on AnimatedG — string transform interpolation is not reliably animated
+  //    in react-native-svg, but numeric x/y props are).
+  //    wave1YAnim / wave2YAnim: start at bottom (empty), rise to fill level.
+  //    sloshAnim: oscillates -14 → +14 → -14 for horizontal slosh.
+  const wave1YAnim = useRef(new Animated.Value(DROP_H - 12)).current;
+  const wave2YAnim = useRef(new Animated.Value(DROP_H - 6)).current;
 
   useEffect(() => {
-    Animated.timing(fillTopAnim, {
-      toValue: DROP_H * (1 - Math.max(progress, 0.04)),
-      duration: 1600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
+    const target = DROP_H * (1 - Math.max(progress, 0.04));
+    Animated.parallel([
+      Animated.timing(wave1YAnim, {
+        toValue: target - 12,
+        duration: 1600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(wave2YAnim, {
+        toValue: target - 6,
+        duration: 1600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
   }, [progress]);
 
-  // Wave 1 surface: translate with fill rise, sits 12 px above fill top
-  const wave1Transform = fillTopAnim.interpolate({
-    inputRange:  [0, DROP_H],
-    outputRange: [`translate(0, -12)`, `translate(0, ${DROP_H - 12})`],
-  });
-  // Wave 2: same rise but 6 px lower so the waves are offset
-  const wave2Transform = fillTopAnim.interpolate({
-    inputRange:  [0, DROP_H],
-    outputRange: [`translate(0, -6)`, `translate(0, ${DROP_H - 6})`],
-  });
-
-  // ── Horizontal water slosh after fill completes ────────────────────────────
-  // sloshAnim: -14 (left) ↔ +14 (right), applied only to wave paths inside
-  // the drop clip — the drop shape itself stays completely still.
+  // ── Horizontal slosh: starts 100 ms after fill completes ──────────────────
   const sloshAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -147,7 +148,7 @@ export function TodayBanner({
             toValue: 14,
             duration: 1800,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false, // SVG transform — no native driver
+            useNativeDriver: false,
           }),
           Animated.timing(sloshAnim, {
             toValue: -14,
@@ -161,15 +162,10 @@ export function TodayBanner({
     return () => clearTimeout(timer);
   }, []);
 
-  // String-based translateX for SVG AnimatedG
-  const slosh1Transform = sloshAnim.interpolate({
+  // Wave 2 uses a slightly smaller slosh amplitude for depth
+  const slosh2Anim = sloshAnim.interpolate({
     inputRange:  [-14, 14],
-    outputRange: [`translate(-14, 0)`, `translate(14, 0)`],
-  });
-  // Wave 2 lags slightly (10 px amplitude) for a more natural sloshing look
-  const slosh2Transform = sloshAnim.interpolate({
-    inputRange:  [-14, 14],
-    outputRange: [`translate(-10, 0)`, `translate(10, 0)`],
+    outputRange: [-10, 10],
   });
 
   const streakEmoji = currentStreak > 0 &&
@@ -197,23 +193,18 @@ export function TodayBanner({
             {/* Empty drop background */}
             <Path d={dropPath} fill={`${waterColor}16`} />
 
-            {/* Water fill, clipped to drop shape.
-                Each wave has two transforms stacked:
-                  - outer AnimatedG: vertical rise (follows fill level)
-                  - inner AnimatedG: horizontal slosh (water moves side-to-side)
-                The drop outline and ring are NOT animated. */}
+            {/* Water fill clipped to drop shape.
+                Each AnimatedG uses numeric x/y props (react-native-svg's
+                G element treats these as SVG translate — reliably animated
+                via Animated.Value, unlike string transform interpolation). */}
             <G clipPath="url(#drop-clip-tb)">
-              {/* Wave 2 — behind, smaller slosh amplitude */}
-              <AnimatedG transform={wave2Transform}>
-                <AnimatedG transform={slosh2Transform}>
-                  <Path d={waveFill2} fill={`${waterColor}40`} />
-                </AnimatedG>
+              {/* Wave 2 — behind, smaller x-slosh amplitude */}
+              <AnimatedG x={slosh2Anim} y={wave2YAnim}>
+                <Path d={waveFill2} fill={`${waterColor}40`} />
               </AnimatedG>
-              {/* Wave 1 — front, full slosh amplitude */}
-              <AnimatedG transform={wave1Transform}>
-                <AnimatedG transform={slosh1Transform}>
-                  <Path d={waveFill1} fill={`${waterColor}70`} />
-                </AnimatedG>
+              {/* Wave 1 — front, full x-slosh amplitude */}
+              <AnimatedG x={sloshAnim} y={wave1YAnim}>
+                <Path d={waveFill1} fill={`${waterColor}70`} />
               </AnimatedG>
             </G>
 

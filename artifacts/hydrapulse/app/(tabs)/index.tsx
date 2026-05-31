@@ -188,6 +188,7 @@ export default function HomeScreen() {
     healthLoading,
     connectHealthKit,
     writeWaterLog,
+    runWatchScan,
   } = useHealth();
   const { todayTotalOz, dailyGoalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -195,6 +196,11 @@ export default function HomeScreen() {
   const dailyFact = useDailyFact();
   const [showWaterLog, setShowWaterLog] = useState(false);
   const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
+
+  // ── Inline watch scan ──────────────────────────────────────────────────────
+  type WatchPhase = "idle" | "scanning" | "failed";
+  const [watchPhase, setWatchPhase] = useState<WatchPhase>("idle");
+  const [watchError, setWatchError] = useState("");
 
   // Fire celebration every day the user scans and extends their streak.
   // Guard: only once per calendar day so repeated app opens don't re-trigger.
@@ -226,6 +232,40 @@ export default function HomeScreen() {
 
   const handleConnectHealth = async () => {
     await connectHealthKit();
+  };
+
+  // Runs watch scan inline — no navigation to the scan screen
+  const handleWatchScan = async () => {
+    if (!healthKitEnabled) { handleConnectHealth(); return; }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setWatchPhase("scanning");
+    setWatchError("");
+    try {
+      const result = await runWatchScan();
+      if (result === "not-worn") {
+        setWatchError(
+          "No heart rate data found. Make sure your Apple Watch is worn and HydraPulse has Health access enabled in Settings."
+        );
+        setWatchPhase("failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      } else if (result) {
+        setWatchPhase("idle");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        router.push({
+          pathname: "/results",
+          params: { recordId: result.id, score: result.score, label: result.label },
+        });
+      } else {
+        setWatchError(
+          "Could not read Watch data. Make sure your Apple Watch is paired and Health access is enabled."
+        );
+        setWatchPhase("failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
+    } catch {
+      setWatchError("An error occurred reading Watch data. Please try again.");
+      setWatchPhase("failed");
+    }
   };
 
   const hasHealthData =
@@ -371,10 +411,7 @@ export default function HomeScreen() {
                       opacity: pressed ? 0.8 : 1,
                     },
                   ]}
-                  onPress={() => {
-                    if (!healthKitEnabled) { handleConnectHealth(); return; }
-                    handleScan("watch");
-                  }}
+                  onPress={handleWatchScan}
                 >
                   <Ionicons
                     name={healthKitEnabled ? "watch-outline" : "link-outline"}
@@ -556,6 +593,47 @@ export default function HomeScreen() {
         visible={celebrationStreak !== null}
         onDismiss={() => setCelebrationStreak(null)}
       />
+
+      {/* ── Watch scan overlay: scanning / failed ──────────────────────── */}
+      <Modal
+        visible={watchPhase !== "idle"}
+        transparent
+        animationType="fade"
+        onRequestClose={() => watchPhase === "failed" && setWatchPhase("idle")}
+      >
+        <View style={styles.watchOverlay}>
+          <View style={[styles.watchSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="watch-outline" size={40} color={colors.primary} />
+
+            {watchPhase === "scanning" ? (
+              <>
+                <Text style={[styles.watchSheetTitle, { color: colors.foreground }]}>
+                  Reading Apple Watch
+                </Text>
+                <Text style={[styles.watchSheetSub, { color: colors.mutedForeground }]}>
+                  Fetching resting heart rate and HRV from Health…
+                </Text>
+                <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 12 }} />
+              </>
+            ) : (
+              <>
+                <Text style={[styles.watchSheetTitle, { color: colors.foreground }]}>
+                  Scan Unavailable
+                </Text>
+                <Text style={[styles.watchSheetSub, { color: colors.mutedForeground }]}>
+                  {watchError}
+                </Text>
+                <Pressable
+                  style={[styles.watchDismissBtn, { backgroundColor: colors.primary }]}
+                  onPress={() => setWatchPhase("idle")}
+                >
+                  <Text style={styles.watchDismissBtnText}>OK</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -821,4 +899,44 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   logBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  // Watch scan overlay
+  watchOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  watchSheet: {
+    width: "100%",
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: "center",
+    gap: 12,
+  },
+  watchSheetTitle: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "700" as const,
+    textAlign: "center",
+  },
+  watchSheetSub: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  watchDismissBtn: {
+    marginTop: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  watchDismissBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
 });

@@ -9,51 +9,70 @@ import {
   Text,
   View,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  Path,
+  RadialGradient,
+  Stop,
+} from "react-native-svg";
 
 import { useColors } from "@/hooks/useColors";
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
+// ─── Layout ────────────────────────────────────────────────────────────────────
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_HEIGHT = 168;
-const WAVE_AMP = 10;
-// The SVG is 2× the card width; we animate translateX by −cardWidth for a
-// seamless, perfectly repeating loop.
-const SVG_WIDTH = SCREEN_WIDTH * 2;
+const { width: SCREEN_W } = Dimensions.get("window");
+const CARD_H     = 360;
+const RING_SIZE  = 160;
+const RING_STROKE = 10;
 
-// ─── Wave path ────────────────────────────────────────────────────────────────
-// Approximates a sine wave using cubic bezier curves.
-// Two full periods drawn so the loop is seamless when we shift by one period.
+// Decorative drop proportions — sized to sit naturally behind the ring
+const DROP_W  = 210;
+const DROP_H  = 230;
+const DROP_R  = DROP_W / 2;
+const DROP_CX = DROP_W / 2;
+const DROP_CY = DROP_H - DROP_R; // centre-Y of bottom arc
 
-function buildWavePath(waveY: number): string {
-  const w = SCREEN_WIDTH;
-  const a = WAVE_AMP;
-  const h = CARD_HEIGHT;
-  // Control-point fraction that produces a smooth sine-like curve (~0.36)
-  const cp = 0.36;
-  const hW = w / 2; // half-period = half screen width
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function buildDropPath(): string {
+  const cx = DROP_CX, W = DROP_W, H = DROP_H, cy = DROP_CY, r = DROP_R;
+  return (
+    `M ${cx} 6 ` +
+    `C ${W * 0.70} ${H * 0.06} ${W} ${H * 0.26} ${W} ${cy} ` +
+    `A ${r} ${r} 0 0 1 0 ${cy} ` +
+    `C 0 ${H * 0.26} ${W * 0.30} ${H * 0.06} ${cx} 6 Z`
+  );
+}
+
+// Wave surface: renders across the full card width with a gentle crest.
+// Two periods drawn so a horizontal translateX loop is seamless if ever needed.
+function buildWavePath(amp: number): string {
+  const W = SCREEN_W + 40; // slight overhang to avoid edge clipping
+  const y = amp;
   return [
-    `M 0 ${waveY}`,
-    `C ${hW * cp} ${waveY - a}, ${hW * (1 - cp)} ${waveY - a}, ${hW} ${waveY}`,
-    `C ${hW * (1 + cp)} ${waveY + a}, ${hW * (2 - cp)} ${waveY + a}, ${w} ${waveY}`,
-    `C ${w + hW * cp} ${waveY - a}, ${w + hW * (1 - cp)} ${waveY - a}, ${w + hW} ${waveY}`,
-    `C ${w + hW * (1 + cp)} ${waveY + a}, ${w + hW * (2 - cp)} ${waveY + a}, ${SVG_WIDTH} ${waveY}`,
-    `V ${h} H 0 Z`,
+    `M 0 ${y}`,
+    `C ${W * 0.25} 0 ${W * 0.75} ${y * 2} ${W} ${y}`,
+    `C ${W * 1.25} 0 ${W * 1.75} ${y * 2} ${W * 2} ${y}`,
+    `V 40 H 0 Z`,
   ].join(" ");
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// Animated Circle for the progress ring
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface TodayBannerProps {
-  todayScans: number;
-  currentStreak: number;
-  bestStreak: number;
-  todayTotalOz: number;
-  dailyGoalOz: number;
-  onLogWater: () => void;
+  todayScans:     number;
+  currentStreak:  number;
+  bestStreak:     number;
+  todayTotalOz:   number;
+  dailyGoalOz:    number;
+  onLogWater:     () => void;
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function TodayBanner({
   todayScans,
@@ -65,36 +84,79 @@ export function TodayBanner({
 }: TodayBannerProps) {
   const colors = useColors();
 
-  // Progress: clamp 0–1, keep a 5% minimum so there's always a sliver visible
-  const progress = Math.min(Math.max(todayTotalOz / Math.max(dailyGoalOz, 1), 0.05), 1);
-  const fillHeight = progress * CARD_HEIGHT;
-  // waveY is the distance from the TOP of the card to where the wave centre sits
-  const waveY = CARD_HEIGHT - fillHeight;
+  // Clamp progress 0-1; keep a 2 % floor so the fill ring is never invisible
+  const progress   = Math.min(Math.max(todayTotalOz / Math.max(dailyGoalOz, 1), 0), 1);
+  const done       = todayTotalOz >= dailyGoalOz;
+  const waterColor = done ? "#10B981" : "#0EA5E9";
+  const pct        = Math.round(progress * 100);
+  const ozDisplay  = todayTotalOz % 1 === 0
+    ? String(todayTotalOz)
+    : todayTotalOz.toFixed(1);
 
-  // ── Wave animation ────────────────────────────────────────────────────────
-  const waveAnim = useRef(new Animated.Value(0)).current;
+  // ── Progress ring ──────────────────────────────────────────────────────────
+  const rInner      = RING_SIZE / 2 - RING_STROKE;
+  const circumference = rInner * 2 * Math.PI;
+  const ringAnim    = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(waveAnim, {
-        toValue: -SCREEN_WIDTH,
-        duration: 4000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, [waveAnim]);
+    Animated.timing(ringAnim, {
+      toValue: progress,
+      duration: 1200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // SVG props cannot use native driver
+    }).start();
+  }, [progress]);
 
-  const wavePath = buildWavePath(waveY);
+  const strokeDashoffset = ringAnim.interpolate({
+    inputRange:  [0, 1],
+    outputRange: [circumference, 0],
+  });
 
-  // ── Derived display values ────────────────────────────────────────────────
-  const done = todayTotalOz >= dailyGoalOz;
-  const waterColor = done ? "#10B981" : "#0EA5E9";
-  const fillOpacity = 0.38;
+  // ── Fill rise: animates the height of an absolutely-positioned bottom view ─
+  const fillHeightAnim = useRef(new Animated.Value(0)).current;
 
-  const ozDisplay =
-    todayTotalOz % 1 === 0 ? String(todayTotalOz) : todayTotalOz.toFixed(1);
-  const pct = Math.round(progress * 100);
+  useEffect(() => {
+    Animated.timing(fillHeightAnim, {
+      toValue: Math.max(progress * CARD_H, 8),
+      duration: 1600,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // height cannot use native driver
+    }).start();
+  }, [progress]);
+
+  // ── Wave bob: starts once the fill animation completes ────────────────────
+  const bobAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bobAnim, {
+            toValue: -5,
+            duration: 1400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(bobAnim, {
+            toValue: 0,
+            duration: 1400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, 1700); // 100 ms after fill ends
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ── Derived display ────────────────────────────────────────────────────────
+  const streakEmoji = currentStreak > 0 &&
+    [30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0)
+      ? "🌊" : "💧";
+
+  const dropPath  = buildDropPath();
+  const wavePath1 = buildWavePath(9);
+  const wavePath2 = buildWavePath(6);
 
   return (
     <View
@@ -103,88 +165,140 @@ export function TodayBanner({
         { backgroundColor: colors.card, borderColor: colors.border },
       ]}
     >
-      {/* ── Animated water fill ─────────────────────────────────────────── */}
-      <Animated.View
-        style={[styles.waveWrap, { transform: [{ translateX: waveAnim }] }]}
-      >
-        <Svg width={SVG_WIDTH} height={CARD_HEIGHT}>
-          <Path
-            d={wavePath}
-            fill={`${waterColor}${Math.round(fillOpacity * 255)
-              .toString(16)
-              .padStart(2, "0")}`}
-          />
+      {/* ── 1. Decorative drop watermark ─────────────────────────────────── */}
+      <View style={styles.dropWrap} pointerEvents="none">
+        <Svg width={DROP_W} height={DROP_H} style={{ opacity: 0.30 }}>
+          <Defs>
+            <RadialGradient id="tb-drop-grad" cx="50%" cy="45%" r="55%">
+              <Stop offset="0%"   stopColor="#38BDF8" stopOpacity={0.6} />
+              <Stop offset="60%"  stopColor="#0EA5E9" stopOpacity={0.3} />
+              <Stop offset="100%" stopColor="#075985" stopOpacity={0.05} />
+            </RadialGradient>
+          </Defs>
+          <Path d={dropPath} fill="url(#tb-drop-grad)" />
+          <Path d={dropPath} fill="none"
+                stroke="#38BDF8" strokeWidth={1.5} strokeOpacity={0.25} />
         </Svg>
+      </View>
+
+      {/* ── 2. Rising fill: grows from bottom up to progress level ───────── */}
+      <Animated.View
+        style={[styles.fillWrap, { height: fillHeightAnim }]}
+        pointerEvents="none"
+      >
+        {/* Animated wave surface rides on the bobAnim */}
+        <Animated.View
+          style={[styles.waveSurface, { transform: [{ translateY: bobAnim }] }]}
+        >
+          <Svg width={SCREEN_W} height={40}
+               style={[StyleSheet.absoluteFill, { top: -10 }]}>
+            <Path d={wavePath1} fill={`${waterColor}55`} />
+          </Svg>
+          <Svg width={SCREEN_W} height={40}
+               style={[StyleSheet.absoluteFill, { top: -4, opacity: 0.55 }]}>
+            <Path d={wavePath2} fill={`${waterColor}40`} />
+          </Svg>
+        </Animated.View>
+
+        {/* Solid fill body — sits below the wave */}
+        <View style={[styles.fillBody, { backgroundColor: waterColor }]} />
       </Animated.View>
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
+      {/* ── 3. Foreground content ─────────────────────────────────────────── */}
       <View style={styles.content}>
-        {/* Left — streak */}
-        <View style={styles.col}>
-          <View style={styles.streakRow}>
-            <Text
-              style={[
-                styles.streakNum,
-                { color: currentStreak > 0 ? "#10B981" : colors.mutedForeground },
-              ]}
-            >
-              {currentStreak}
-            </Text>
-            <View>
-              <Text style={[styles.streakUnit, { color: colors.foreground }]}>
-                {currentStreak === 1 ? "day" : "days"}
+
+        {/* Progress ring */}
+        <View style={styles.ringWrap}>
+          <Svg
+            width={RING_SIZE}
+            height={RING_SIZE}
+            style={{ transform: [{ rotate: "-90deg" }] }}
+          >
+            {/* Track */}
+            <Circle
+              stroke={colors.border}
+              fill="transparent"
+              strokeWidth={RING_STROKE}
+              r={rInner}
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+            />
+            {/* Progress arc */}
+            <AnimatedCircle
+              stroke={waterColor}
+              fill="transparent"
+              strokeWidth={RING_STROKE}
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeLinecap="round"
+              strokeDashoffset={strokeDashoffset}
+              r={rInner}
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+            />
+          </Svg>
+          {/* Centre: oz count */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <View style={styles.ringCenter}>
+              <Text style={[styles.ringOz, { color: colors.foreground }]}>
+                {ozDisplay}
               </Text>
-              <Text style={[styles.streakLabel, { color: colors.mutedForeground }]}>
-                streak
+              <Text style={[styles.ringGoalLabel, { color: colors.mutedForeground }]}>
+                / {dailyGoalOz} oz
               </Text>
             </View>
-            <Text style={styles.streakEmoji}>
-              {[30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0 && currentStreak > 0)
-                ? "🌊"
-                : "💧"}
-            </Text>
           </View>
-          <Text style={[styles.bestText, { color: colors.mutedForeground }]}>
-            Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
-          </Text>
-          <Text
-            style={[
-              styles.scanBadge,
-              { color: todayScans > 0 ? "#10B981" : colors.primary },
-            ]}
-          >
-            {todayScans > 0 ? "Scanned today" : "No scan yet"}
-          </Text>
         </View>
 
-        {/* Divider */}
-        <View style={[styles.divider, { backgroundColor: colors.border + "80" }]} />
+        {/* Percentage */}
+        <Text style={[styles.pctText, { color: waterColor }]}>{pct}%</Text>
+        <Text style={[styles.pctSub, { color: colors.mutedForeground }]}>
+          of daily goal
+        </Text>
 
-        {/* Right — water */}
-        <View style={styles.col}>
-          <View style={styles.waterRow}>
-            <Ionicons name="water" size={16} color={waterColor} />
-            <Text style={[styles.waterOz, { color: done ? "#10B981" : colors.foreground }]}>
-              {ozDisplay}
-            </Text>
-            <Text style={[styles.waterGoal, { color: colors.mutedForeground }]}>
-              / {dailyGoalOz} oz
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statLeft}>
+            <View style={styles.streakRow}>
+              <Text
+                style={[
+                  styles.streakNum,
+                  { color: currentStreak > 0 ? "#10B981" : colors.mutedForeground },
+                ]}
+              >
+                {currentStreak}
+              </Text>
+              <Text style={styles.streakEmoji}>{streakEmoji}</Text>
+            </View>
+            <Text style={[styles.streakLabel, { color: colors.mutedForeground }]}>
+              Day Streak
             </Text>
           </View>
-          <Text style={[styles.waterPct, { color: waterColor }]}>
-            {pct}% of daily goal
-          </Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.logBtn,
-              { backgroundColor: waterColor + "20", borderColor: waterColor + "40", opacity: pressed ? 0.75 : 1 },
-            ]}
-            onPress={onLogWater}
-          >
-            <Ionicons name="add" size={15} color={waterColor} />
-            <Text style={[styles.logBtnText, { color: waterColor }]}>Log Water</Text>
-          </Pressable>
+          <View style={styles.statRight}>
+            <Text
+              style={[
+                styles.scanBadge,
+                { color: todayScans > 0 ? "#10B981" : colors.primary },
+              ]}
+            >
+              {todayScans > 0 ? "Scanned today" : "No scan yet"}
+            </Text>
+            <Text style={[styles.bestText, { color: colors.mutedForeground }]}>
+              Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
+            </Text>
+          </View>
         </View>
+
+        {/* Log Water button */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.logBtn,
+            { backgroundColor: waterColor, opacity: pressed ? 0.85 : 1 },
+          ]}
+          onPress={onLogWater}
+        >
+          <Ionicons name="add" size={20} color="#fff" />
+          <Text style={styles.logBtnText}>Log Water</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -194,28 +308,109 @@ export function TodayBanner({
 
 const styles = StyleSheet.create({
   card: {
-    height: CARD_HEIGHT,
-    borderRadius: 20,
+    height: CARD_H,
+    borderRadius: 24,
     borderWidth: 1,
     overflow: "hidden",
   },
-  waveWrap: {
+
+  // Decorative drop glow behind ring
+  dropWrap: {
+    position: "absolute",
+    top: 14,
+    alignSelf: "center",
+    left: (SCREEN_W - 40 - DROP_W) / 2, // 40 = 2× paddingHorizontal
+  },
+
+  // Rising water fill
+  fillWrap: {
     position: "absolute",
     bottom: 0,
     left: 0,
+    right: 0,
+    overflow: "hidden",
   },
+  waveSurface: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+  },
+  fillBody: {
+    position: "absolute",
+    top: 20,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    opacity: 0.16,
+  },
+
+  // Content sits on top of fill + drop
   content: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
     gap: 0,
     zIndex: 1,
   },
-  col: {
+
+  // Ring
+  ringWrap: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    marginBottom: 10,
+  },
+  ringCenter: {
     flex: 1,
-    gap: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringOz: {
+    fontSize: 28,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "700",
+    lineHeight: 32,
+  },
+  ringGoalLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+  },
+
+  // Percentage
+  pctText: {
+    fontSize: 42,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "700",
+    lineHeight: 48,
+    letterSpacing: -1,
+  },
+  pctSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    marginBottom: 16,
+    marginTop: 3,
+  },
+
+  // Stats
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 16,
+  },
+  statLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  statRight: {
+    alignItems: "flex-end",
+    gap: 3,
   },
   streakRow: {
     flexDirection: "row",
@@ -223,76 +418,42 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   streakNum: {
-    fontSize: 44,
+    fontSize: 26,
     fontFamily: "Inter_700Bold",
     fontWeight: "700",
-    lineHeight: 50,
-  },
-  streakUnit: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600",
-    lineHeight: 18,
-  },
-  streakLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 17,
+    lineHeight: 30,
   },
   streakEmoji: {
-    fontSize: 24,
-    lineHeight: 28,
-    marginLeft: 2,
+    fontSize: 22,
+    lineHeight: 26,
   },
-  bestText: {
+  streakLabel: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
   },
   scanBadge: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500",
-    marginTop: 2,
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
   },
-  divider: {
-    width: 1,
-    height: 80,
-    marginHorizontal: 16,
-  },
-  waterRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-  },
-  waterOz: {
-    fontSize: 28,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700",
-    lineHeight: 34,
-  },
-  waterGoal: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 18,
-  },
-  waterPct: {
-    fontSize: 12,
+  bestText: {
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
   },
+
+  // Log Water button
   logBtn: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-    marginTop: 4,
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   logBtnText: {
-    fontSize: 13,
+    color: "#fff",
+    fontSize: 16,
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600",
   },

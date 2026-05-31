@@ -80,6 +80,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="coach"
+        options={{
+          title: "Coach",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="lightbulb.fill" tintColor={color} size={22} />
+            ) : (
+              <Ionicons name="bulb-outline" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",

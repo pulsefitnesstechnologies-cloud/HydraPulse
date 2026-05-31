@@ -19,10 +19,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
+import { DailyFactModal } from "@/components/DailyFactModal";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
+import { useDailyFact } from "@/hooks/useDailyFact";
 import { useHealth } from "@/context/HealthContext";
 import {
   getScoreColor,
@@ -186,6 +188,7 @@ export default function HomeScreen() {
   const { todayTotalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const dailyFact = useDailyFact();
   const [watchScanning, setWatchScanning] = useState(false);
   const [showWaterLog, setShowWaterLog] = useState(false);
 
@@ -558,6 +561,12 @@ export default function HomeScreen() {
           addWaterLog({ amountOz: oz, time }).catch(() => {});
           writeWaterLog(oz, time).catch(() => {});
         }}
+      />
+
+      <DailyFactModal
+        visible={dailyFact.visible}
+        fact={dailyFact.fact}
+        onDismiss={dailyFact.dismiss}
       />
     </View>
   );

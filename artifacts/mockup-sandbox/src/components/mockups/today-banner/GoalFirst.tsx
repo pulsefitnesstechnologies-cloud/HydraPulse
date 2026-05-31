@@ -6,54 +6,69 @@ import "./_group.css";
 const PROGRESS = 0.6;
 const RING_SIZE = 190;
 const RING_STROKE = 10;
-
 const DROP_W = 280;
 const DROP_H = 300;
-const DROP_R = DROP_W / 2;        // 140 — bottom circle radius
-const DROP_CX = DROP_W / 2;       // 140
-const CIRCLE_CY = DROP_H - DROP_R; // 160
+const DROP_R = DROP_W / 2;         // 140 — bottom circle radius
+const DROP_CX = DROP_W / 2;        // 140
+const CIRCLE_CY = DROP_H - DROP_R; // 160 — centre Y of bottom circle
 
-// Softer, more organic blob-drop — rounded tip, subtle asymmetric control points
+// ── Smooth teardrop shape ─────────────────────────────────────────────────────
+// Key: P2 of each cubic is directly above the arc tangent point (same X) so
+// the curve arrives vertically, joining the circle with zero kink.
 function buildDropPath(): string {
-  const cx = DROP_CX;
-  const h = DROP_H;
-  const w = DROP_W;
-  const r = DROP_R;
-  const cy = CIRCLE_CY;
+  const cx = DROP_CX; // 140
+  const W  = DROP_W;  // 280
+  const H  = DROP_H;  // 300
+  const cy = CIRCLE_CY; // 160
+  const r  = DROP_R;    // 140
+
   return (
-    // Soft rounded tip (smaller, more rounded bezier horns)
-    `M ${cx} 6 ` +
-    `C ${w * 0.64} ${h * 0.18}, ${w * 0.92} ${h * 0.44}, ${w} ${cy} ` +
+    `M ${cx} 8 ` +
+    // right side: tip → right tangent of circle. P2 must be (W, something) so
+    // the bezier arrives with a vertical tangent matching the circle.
+    `C ${W * 0.70} ${H * 0.06}, ${W} ${H * 0.26}, ${W} ${cy} ` +
+    // bottom semicircle
     `A ${r} ${r} 0 0 1 0 ${cy} ` +
-    `C ${w * 0.08} ${h * 0.44}, ${w * 0.36} ${h * 0.18}, ${cx} 6 Z`
+    // left side: left tangent → tip. P1 is (0, *) for vertical departure.
+    `C 0 ${H * 0.26}, ${W * 0.30} ${H * 0.06}, ${cx} 8 Z`
   );
 }
 
-// Wave: 2× drop width for seamless SMIL loop
+// ── Wave path: 2× drop width so SMIL horizontal loop is seamless ──────────────
 function buildWave(y: number, amp: number): string {
   const W = DROP_W;
   return (
     `M 0 ${y} ` +
-    `C ${W * 0.25} ${y - amp}, ${W * 0.75} ${y + amp}, ${W} ${y} ` +
-    `C ${W * 1.25} ${y - amp}, ${W * 1.75} ${y + amp}, ${W * 2} ${y} ` +
+    `C ${W * 0.25} ${y - amp} ${W * 0.75} ${y + amp} ${W} ${y} ` +
+    `C ${W * 1.25} ${y - amp} ${W * 1.75} ${y + amp} ${W * 2} ${y} ` +
     `V ${DROP_H} H 0 Z`
   );
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export function GoalFirst() {
   const normalizedRadius = RING_SIZE / 2 - RING_STROKE;
-  const circumference = normalizedRadius * 2 * Math.PI;
+  const circumference    = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference * (1 - PROGRESS);
 
   const dropPath = buildDropPath();
-  const waveY = DROP_H * (1 - PROGRESS); // 120 at 60%
+  const waveY    = DROP_H * (1 - PROGRESS); // 120 at 60 %
+
+  // Wave paths: start flat at the very bottom of the drop, end at fill level
+  const waveFlat = buildWave(DROP_H + 20, 0); // invisible starting position
+  const wave1End = buildWave(waveY,     9);
+  const wave2End = buildWave(waveY + 8, 7);
+  const wave3End = buildWave(waveY + 4, 5);
+
+  const RISE = "1.8s";
+  const EASE = "0.22 0.1 0.25 1"; // fast-out ease
 
   return (
     <div
       className="w-full max-w-sm mx-auto rounded-3xl overflow-hidden relative shadow-2xl border border-slate-800"
       style={{ background: "#0F172A", fontFamily: "'Inter', sans-serif" }}
     >
-      {/* ── Water-drop SVG ───────────────────────────────────────────────────── */}
+      {/* ── Water-drop SVG ───────────────────────────────────────────────── */}
       <div
         style={{
           position: "absolute",
@@ -66,185 +81,140 @@ export function GoalFirst() {
           pointerEvents: "none",
         }}
       >
-        <svg
-          width={DROP_W}
-          height={DROP_H}
-          style={{ overflow: "visible" }}
-        >
+        <svg width={DROP_W} height={DROP_H} style={{ overflow: "visible" }}>
           <defs>
-            {/* Hard clip for wave content */}
-            <clipPath id="gf-drop-clip">
+            <clipPath id="gf-clip">
               <path d={dropPath} />
             </clipPath>
 
-            {/* Radial gradient — bright cyan core fading outward */}
-            <radialGradient id="gf-water-core" cx="50%" cy="45%" r="55%">
+            {/* Radial gradient — bright cyan core fading out */}
+            <radialGradient id="gf-grad" cx="50%" cy="45%" r="55%">
               <stop offset="0%"   stopColor="#38BDF8" stopOpacity="0.18" />
               <stop offset="55%"  stopColor="#0EA5E9" stopOpacity="0.10" />
               <stop offset="100%" stopColor="#075985" stopOpacity="0.02" />
             </radialGradient>
 
-            {/* Soft-edge blur filter — drawn OUTSIDE clip so edges bleed/feather */}
+            {/* Feather filter — drawn outside clip so edges bleed softly */}
             <filter id="gf-feather" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="14" />
             </filter>
 
-            {/* Subtle inner shimmer highlight */}
+            {/* Caustic shimmer highlight */}
             <radialGradient id="gf-shimmer" cx="38%" cy="28%" r="35%">
-              <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.10" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"   />
+              <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.11" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"    />
             </radialGradient>
           </defs>
 
-          {/* ── 1. Feathered outer glow (no clip — intentionally bleeds) ── */}
-          <path
-            d={dropPath}
-            fill="#0EA5E9"
-            fillOpacity="0.10"
-            filter="url(#gf-feather)"
-          />
+          {/* 1. Feathered outer glow — no clip, intentionally bleeds */}
+          <path d={dropPath} fill="#0EA5E9" fillOpacity="0.09" filter="url(#gf-feather)" />
 
-          {/* ── 2. Second softer halo, slightly larger ── */}
-          <path
-            d={dropPath}
-            fill="#38BDF8"
-            fillOpacity="0.06"
-            filter="url(#gf-feather)"
-            transform={`translate(${-DROP_W * 0.04} ${-DROP_H * 0.03}) scale(1.08)`}
-            style={{ transformOrigin: `${DROP_CX}px ${CIRCLE_CY}px` }}
-          />
+          {/* 2. Radial-gradient base fill */}
+          <path d={dropPath} fill="url(#gf-grad)" />
 
-          {/* ── 3. Radial gradient base fill (inside shape) ── */}
-          <path
-            d={dropPath}
-            fill="url(#gf-water-core)"
-          />
+          {/* 3. Rising fill — bottom → 60 % level, then horizontal wave */}
+          <g clipPath="url(#gf-clip)">
 
-          {/* ── 4. Animated waves — clipped ── */}
-          <g clipPath="url(#gf-drop-clip)">
-            {/* Static fill base */}
-            <rect
-              x={0} y={waveY}
-              width={DROP_W} height={DROP_H - waveY + 10}
-              fill="#0EA5E916"
-            />
+            {/* Static fill rect that rises with the water */}
+            <rect x="0" width={DROP_W} fill="#0EA5E914">
+              <animate attributeName="y"
+                from={DROP_H + 20} to={waveY}
+                dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
+              <animate attributeName="height"
+                from="0" to={DROP_H - waveY + 10}
+                dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
+            </rect>
 
-            {/* Primary wave */}
-            <path d={buildWave(waveY, 9)} fill="#0EA5E930">
-              <animateTransform
-                attributeName="transform" type="translate"
+            {/* Wave 1 — rises then scrolls left */}
+            <g>
+              <animateTransform attributeName="transform" type="translate"
                 from="0 0" to={`-${DROP_W} 0`}
-                dur="4s" repeatCount="indefinite"
-              />
-            </path>
+                begin={RISE} dur="4s" repeatCount="indefinite" />
+              <path fill="#0EA5E932">
+                <animate attributeName="d"
+                  from={waveFlat} to={wave1End}
+                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
+              </path>
+            </g>
 
-            {/* Secondary wave — offset phase, softer */}
-            <path d={buildWave(waveY + 8, 7)} fill="#38BDF820">
-              <animateTransform
-                attributeName="transform" type="translate"
+            {/* Wave 2 — slightly offset phase for depth */}
+            <g>
+              <animateTransform attributeName="transform" type="translate"
                 from={`-${DROP_W * 0.4} 0`} to={`-${DROP_W * 1.4} 0`}
-                dur="6.5s" repeatCount="indefinite"
-              />
-            </path>
+                begin={RISE} dur="6.5s" repeatCount="indefinite" />
+              <path fill="#38BDF822">
+                <animate attributeName="d"
+                  from={waveFlat} to={wave2End}
+                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
+              </path>
+            </g>
 
-            {/* Tertiary micro-wave — lightest */}
-            <path d={buildWave(waveY + 4, 5)} fill="#7DD3FC18">
-              <animateTransform
-                attributeName="transform" type="translate"
+            {/* Wave 3 — micro layer */}
+            <g>
+              <animateTransform attributeName="transform" type="translate"
                 from={`-${DROP_W * 0.7} 0`} to={`-${DROP_W * 1.7} 0`}
-                dur="5s" repeatCount="indefinite"
-              />
-            </path>
+                begin={RISE} dur="5s" repeatCount="indefinite" />
+              <path fill="#7DD3FC1A">
+                <animate attributeName="d"
+                  from={waveFlat} to={wave3End}
+                  dur={RISE} calcMode="spline" keySplines={EASE} fill="freeze" />
+              </path>
+            </g>
           </g>
 
-          {/* ── 5. Caustic shimmer highlight (top-left of drop) ── */}
+          {/* 4. Caustic shimmer highlight */}
           <ellipse
-            cx={DROP_CX * 0.70}
-            cy={DROP_H * 0.22}
-            rx={45} ry={22}
+            cx={DROP_CX * 0.68} cy={DROP_H * 0.21}
+            rx={46} ry={22}
             fill="url(#gf-shimmer)"
-            clipPath="url(#gf-drop-clip)"
+            clipPath="url(#gf-clip)"
           />
 
-          {/* ── 6. Very faint crisp border — barely visible ── */}
-          <path
-            d={dropPath}
-            fill="none"
-            stroke="#38BDF8"
-            strokeWidth={1}
-            strokeOpacity="0.12"
-          />
+          {/* 5. Barely-there border */}
+          <path d={dropPath} fill="none" stroke="#38BDF8"
+                strokeWidth={1} strokeOpacity="0.14" />
         </svg>
       </div>
 
-      {/* ── Content ──────────────────────────────────────────────────────────── */}
-      <div
-        className="relative flex flex-col items-center px-6 pt-8 pb-6"
-        style={{ zIndex: 1 }}
-      >
+      {/* ── Content ──────────────────────────────────────────────────────── */}
+      <div className="relative flex flex-col items-center px-6 pt-8 pb-6" style={{ zIndex: 1 }}>
+
         {/* Progress Ring */}
-        <div
-          className="relative flex items-center justify-center"
-          style={{ width: RING_SIZE, height: RING_SIZE, marginBottom: 10 }}
-        >
-          <svg
-            width={RING_SIZE}
-            height={RING_SIZE}
-            style={{ transform: "rotate(-90deg)", position: "absolute", inset: 0 }}
-          >
-            <circle
-              stroke="#1E293B"
-              fill="transparent"
-              strokeWidth={RING_STROKE}
-              r={normalizedRadius}
-              cx={RING_SIZE / 2}
-              cy={RING_SIZE / 2}
-            />
-            <circle
-              stroke="#0EA5E9"
-              fill="transparent"
-              strokeWidth={RING_STROKE}
-              strokeDasharray={`${circumference} ${circumference}`}
-              strokeLinecap="round"
-              style={{
-                strokeDashoffset,
-                filter: "drop-shadow(0 0 8px #0EA5E970)",
-                transition: "stroke-dashoffset 1s ease-out",
-              }}
-              r={normalizedRadius}
-              cx={RING_SIZE / 2}
-              cy={RING_SIZE / 2}
-            />
+        <div className="relative flex items-center justify-center"
+             style={{ width: RING_SIZE, height: RING_SIZE, marginBottom: 10 }}>
+          <svg width={RING_SIZE} height={RING_SIZE}
+               style={{ transform: "rotate(-90deg)", position: "absolute", inset: 0 }}>
+            <circle stroke="#1E293B" fill="transparent"
+                    strokeWidth={RING_STROKE}
+                    r={normalizedRadius} cx={RING_SIZE / 2} cy={RING_SIZE / 2} />
+            <circle stroke="#0EA5E9" fill="transparent"
+                    strokeWidth={RING_STROKE}
+                    strokeDasharray={`${circumference} ${circumference}`}
+                    strokeLinecap="round"
+                    style={{
+                      strokeDashoffset,
+                      filter: "drop-shadow(0 0 8px #0EA5E970)",
+                      transition: "stroke-dashoffset 1s ease-out",
+                    }}
+                    r={normalizedRadius} cx={RING_SIZE / 2} cy={RING_SIZE / 2} />
           </svg>
 
           {/* Centre: oz */}
           <div className="flex flex-col items-center text-center gap-0.5">
-            <span className="font-extrabold text-white" style={{ fontSize: 30, lineHeight: 1 }}>
-              48
-            </span>
-            <span className="text-slate-400 font-medium" style={{ fontSize: 12 }}>
-              / 80 oz
-            </span>
+            <span className="font-extrabold text-white" style={{ fontSize: 30, lineHeight: 1 }}>48</span>
+            <span className="text-slate-400 font-medium" style={{ fontSize: 12 }}>/ 80 oz</span>
           </div>
         </div>
 
-        {/* % below ring */}
+        {/* % — below ring */}
         <div className="flex flex-col items-center" style={{ marginBottom: 18 }}>
-          <span
-            className="font-extrabold text-[#38BDF8]"
-            style={{
-              fontSize: 44,
-              lineHeight: 1,
-              letterSpacing: "-0.02em",
-              textShadow: "0 0 20px #0EA5E950",
-            }}
-          >
+          <span className="font-extrabold text-[#38BDF8]"
+                style={{ fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em",
+                         textShadow: "0 0 20px #0EA5E950" }}>
             60%
           </span>
-          <span
-            className="text-slate-400 uppercase tracking-widest font-medium"
-            style={{ fontSize: 11, marginTop: 5 }}
-          >
+          <span className="text-slate-400 uppercase tracking-widest font-medium"
+                style={{ fontSize: 11, marginTop: 5 }}>
             of daily goal
           </span>
         </div>
@@ -265,15 +235,10 @@ export function GoalFirst() {
         </div>
 
         {/* Log Water */}
-        <button
-          className="w-full flex items-center justify-center gap-2 font-semibold text-white rounded-2xl"
-          style={{
-            background: "linear-gradient(135deg, #0EA5E9, #0284C7)",
-            padding: "14px 24px",
-            fontSize: 15,
-            boxShadow: "0 4px 24px #0EA5E940",
-          }}
-        >
+        <button className="w-full flex items-center justify-center gap-2 font-semibold text-white rounded-2xl"
+                style={{ background: "linear-gradient(135deg,#0EA5E9,#0284C7)",
+                         padding: "14px 24px", fontSize: 15,
+                         boxShadow: "0 4px 24px #0EA5E940" }}>
           <Plus size={20} strokeWidth={2.5} />
           Log Water
         </button>

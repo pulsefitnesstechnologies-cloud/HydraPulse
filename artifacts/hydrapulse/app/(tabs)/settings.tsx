@@ -369,6 +369,10 @@ export default function SettingsScreen() {
     enableSmartSchedule,
     disableSmartSchedule,
     refreshSmartSchedule,
+    hasEnoughData,
+    pendingSuggestions,
+    suggestionDismissed,
+    dismissSuggestion,
     connectHealthKit,
     refreshHealthData,
     requestNotificationPermission,
@@ -579,6 +583,60 @@ export default function SettingsScreen() {
               ? "HydraPulse is learning your drinking patterns and automatically scheduling reminders during your natural hydration gaps."
               : "Set reminders manually, or turn on Auto-Schedule to let HydraPulse learn your habits and fill in the gaps automatically."}
           </Text>
+
+          {/* Pattern suggestion card — shown when enough data exists and user hasn't enabled Auto-Schedule or dismissed */}
+          {!smartScheduleEnabled && hasEnoughData && !suggestionDismissed && (
+            <View style={[styles.suggestionCard, { backgroundColor: colors.accent + "08", borderColor: colors.accent + "30" }]}>
+              <View style={styles.suggestionHeader}>
+                <View style={[styles.suggestionIconWrap, { backgroundColor: colors.accent + "20" }]}>
+                  <Ionicons name="sparkles" size={14} color={colors.accent} />
+                </View>
+                <Text style={[styles.suggestionTitle, { color: colors.foreground }]}>Pattern Detected</Text>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync().catch(() => {});
+                    dismissSuggestion();
+                  }}
+                  hitSlop={12}
+                >
+                  <Ionicons name="close" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+              <Text style={[styles.suggestionBody, { color: colors.mutedForeground }]}>
+                Based on your last 14 days, these times fall in your natural hydration gaps:
+              </Text>
+              <View style={styles.suggestionTimes}>
+                {pendingSuggestions.map((s, i) => (
+                  <View key={i} style={[styles.suggestionTime, { backgroundColor: colors.accent + "12", borderColor: colors.accent + "25" }]}>
+                    <Ionicons name="alarm-outline" size={13} color={colors.accent} />
+                    <Text style={[styles.suggestionTimeText, { color: colors.accent }]}>{s.displayTime}</Text>
+                  </View>
+                ))}
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.suggestionApplyBtn,
+                  { backgroundColor: colors.accent, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                  const granted = await requestNotificationPermission();
+                  if (!granted) {
+                    Alert.alert(
+                      "Notifications Required",
+                      "Enable notifications in iPhone Settings to use Smart Reminders.",
+                      [{ text: "OK" }]
+                    );
+                    return;
+                  }
+                  await enableSmartSchedule();
+                }}
+              >
+                <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+                <Text style={styles.suggestionApplyText}>Use These Times</Text>
+              </Pressable>
+            </View>
+          )}
 
           {/* Auto-Schedule toggle */}
           <View style={[styles.autoScheduleRow, { backgroundColor: colors.accent + "10", borderColor: colors.accent + "30" }]}>
@@ -842,7 +900,69 @@ const styles = StyleSheet.create({
   },
   optionText: { fontSize: 16, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   optionDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 16 },
-  // Smart schedule
+  // Smart schedule — suggestion card
+  suggestionCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 10,
+  },
+  suggestionHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  suggestionIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  suggestionTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
+  suggestionBody: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+  },
+  suggestionTimes: {
+    flexDirection: "row" as const,
+    gap: 8,
+    flexWrap: "wrap" as const,
+  },
+  suggestionTime: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  suggestionTimeText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
+  suggestionApplyBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  suggestionApplyText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+    color: "#fff",
+  },
   autoScheduleRow: {
     flexDirection: "row" as const,
     alignItems: "center" as const,

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
 import { ScanRecord } from "@/context/HydrationContext";
@@ -10,6 +10,7 @@ import { SmartReminder } from "./useNotifications";
 
 const ENABLED_KEY = "@hydrapulse:smartScheduleEnabled";
 const DATE_KEY = "@hydrapulse:smartScheduleLastDate";
+const DISMISSED_KEY = "@hydrapulse:smartScheduleSuggestionDismissed";
 
 // ─── Algorithm constants ──────────────────────────────────────────────────────
 
@@ -113,6 +114,14 @@ export interface SmartScheduleHook {
   enableSmartSchedule: () => Promise<void>;
   disableSmartSchedule: () => Promise<void>;
   refreshSmartSchedule: () => Promise<void>;
+  /** True when there are enough events in the last 14 days to compute a real pattern. */
+  hasEnoughData: boolean;
+  /** The times the algorithm would suggest right now — always computed, regardless of enabled state. */
+  pendingSuggestions: SmartScheduleTime[];
+  /** True if the user has dismissed the suggestion card without enabling Auto-Schedule. */
+  suggestionDismissed: boolean;
+  /** Persist a dismissal so the suggestion card hides until data meaningfully changes. */
+  dismissSuggestion: () => Promise<void>;
 }
 
 export function useSmartSchedule({
@@ -131,21 +140,54 @@ export function useSmartSchedule({
   const [scheduledTimes, setScheduledTimes] = useState<SmartScheduleTime[]>([]);
   const [isScheduling, setIsScheduling] = useState(false);
   const [ready, setReady] = useState(false);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
 
   // Load persisted state on mount
   useEffect(() => {
     if (Platform.OS === "web") { setReady(true); return; }
     (async () => {
       try {
-        const [enabledRaw, dateRaw] = await Promise.all([
+        const [enabledRaw, dateRaw, dismissedRaw] = await Promise.all([
           AsyncStorage.getItem(ENABLED_KEY),
           AsyncStorage.getItem(DATE_KEY),
+          AsyncStorage.getItem(DISMISSED_KEY),
         ]);
         if (enabledRaw === "true") setEnabled(true);
         if (dateRaw) setLastScheduledDate(dateRaw);
+        if (dismissedRaw === "true") setSuggestionDismissed(true);
       } catch {}
       setReady(true);
     })();
+  }, []);
+
+  // Always-computed pattern analysis — drives the suggestion card regardless
+  // of whether Auto-Schedule is enabled.
+  const allEvents = useMemo(
+    () => [
+      ...waterLog.map((l) => ({ time: l.time })),
+      ...history.map((s) => ({ time: s.date })),
+    ],
+    // Recompute only when counts change, not on every reference change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [waterLog.length, history.length]
+  );
+
+  const hasEnoughData = useMemo(() => {
+    const cutoff = Date.now() - LOOKBACK_MS;
+    const recentCount = allEvents.filter(
+      (e) => new Date(e.time).getTime() > cutoff
+    ).length;
+    return recentCount >= MIN_EVENTS;
+  }, [allEvents]);
+
+  const pendingSuggestions = useMemo(
+    () => computeSmartTimes(allEvents),
+    [allEvents]
+  );
+
+  const dismissSuggestion = useCallback(async () => {
+    setSuggestionDismissed(true);
+    await AsyncStorage.setItem(DISMISSED_KEY, "true").catch(() => {});
   }, []);
 
   const doSchedule = useCallback(async () => {
@@ -213,5 +255,9 @@ export function useSmartSchedule({
     enableSmartSchedule: enable,
     disableSmartSchedule: disable,
     refreshSmartSchedule: doSchedule,
+    hasEnoughData,
+    pendingSuggestions,
+    suggestionDismissed,
+    dismissSuggestion,
   };
 }

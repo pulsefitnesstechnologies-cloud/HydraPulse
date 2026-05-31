@@ -82,6 +82,10 @@ interface HealthContextType {
   enableSmartSchedule: () => Promise<void>;
   disableSmartSchedule: () => Promise<void>;
   refreshSmartSchedule: () => Promise<void>;
+  hasEnoughData: boolean;
+  pendingSuggestions: SmartScheduleTime[];
+  suggestionDismissed: boolean;
+  dismissSuggestion: () => Promise<void>;
   connectHealthKit: () => Promise<{ ok: boolean; error?: string }>;
   refreshHealthData: () => void;
   runWatchScan: () => Promise<ScanRecord | "not-worn" | null>;
@@ -225,6 +229,10 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         enableSmartSchedule: smartSchedule.enableSmartSchedule,
         disableSmartSchedule: smartSchedule.disableSmartSchedule,
         refreshSmartSchedule: smartSchedule.refreshSmartSchedule,
+        hasEnoughData: smartSchedule.hasEnoughData,
+        pendingSuggestions: smartSchedule.pendingSuggestions,
+        suggestionDismissed: smartSchedule.suggestionDismissed,
+        dismissSuggestion: smartSchedule.dismissSuggestion,
         connectHealthKit,
         refreshHealthData: () => { hk.fetchLatest(); },
         runWatchScan,

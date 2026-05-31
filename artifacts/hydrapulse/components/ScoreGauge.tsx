@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 
 import { HydrationScore, getScoreColor, getScoreLabel } from "@/context/HydrationContext";
@@ -36,7 +36,8 @@ export function ScoreGauge({ score, size = 200, showLabel = true }: ScoreGaugePr
       });
       Animated.timing(countAnim, {
         toValue: score,
-        duration: 900,
+        duration: 1600,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
       }).start();
       return () => countAnim.removeListener(listenerId);

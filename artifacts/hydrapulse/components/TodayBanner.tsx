@@ -137,13 +137,11 @@ export function TodayBanner({
   const [wave, setWave] = useState({ x1: 0, y1: DROP_H, x2: 0, y2: DROP_H + 6 });
 
   // Keep target in sync with the latest fill level.
-  // Minimum 10% visual fill when ANY water has been logged so the animation
-  // is always perceptible; otherwise the wave sits below the drop boundary
-  // and appears completely invisible.
+  // Always show a minimum 15% visual fill so the wave is perceptible even
+  // before any water is logged — the wave animation proves the code is running.
   useEffect(() => {
-    const minP = todayTotalOz > 0 ? 0.10 : 0;
-    targetYRef.current = DROP_H * (1 - Math.max(progress, minP));
-  }, [progress, todayTotalOz]);
+    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.15));
+  }, [progress]);
 
   // Single perpetual RAF loop started once on mount
   useEffect(() => {
@@ -269,6 +267,8 @@ export function TodayBanner({
         <Text style={[styles.pctSub, { color: colors.mutedForeground }]}>
           of daily goal
         </Text>
+        {/* DIAGNOSTIC — remove after confirming update applies */}
+        <View style={styles.diagDot} />
 
         {/* ── Stats row ─────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
@@ -409,6 +409,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bestText: { fontSize: 11, fontFamily: "Inter_400Regular" },
+
+  // Diagnostic dot — bright orange, remove once confirmed update applies
+  diagDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FF6B35",
+    marginTop: -6,
+  },
 
   // Log Water button
   logBtn: {

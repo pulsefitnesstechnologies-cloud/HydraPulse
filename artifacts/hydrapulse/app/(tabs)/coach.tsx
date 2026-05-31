@@ -178,16 +178,44 @@ export default function CoachScreen() {
       >
         {/* Header card */}
         <View style={[styles.headerCard, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "25" }]}>
-          <View style={[styles.headerIcon, { backgroundColor: colors.primary + "20" }]}>
-            <Ionicons name="bulb-outline" size={26} color={colors.primary} />
+          <View style={styles.headerTopRow}>
+            <View style={[styles.headerIcon, { backgroundColor: colors.primary + "20" }]}>
+              <Ionicons name="bulb-outline" size={26} color={colors.primary} />
+            </View>
+            <View style={styles.headerText}>
+              <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+                Hydration Coach
+              </Text>
+              <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
+                Personalized insights based on your scans and water logs
+              </Text>
+            </View>
           </View>
-          <View style={styles.headerText}>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              Hydration Coach
+
+          <View style={[styles.headerDivider, { backgroundColor: colors.primary + "20" }]} />
+
+          <View style={styles.headerFactors}>
+            <Text style={[styles.headerFactorsTitle, { color: colors.foreground }]}>
+              What we factor in
             </Text>
-            <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-              Personalized insights based on your scan history and water logs
-            </Text>
+            {[
+              { icon: "pulse-outline" as const,         text: "Scan scores and HRV from every camera and Watch scan" },
+              { icon: "water-outline" as const,         text: "Water intake from your daily log entries" },
+              { icon: "trending-up-outline" as const,   text: "Week-over-week score and HRV trends" },
+              { icon: "flame-outline" as const,         text: "Your daily scan streak" },
+            ].map(({ icon, text }) => (
+              <View key={text} style={styles.headerFactorRow}>
+                <Ionicons name={icon} size={13} color={colors.primary} />
+                <Text style={[styles.headerFactorText, { color: colors.mutedForeground }]}>{text}</Text>
+              </View>
+            ))}
+            <View style={[styles.headerFactorRow, { marginTop: 4 }]}>
+              <Ionicons name="time-outline" size={13} color={colors.mutedForeground} />
+              <Text style={[styles.headerFactorText, { color: colors.mutedForeground }]}>
+                <Text style={{ color: colors.foreground }}>Timeline: </Text>
+                first insights appear after your initial scan. Trend coaching — comparing this week to last — unlocks after about 7 days of data.
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -302,13 +330,17 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
   headerCard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
     gap: 14,
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
     marginBottom: 4,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
   },
   headerIcon: {
     width: 52,
@@ -320,6 +352,27 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, gap: 3 },
   headerTitle: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" },
   headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  headerDivider: { height: 1 },
+  headerFactors: { gap: 8 },
+  headerFactorsTitle: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  headerFactorRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  headerFactorText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+  },
   sectionLabel: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",

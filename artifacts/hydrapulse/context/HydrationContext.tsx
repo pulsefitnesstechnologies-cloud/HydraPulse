@@ -30,6 +30,9 @@ interface HydrationContextType {
   history: ScanRecord[];
   latestScan: ScanRecord | null;
   scansThisWeek: number;
+  todayScans: number;
+  currentStreak: number;
+  bestStreak: number;
   isPremium: boolean;
   hasOnboarded: boolean;
   /** True once AsyncStorage has finished loading — NavigationGuard waits for this. */
@@ -49,6 +52,7 @@ const STORAGE_KEYS = {
   HISTORY: "@hydrapulse:history",
   PREMIUM: "@hydrapulse:premium",
   ONBOARDED: "@hydrapulse:onboarded",
+  BEST_STREAK: "@hydrapulse:bestStreak",
 };
 
 export function getScoreLabel(score: HydrationScore): ScoreLabel {
@@ -81,6 +85,34 @@ function getStartOfWeek(): Date {
   return start;
 }
 
+function startOfDay(date: Date): number {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** Count consecutive days ending on today (or yesterday if no scan today). */
+function computeCurrentStreak(history: ScanRecord[]): number {
+  if (history.length === 0) return 0;
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const scanDays = new Set(history.map((r) => startOfDay(new Date(r.date))));
+  const today = startOfDay(new Date());
+  // If no scan today, streak can still be alive from yesterday —
+  // only break if yesterday also has no scan.
+  let cursor = scanDays.has(today) ? today : today - MS_PER_DAY;
+  let streak = 0;
+  while (scanDays.has(cursor)) {
+    streak++;
+    cursor -= MS_PER_DAY;
+  }
+  return streak;
+}
+
+function getTodayScans(history: ScanRecord[]): number {
+  const today = startOfDay(new Date());
+  return history.filter((r) => startOfDay(new Date(r.date)) === today).length;
+}
+
 const HydrationContext = createContext<HydrationContextType | undefined>(
   undefined
 );
@@ -90,6 +122,7 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   const [isPremium, setIsPremiumState] = useState(TESTING_MODE);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [bestStreak, setBestStreakState] = useState(0);
 
   // historyRef always mirrors the latest history state so callbacks like
   // addScanResult never capture a stale snapshot via closure.
@@ -112,6 +145,10 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
 
       await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM)
         .then((raw) => { if (raw === "true") setIsPremiumState(true); })
+        .catch(() => {});
+
+      await AsyncStorage.getItem(STORAGE_KEYS.BEST_STREAK)
+        .then((raw) => { if (raw) setBestStreakState(parseInt(raw, 10) || 0); })
         .catch(() => {});
 
       // Read ONBOARDED and set both flags in the same synchronous block so
@@ -174,6 +211,16 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
   ).length;
 
   const latestScan = history.length > 0 ? history[0] : null;
+  const currentStreak = computeCurrentStreak(history);
+  const todayScans = getTodayScans(history);
+
+  // Persist best streak whenever current streak surpasses it.
+  useEffect(() => {
+    if (currentStreak > bestStreak) {
+      setBestStreakState(currentStreak);
+      AsyncStorage.setItem(STORAGE_KEYS.BEST_STREAK, String(currentStreak)).catch(() => {});
+    }
+  }, [currentStreak, bestStreak]);
 
   return (
     <HydrationContext.Provider
@@ -181,6 +228,9 @@ export function HydrationProvider({ children }: { children: React.ReactNode }) {
         history,
         latestScan,
         scansThisWeek,
+        todayScans,
+        currentStreak,
+        bestStreak: Math.max(bestStreak, currentStreak),
         isPremium,
         hasOnboarded,
         isLoaded,

@@ -20,8 +20,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { DailyFactModal } from "@/components/DailyFactModal";
+import { DailyGoalRing } from "@/components/DailyGoalRing";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { SkeletonBlock } from "@/components/SkeletonBlock";
+import { StreakCelebration } from "@/components/StreakCelebration";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import { useDailyFact } from "@/hooks/useDailyFact";
@@ -33,6 +35,7 @@ import {
 } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function greeting() {
   const h = new Date().getHours();
@@ -172,11 +175,14 @@ function HomeLoadingSkeleton() {
 
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
+const STREAK_MILESTONES = [3, 7, 14, 30];
+const CELEBRATED_KEY = "@hydrapulse:celebratedStreaks";
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { latestScan, history, isLoaded } = useHydration();
+  const { latestScan, history, isLoaded, currentStreak, bestStreak, todayScans } = useHydration();
   const {
     healthKitEnabled,
     healthSnapshot,
@@ -191,6 +197,25 @@ export default function HomeScreen() {
   const dailyFact = useDailyFact();
   const [watchScanning, setWatchScanning] = useState(false);
   const [showWaterLog, setShowWaterLog] = useState(false);
+  const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
+
+  // Fire milestone celebration the first time a streak milestone is reached.
+  useEffect(() => {
+    if (!isLoaded || currentStreak === 0) return;
+    if (!STREAK_MILESTONES.includes(currentStreak)) return;
+    AsyncStorage.getItem(CELEBRATED_KEY)
+      .then((raw) => {
+        const celebrated: number[] = raw ? JSON.parse(raw) : [];
+        if (!celebrated.includes(currentStreak)) {
+          setCelebrationStreak(currentStreak);
+          const next = [...celebrated, currentStreak];
+          AsyncStorage.setItem(CELEBRATED_KEY, JSON.stringify(next)).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  // Only re-check when the streak value changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStreak, isLoaded]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -273,6 +298,47 @@ export default function HomeScreen() {
           <HomeLoadingSkeleton />
         ) : (
           <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
+
+          {/* ── Today: daily goal ring + streak ───────────────────────── */}
+          <View style={[styles.todayCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.todayRow}>
+              {/* Ring */}
+              <View style={styles.todayRingCol}>
+                <DailyGoalRing todayScans={todayScans} goalScans={1} size={84} />
+                <Text style={[styles.todayRingLabel, { color: colors.mutedForeground }]}>Today's scan</Text>
+              </View>
+
+              {/* Divider */}
+              <View style={[styles.todayDivider, { backgroundColor: colors.border }]} />
+
+              {/* Streak info */}
+              <View style={styles.todayStreakCol}>
+                <View style={styles.streakMainRow}>
+                  <Text style={[styles.streakNumber, { color: currentStreak > 0 ? "#10B981" : colors.mutedForeground }]}>
+                    {currentStreak}
+                  </Text>
+                  <View>
+                    <Text style={[styles.streakUnitTop, { color: colors.foreground }]}>
+                      {currentStreak === 1 ? "day" : "days"}
+                    </Text>
+                    <Text style={[styles.streakUnitBottom, { color: colors.mutedForeground }]}>streak</Text>
+                  </View>
+                </View>
+                <Text style={[styles.bestStreakText, { color: colors.mutedForeground }]}>
+                  Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
+                </Text>
+                <Text
+                  style={[
+                    styles.streakNudge,
+                    { color: todayScans > 0 ? "#10B981" : colors.primary },
+                  ]}
+                >
+                  {todayScans > 0 ? "Streak active — great work!" : "Scan today to extend your streak"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
           {/* Main hydration score card */}
           <View
             style={[
@@ -636,6 +702,12 @@ export default function HomeScreen() {
         fact={dailyFact.fact}
         onDismiss={dailyFact.dismiss}
       />
+
+      <StreakCelebration
+        streak={celebrationStreak ?? 0}
+        visible={celebrationStreak !== null}
+        onDismiss={() => setCelebrationStreak(null)}
+      />
     </View>
   );
 }
@@ -643,6 +715,69 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 16 },
+  // Today card
+  todayCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  todayRow: {
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: 0,
+  },
+  todayRingCol: {
+    alignItems: "center",
+    gap: 6,
+    width: 90,
+  },
+  todayRingLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+  },
+  todayDivider: {
+    width: 1,
+    height: 72,
+    marginHorizontal: 18,
+  },
+  todayStreakCol: {
+    flex: 1,
+    gap: 3,
+  },
+  streakMainRow: {
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: 8,
+  },
+  streakNumber: {
+    fontSize: 42,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "700" as const,
+    lineHeight: 48,
+  },
+  streakUnitTop: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+    lineHeight: 19,
+  },
+  streakUnitBottom: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 17,
+  },
+  bestStreakText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+  streakNudge: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+    marginTop: 2,
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",

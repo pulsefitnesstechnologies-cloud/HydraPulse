@@ -5,8 +5,10 @@ import {
   Easing,
   Pressable,
   StyleSheet,
+  StyleProp,
   Text,
   View,
+  ViewStyle,
 } from "react-native";
 import Svg, {
   Circle,
@@ -59,7 +61,14 @@ function buildWaveFill(amp: number): string {
 // ─── Animated components ───────────────────────────────────────────────────────
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedG      = Animated.createAnimatedComponent(G);
+
+// react-native-svg's GProps doesn't declare `style`, but the native
+// implementation honours React Native style transforms at runtime.
+// Cast through unknown so TypeScript doesn't block the valid style prop.
+const AnimatedG = Animated.createAnimatedComponent(G) as unknown as React.ComponentType<{
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}>;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -194,16 +203,30 @@ export function TodayBanner({
             <Path d={dropPath} fill={`${waterColor}16`} />
 
             {/* Water fill clipped to drop shape.
-                Each AnimatedG uses numeric x/y props (react-native-svg's
-                G element treats these as SVG translate — reliably animated
-                via Animated.Value, unlike string transform interpolation). */}
+                AnimatedG uses style.transform (React Native animation path) —
+                x/y SVG attributes are NOT animated by Animated.Value in
+                react-native-svg; style transforms are. */}
             <G clipPath="url(#drop-clip-tb)">
               {/* Wave 2 — behind, smaller x-slosh amplitude */}
-              <AnimatedG x={slosh2Anim} y={wave2YAnim}>
+              <AnimatedG
+                style={{
+                  transform: [
+                    { translateX: slosh2Anim as unknown as number },
+                    { translateY: wave2YAnim as unknown as number },
+                  ],
+                }}
+              >
                 <Path d={waveFill2} fill={`${waterColor}40`} />
               </AnimatedG>
               {/* Wave 1 — front, full x-slosh amplitude */}
-              <AnimatedG x={sloshAnim} y={wave1YAnim}>
+              <AnimatedG
+                style={{
+                  transform: [
+                    { translateX: sloshAnim as unknown as number },
+                    { translateY: wave1YAnim as unknown as number },
+                  ],
+                }}
+              >
                 <Path d={waveFill1} fill={`${waterColor}70`} />
               </AnimatedG>
             </G>

@@ -184,6 +184,15 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
 
   const runWatchScan = useCallback(async (): Promise<ScanRecord | "not-worn" | null> => {
     if (Platform.OS !== "ios") return null;
+
+    // On startup, healthKitEnabled is restored from storage before isAuthorized
+    // resolves (requestAuthorization is async). Guard against that race: if the
+    // hook hasn't confirmed authorization yet, re-request before fetching.
+    if (!hk.isAuthorized) {
+      const authResult = await hk.requestAuthorization();
+      if (!authResult.ok) return null;
+    }
+
     const snap = await hk.fetchLatest();
 
     // No data at all from HealthKit — permissions missing or Watch never paired.

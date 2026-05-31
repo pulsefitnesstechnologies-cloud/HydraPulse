@@ -351,6 +351,61 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
+          {/* Score Comparison card — only shown when both scan types have data */}
+          {(() => {
+            const lastWatch  = history.find((s) => s.method === "watch");
+            const lastCamera = history.find((s) => s.method === "phone" || s.method === "simulation");
+            if (!lastWatch || !lastCamera) return null;
+            const watchColor  = getScoreColor(lastWatch.score);
+            const cameraColor = getScoreColor(lastCamera.score);
+            return (
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.cardHeaderLeft}>
+                  <Ionicons name="git-compare-outline" size={16} color={colors.mutedForeground} />
+                  <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
+                    Score Comparison
+                  </Text>
+                </View>
+                <View style={styles.compareRow}>
+                  {/* Watch column */}
+                  <View style={[styles.compareCol, { borderColor: watchColor + "35", backgroundColor: watchColor + "08" }]}>
+                    <View style={styles.compareColHeader}>
+                      <Ionicons name="watch-outline" size={13} color={colors.mutedForeground} />
+                      <Text style={[styles.compareMethod, { color: colors.mutedForeground }]}>Watch</Text>
+                    </View>
+                    <Text style={[styles.compareScore, { color: watchColor }]}>{lastWatch.score}</Text>
+                    <Text style={[styles.compareLabel, { color: watchColor }]}>{getScoreLabel(lastWatch.score)}</Text>
+                    <Text style={[styles.compareSubLabel, { color: colors.mutedForeground }]}>Resting Baseline</Text>
+                    <Text style={[styles.compareTime, { color: colors.mutedForeground }]}>{timeAgo(lastWatch.date)}</Text>
+                  </View>
+
+                  {/* Divider */}
+                  <View style={styles.compareDivider}>
+                    <View style={[styles.compareDividerLine, { backgroundColor: colors.border }]} />
+                    <Text style={[styles.compareVs, { color: colors.mutedForeground }]}>vs</Text>
+                    <View style={[styles.compareDividerLine, { backgroundColor: colors.border }]} />
+                  </View>
+
+                  {/* Camera column */}
+                  <View style={[styles.compareCol, { borderColor: cameraColor + "35", backgroundColor: cameraColor + "08" }]}>
+                    <View style={styles.compareColHeader}>
+                      <Ionicons name="flashlight-outline" size={13} color={colors.mutedForeground} />
+                      <Text style={[styles.compareMethod, { color: colors.mutedForeground }]}>Camera</Text>
+                    </View>
+                    <Text style={[styles.compareScore, { color: cameraColor }]}>{lastCamera.score}</Text>
+                    <Text style={[styles.compareLabel, { color: cameraColor }]}>{getScoreLabel(lastCamera.score)}</Text>
+                    <Text style={[styles.compareSubLabel, { color: colors.mutedForeground }]}>Live Reading</Text>
+                    <Text style={[styles.compareTime, { color: colors.mutedForeground }]}>{timeAgo(lastCamera.date)}</Text>
+                  </View>
+                </View>
+
+                <Text style={[styles.compareFootnote, { color: colors.mutedForeground }]}>
+                  A gap between scores is normal — Watch reflects your resting state from earlier; Camera captures your current reading.
+                </Text>
+              </View>
+            );
+          })()}
+
           {/* Water Intake card */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeaderRow}>
@@ -699,6 +754,27 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: 20,
   },
+  // Score Comparison card
+  compareRow: { flexDirection: "row" as const, alignItems: "stretch", gap: 10 },
+  compareCol: {
+    flex: 1,
+    alignItems: "center" as const,
+    gap: 3,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  compareColHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 4, marginBottom: 4 },
+  compareMethod: { fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const, textTransform: "uppercase" as const, letterSpacing: 0.8 },
+  compareScore: { fontSize: 36, fontFamily: "Inter_700Bold", fontWeight: "700" as const, lineHeight: 40 },
+  compareLabel: { fontSize: 12, fontFamily: "Inter_700Bold", fontWeight: "700" as const, textTransform: "uppercase" as const, letterSpacing: 0.8 },
+  compareSubLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  compareTime: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  compareDivider: { alignItems: "center" as const, justifyContent: "center" as const, gap: 4, paddingVertical: 8 },
+  compareDividerLine: { width: 1, flex: 1 },
+  compareVs: { fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const, textTransform: "uppercase" as const, letterSpacing: 1 },
+  compareFootnote: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17, textAlign: "center" as const },
   // Water card
   waterTotal: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   progressTrack: { height: 5, borderRadius: 3, overflow: "hidden", flexDirection: "row" as const },

@@ -243,6 +243,11 @@ export default function ScanScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sampleBuffer = useRef<number[]>([]);
   const scanningRef = useRef(false);
+  // Tracks whether the signal quality ever reached "good" during this scan.
+  // The fallback two-thirds analysis is only attempted when this is true —
+  // ensuring a finger-never-on-lens scan cannot produce a junk result via
+  // the shorter window.
+  const hadGoodSignalRef = useRef(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -267,7 +272,9 @@ export default function ScanScreen() {
     // Threshold lowered to 0.5 (was 0.8) — gives positive "signal good"
     // feedback sooner once the finger is properly placed, which encourages
     // users to hold still rather than adjusting their grip mid-scan.
-    setSignalQuality(hi - lo > 0.5 ? "good" : "weak");
+    const quality = hi - lo > 0.5 ? "good" : "weak";
+    if (quality === "good") hadGoodSignalRef.current = true;
+    setSignalQuality(quality);
   }, []);
 
   // Stable JS-thread callback that the worklet can call via useRunOnJS
@@ -325,11 +332,15 @@ export default function ScanScreen() {
     sampleBuffer.current = [];
     setSignalQuality("none");
     // Primary attempt: full buffer.
-    // Fallback: final two-thirds — if the user started moving but then held
-    // still, the later portion of the signal is cleaner and often analysable.
+    // Fallback: final two-thirds — only attempted if signal quality was "good"
+    // at some point during the scan (finger was actually on the lens). This
+    // prevents a never-covered-lens scan from producing a junk result via the
+    // shorter window.
     const analyzed =
       analyzeSignal(buf) ??
-      analyzeSignal(buf.slice(Math.floor(buf.length / 3)));
+      (hadGoodSignalRef.current
+        ? analyzeSignal(buf.slice(Math.floor(buf.length / 3)))
+        : null);
 
     if (analyzed) {
       setResult(analyzed);
@@ -357,6 +368,7 @@ export default function ScanScreen() {
   const beginScanning = useCallback(() => {
     sampleBuffer.current = [];
     scanningRef.current = true;
+    hadGoodSignalRef.current = false;
     setSignalQuality("none");
     setResult(null);
     setFailReason("");

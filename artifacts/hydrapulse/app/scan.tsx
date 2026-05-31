@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Linking,
   Platform,
@@ -32,6 +33,7 @@ import {
   getScoreLabel,
   useHydration,
 } from "@/context/HydrationContext";
+import { useHealth } from "@/context/HealthContext";
 import { useColors } from "@/hooks/useColors";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -226,6 +228,7 @@ export default function ScanScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { addScanResult } = useHydration();
+  const { runWatchScan } = useHealth();
 
   // VisionCamera v4 hooks
   const device = useCameraDevice("back");
@@ -239,6 +242,16 @@ export default function ScanScreen() {
   const [result, setResult] = useState<ReturnType<typeof analyzeSignal>>(null);
   const [failReason, setFailReason] = useState<string>("");
   const [permissionDenied, setPermissionDenied] = useState(false);
+
+  // ── Scan mode ──────────────────────────────────────────────────────────────
+  type ScanMode = "camera" | "watch";
+  const [mode, setMode] = useState<ScanMode>("camera");
+
+  // ── Watch scan state ───────────────────────────────────────────────────────
+  type WatchScanState = "idle" | "scanning" | "done" | "failed";
+  const [watchScanState, setWatchScanState] = useState<WatchScanState>("idle");
+  const [watchRecord, setWatchRecord] = useState<ScanRecord | null>(null);
+  const [watchError, setWatchError] = useState("");
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sampleBuffer = useRef<number[]>([]);
@@ -425,6 +438,54 @@ export default function ScanScreen() {
     setTimeLeft(SCAN_DURATION);
   }, [stopPulse, progressAnim]);
 
+  const switchMode = useCallback(
+    (next: "camera" | "watch") => {
+      if (next === mode) return;
+      if (next === "watch" && state === "scanning") cancelScan();
+      if (next === "camera") {
+        setWatchScanState("idle");
+        setWatchRecord(null);
+        setWatchError("");
+      }
+      setMode(next);
+    },
+    [mode, state, cancelScan]
+  );
+
+  const doWatchScan = useCallback(async () => {
+    if (watchScanState === "scanning") return;
+    setWatchScanState("scanning");
+    setWatchRecord(null);
+    setWatchError("");
+    startPulse();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    try {
+      const result = await runWatchScan();
+      stopPulse();
+      if (result === "not-worn") {
+        setWatchError(
+          "No heart rate or HRV data found. Make sure your Apple Watch is paired, worn recently, and Health access is enabled in Settings."
+        );
+        setWatchScanState("failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      } else if (result) {
+        setWatchRecord(result);
+        setWatchScanState("done");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } else {
+        setWatchError(
+          "Could not read Watch data. Make sure your Apple Watch is paired and HydraPulse has permission to access Health data."
+        );
+        setWatchScanState("failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
+    } catch {
+      stopPulse();
+      setWatchError("An error occurred reading Watch data. Please try again.");
+      setWatchScanState("failed");
+    }
+  }, [watchScanState, runWatchScan, startPulse, stopPulse]);
+
   const saveResult = useCallback(async () => {
     if (!result) return;
     const record: ScanRecord = {
@@ -457,6 +518,7 @@ export default function ScanScreen() {
   });
 
   const signalColor = signalQuality === "good" ? "#10B981" : "#EF4444";
+  const watchScoreColor = watchRecord ? SCORE_COLORS[watchRecord.score] : colors.primary;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -484,141 +546,324 @@ export default function ScanScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* ── Mode toggle (iOS only — Watch Scan requires Apple Watch) ── */}
+      {Platform.OS === "ios" && (
+        <View style={styles.modeToggle}>
+          {(["camera", "watch"] as const).map((m) => (
+            <Pressable
+              key={m}
+              style={[
+                styles.modeBtn,
+                { backgroundColor: mode === m ? colors.primary : colors.muted },
+              ]}
+              onPress={() => switchMode(m)}
+            >
+              <Ionicons
+                name={m === "camera" ? "phone-portrait-outline" : "watch-outline"}
+                size={16}
+                color={mode === m ? "#FFFFFF" : colors.mutedForeground}
+              />
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  { color: mode === m ? "#FFFFFF" : colors.mutedForeground },
+                ]}
+              >
+                {m === "camera" ? "Camera Scan" : "Watch Scan"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       {/* ── Scan area ── */}
       <View style={styles.scanArea}>
 
         {/* ─────────────────────────────────────────────────────────────────
-            CAMERA MODE — single persistent Camera instance.
-            The frame processor is only attached during the scanning state,
-            but the Camera component itself stays mounted throughout the
-            session so the torch is never reset by a remount.
+            CAMERA MODE
         ───────────────────────────────────────────────────────────────── */}
-        {cameraReady && (
-          <View style={styles.cameraBlock}>
-            <View style={styles.cameraCircle}>
-              <Camera
-                style={StyleSheet.absoluteFillObject}
-                device={device}
-                isActive={state === "idle" || state === "scanning"}
-                torch={torchOn ? "on" : "off"}
-                frameProcessor={state === "scanning" ? frameProcessor : undefined}
-              />
+        {mode === "camera" && (
+          <>
+            {cameraReady && (
+              <View style={styles.cameraBlock}>
+                <View style={styles.cameraCircle}>
+                  <Camera
+                    style={StyleSheet.absoluteFillObject}
+                    device={device}
+                    isActive={state === "idle" || state === "scanning"}
+                    torch={torchOn ? "on" : "off"}
+                    frameProcessor={state === "scanning" ? frameProcessor : undefined}
+                  />
 
-              {/* State-specific overlays */}
-              <View style={styles.cameraOverlay}>
-                {(state === "idle" || state === "scanning") && (
-                  <View
-                    style={[
-                      styles.fingerRing,
-                      {
-                        borderColor:
-                          state === "scanning"
-                            ? signalQuality === "good"
-                              ? "#10B981"
-                              : colors.primary
-                            : colors.primary + "70",
-                        borderStyle: state === "scanning" ? "solid" : "dashed",
-                      },
-                    ]}
-                  >
-                    {state === "scanning" && (
-                      <Text style={styles.timerOverlay}>{timeLeft}</Text>
+                  <View style={styles.cameraOverlay}>
+                    {(state === "idle" || state === "scanning") && (
+                      <View
+                        style={[
+                          styles.fingerRing,
+                          {
+                            borderColor:
+                              state === "scanning"
+                                ? signalQuality === "good"
+                                  ? "#10B981"
+                                  : colors.primary
+                                : colors.primary + "70",
+                            borderStyle: state === "scanning" ? "solid" : "dashed",
+                          },
+                        ]}
+                      >
+                        {state === "scanning" && (
+                          <Text style={styles.timerOverlay}>{timeLeft}</Text>
+                        )}
+                      </View>
+                    )}
+                    {state === "done" && result && (
+                      <View
+                        style={[
+                          styles.doneOverlay,
+                          { backgroundColor: resultColor + "30" },
+                        ]}
+                      >
+                        <Ionicons name="checkmark-circle" size={52} color={resultColor} />
+                      </View>
                     )}
                   </View>
-                )}
-                {state === "done" && result && (
-                  <View
-                    style={[
-                      styles.doneOverlay,
-                      { backgroundColor: resultColor + "30" },
-                    ]}
-                  >
-                    <Ionicons name="checkmark-circle" size={52} color={resultColor} />
+
+                  {torchOn && (
+                    <View style={[styles.torchBadge, { backgroundColor: "#F59E0B" }]}>
+                      <Ionicons name="flashlight" size={11} color="#fff" />
+                      <Text style={styles.torchBadgeText}>Torch on</Text>
+                    </View>
+                  )}
+
+                  {state === "scanning" && (
+                    <View
+                      style={[
+                        styles.qualityBadge,
+                        { backgroundColor: signalColor + "22" },
+                      ]}
+                    >
+                      <View style={[styles.qualityDot, { backgroundColor: signalColor }]} />
+                      <Text style={[styles.qualityText, { color: signalColor }]}>
+                        {signalQuality === "good" ? "Signal good" : "Press finger firmly"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {state === "idle" && (
+                  <View style={styles.belowCamera}>
+                    <Text style={[styles.instruction, { color: colors.foreground }]}>
+                      Cover the rear camera tightly with your fingertip
+                    </Text>
+                    <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                      Press firmly and hold completely still. Torch activates when you tap Start.
+                    </Text>
                   </View>
                 )}
+
+                {state === "scanning" && (
+                  <View style={styles.belowCamera}>
+                    <WaveformPreview
+                      isActive
+                      width={260}
+                      height={60}
+                      color={signalQuality === "good" ? "#10B981" : colors.primary}
+                    />
+                    <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
+                      {signalQuality === "good"
+                        ? "Strong signal — keep holding still..."
+                        : "Hold still — torch active, reading pulse..."}
+                    </Text>
+                    <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                      <Animated.View
+                        style={[
+                          styles.progressFill,
+                          { backgroundColor: colors.primary, width: progressWidth },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {state === "done" && result && (
+                  <>
+                    <View
+                      style={[
+                        styles.sourceBadge,
+                        { backgroundColor: "#10B98120", borderColor: "#10B98140" },
+                      ]}
+                    >
+                      <Ionicons name="pulse-outline" size={13} color="#10B981" />
+                      <Text style={[styles.sourceText, { color: "#10B981" }]}>
+                        Live PPG measurement
+                      </Text>
+                    </View>
+                    <View style={styles.metricsRow}>
+                      {[
+                        { value: result.heartRate, label: "BPM" },
+                        { value: result.hrv, label: "HRV ms" },
+                        { value: `${result.confidence}%`, label: "Confidence" },
+                      ].map((m) => (
+                        <View
+                          key={m.label}
+                          style={[
+                            styles.metricCard,
+                            { backgroundColor: colors.card, borderColor: colors.border },
+                          ]}
+                        >
+                          <Text style={[styles.metricValue, { color: colors.foreground }]}>
+                            {m.value}
+                          </Text>
+                          <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                            {m.label}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                )}
               </View>
+            )}
 
-              {/* Torch badge */}
-              {torchOn && (
-                <View style={[styles.torchBadge, { backgroundColor: "#F59E0B" }]}>
-                  <Ionicons name="flashlight" size={11} color="#fff" />
-                  <Text style={styles.torchBadgeText}>Torch on</Text>
-                </View>
-              )}
-
-              {/* Live signal quality badge */}
-              {state === "scanning" && (
-                <View
+            {!cameraReady && (
+              <View style={styles.idleContent}>
+                <Animated.View
                   style={[
-                    styles.qualityBadge,
-                    { backgroundColor: signalColor + "22" },
+                    styles.fingerTarget,
+                    {
+                      borderColor: permissionDenied ? "#EF4444" : colors.primary,
+                      transform: [{ scale: pulseAnim }],
+                    },
                   ]}
                 >
-                  <View style={[styles.qualityDot, { backgroundColor: signalColor }]} />
-                  <Text style={[styles.qualityText, { color: signalColor }]}>
-                    {signalQuality === "good"
-                      ? "Signal good"
-                      : "Press finger firmly"}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Content below the camera circle, changes by state */}
-            {state === "idle" && (
-              <View style={styles.belowCamera}>
+                  <Ionicons
+                    name={permissionDenied ? "lock-closed-outline" : "camera-outline"}
+                    size={64}
+                    color={permissionDenied ? "#EF4444" : colors.primary}
+                  />
+                </Animated.View>
                 <Text style={[styles.instruction, { color: colors.foreground }]}>
-                  Cover the rear camera tightly with your fingertip
+                  {state === "requesting"
+                    ? "Requesting camera access..."
+                    : permissionDenied
+                    ? "Camera access denied"
+                    : "Camera access needed"}
                 </Text>
                 <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-                  Press firmly and hold completely still. Torch activates when you tap Start.
+                  {state === "requesting"
+                    ? "Please allow camera permission in the system prompt."
+                    : permissionDenied
+                    ? "HydraPulse needs camera access to read your pulse. Open Settings and enable camera permission for HydraPulse."
+                    : "HydraPulse needs camera access to activate the torch and read your pulse. Tap Start Scan to grant permission."}
                 </Text>
-              </View>
-            )}
-
-            {state === "scanning" && (
-              <View style={styles.belowCamera}>
-                <WaveformPreview
-                  isActive
-                  width={260}
-                  height={60}
-                  color={signalQuality === "good" ? "#10B981" : colors.primary}
-                />
-                <Text style={[styles.scanningHint, { color: colors.mutedForeground }]}>
-                  {signalQuality === "good"
-                    ? "Strong signal — keep holding still..."
-                    : "Hold still — torch active, reading pulse..."}
-                </Text>
-                <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-                  <Animated.View
-                    style={[
-                      styles.progressFill,
-                      { backgroundColor: colors.primary, width: progressWidth },
+                {permissionDenied && state !== "requesting" && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.startBtn,
+                      { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, marginTop: 8 },
                     ]}
-                  />
-                </View>
+                    onPress={() => Linking.openSettings()}
+                  >
+                    <Ionicons name="settings-outline" size={22} color={colors.primaryForeground} />
+                    <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+                      Open Settings
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             )}
 
-            {state === "done" && result && (
-              <>
+            {state === "failed" && (
+              <View style={styles.idleContent}>
+                <View style={[styles.fingerTarget, { borderColor: "#EF4444" }]}>
+                  <Ionicons name="warning-outline" size={64} color="#EF4444" />
+                </View>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  Reading unsuccessful
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  {failReason}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────
+            WATCH MODE
+        ───────────────────────────────────────────────────────────────── */}
+        {mode === "watch" && (
+          <>
+            {watchScanState === "idle" && (
+              <View style={styles.idleContent}>
+                <View style={[styles.fingerTarget, { borderColor: colors.primary }]}>
+                  <Ionicons name="watch-outline" size={64} color={colors.primary} />
+                </View>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  Watch Scan
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  Reads your resting heart rate and HRV from Apple Health to estimate hydration.
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  For best results, wait 5–10 minutes after exercise before scanning.
+                </Text>
+              </View>
+            )}
+
+            {watchScanState === "scanning" && (
+              <View style={styles.idleContent}>
+                <Animated.View
+                  style={[
+                    styles.fingerTarget,
+                    { borderColor: colors.primary, transform: [{ scale: pulseAnim }] },
+                  ]}
+                >
+                  <Ionicons name="watch-outline" size={64} color={colors.primary} />
+                </Animated.View>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  Reading Watch Data...
+                </Text>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  Fetching your latest heart rate and HRV from Apple Health.
+                </Text>
+              </View>
+            )}
+
+            {watchScanState === "done" && watchRecord && (
+              <View style={styles.watchDoneContent}>
+                <View
+                  style={[
+                    styles.resultCircle,
+                    { borderColor: watchScoreColor + "60", backgroundColor: watchScoreColor + "15" },
+                  ]}
+                >
+                  <Text style={[styles.resultScore, { color: watchScoreColor }]}>
+                    {watchRecord.score}/4
+                  </Text>
+                  <Text style={[styles.resultLabel, { color: watchScoreColor }]}>
+                    {watchRecord.label}
+                  </Text>
+                </View>
                 <View
                   style={[
                     styles.sourceBadge,
-                    { backgroundColor: "#10B98120", borderColor: "#10B98140" },
+                    { backgroundColor: "#0EA5E920", borderColor: "#0EA5E940" },
                   ]}
                 >
-                  <Ionicons name="pulse-outline" size={13} color="#10B981" />
-                  <Text style={[styles.sourceText, { color: "#10B981" }]}>
-                    Live PPG measurement
+                  <Ionicons name="watch-outline" size={13} color="#0EA5E9" />
+                  <Text style={[styles.sourceText, { color: "#0EA5E9" }]}>
+                    Apple Watch measurement
                   </Text>
                 </View>
                 <View style={styles.metricsRow}>
                   {[
-                    { value: result.heartRate, label: "BPM" },
-                    { value: result.hrv, label: "HRV ms" },
-                    { value: `${result.confidence}%`, label: "Confidence" },
+                    { value: watchRecord.heartRate ?? "—", label: "RHR" },
+                    { value: watchRecord.hrv ?? "—", label: "HRV ms" },
+                    {
+                      value: watchRecord.confidence ? `${watchRecord.confidence}%` : "—",
+                      label: "Confidence",
+                    },
                   ].map((m) => (
                     <View
                       key={m.label}
@@ -636,82 +881,23 @@ export default function ScanScreen() {
                     </View>
                   ))}
                 </View>
-              </>
+              </View>
             )}
-          </View>
-        )}
 
-        {/* ─────────────────────────────────────────────────────────────────
-            PERMISSION-NOT-YET-GRANTED / NO DEVICE
-        ───────────────────────────────────────────────────────────────── */}
-        {!cameraReady && (
-          <View style={styles.idleContent}>
-            <Animated.View
-              style={[
-                styles.fingerTarget,
-                {
-                  borderColor: permissionDenied ? "#EF4444" : colors.primary,
-                  transform: [{ scale: pulseAnim }],
-                },
-              ]}
-            >
-              <Ionicons
-                name={permissionDenied ? "lock-closed-outline" : "camera-outline"}
-                size={64}
-                color={permissionDenied ? "#EF4444" : colors.primary}
-              />
-            </Animated.View>
-            <Text style={[styles.instruction, { color: colors.foreground }]}>
-              {state === "requesting"
-                ? "Requesting camera access..."
-                : permissionDenied
-                ? "Camera access denied"
-                : "Camera access needed"}
-            </Text>
-            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-              {state === "requesting"
-                ? "Please allow camera permission in the system prompt."
-                : permissionDenied
-                ? "HydraPulse needs camera access to read your pulse. Open Settings and enable camera permission for HydraPulse."
-                : "HydraPulse needs camera access to activate the torch and read your pulse. Tap Start Scan to grant permission."}
-            </Text>
-            {permissionDenied && state !== "requesting" && (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.startBtn,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, marginTop: 8 },
-                ]}
-                onPress={() => Linking.openSettings()}
-              >
-                <Ionicons name="settings-outline" size={22} color={colors.primaryForeground} />
-                <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
-                  Open Settings
+            {watchScanState === "failed" && (
+              <View style={styles.idleContent}>
+                <View style={[styles.fingerTarget, { borderColor: "#EF4444" }]}>
+                  <Ionicons name="warning-outline" size={64} color="#EF4444" />
+                </View>
+                <Text style={[styles.instruction, { color: colors.foreground }]}>
+                  Reading unsuccessful
                 </Text>
-              </Pressable>
+                <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
+                  {watchError}
+                </Text>
+              </View>
             )}
-          </View>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────────
-            FAILED STATE
-        ───────────────────────────────────────────────────────────────── */}
-        {state === "failed" && (
-          <View style={styles.idleContent}>
-            <View
-              style={[
-                styles.fingerTarget,
-                { borderColor: "#EF4444" },
-              ]}
-            >
-              <Ionicons name="warning-outline" size={64} color="#EF4444" />
-            </View>
-            <Text style={[styles.instruction, { color: colors.foreground }]}>
-              Reading unsuccessful
-            </Text>
-            <Text style={[styles.subInstruction, { color: colors.mutedForeground }]}>
-              {failReason}
-            </Text>
-          </View>
+          </>
         )}
       </View>
 
@@ -719,82 +905,151 @@ export default function ScanScreen() {
       <View style={styles.bottomArea}>
         <DisclaimerBanner />
 
-        {(state === "idle" || state === "requesting") && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.startBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={startScan}
-            disabled={state === "requesting"}
-          >
-            <Ionicons name="scan-outline" size={22} color={colors.primaryForeground} />
-            <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
-              {state === "requesting" ? "Requesting access..." : "Start Scan"}
-            </Text>
-          </Pressable>
+        {/* ── Camera mode controls ── */}
+        {mode === "camera" && (
+          <>
+            {(state === "idle" || state === "requesting") && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={startScan}
+                disabled={state === "requesting"}
+              >
+                <Ionicons name="scan-outline" size={22} color={colors.primaryForeground} />
+                <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+                  {state === "requesting" ? "Requesting access..." : "Start Camera Scan"}
+                </Text>
+              </Pressable>
+            )}
+
+            {state === "scanning" && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cancelBtn,
+                  { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                ]}
+                onPress={cancelScan}
+              >
+                <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+            )}
+
+            {state === "done" && (
+              <View style={styles.doneButtons}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.retryBtn,
+                    { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                  ]}
+                  onPress={() => {
+                    setState("idle");
+                    setTimeLeft(SCAN_DURATION);
+                    setResult(null);
+                    progressAnim.setValue(0);
+                  }}
+                >
+                  <Ionicons name="refresh-outline" size={20} color={colors.foreground} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.saveBtn,
+                    { backgroundColor: resultColor, opacity: pressed ? 0.85 : 1, flex: 1 },
+                  ]}
+                  onPress={saveResult}
+                >
+                  <Text style={styles.saveBtnText}>Save & View Results</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {state === "failed" && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={() => {
+                  setState("idle");
+                  setTimeLeft(SCAN_DURATION);
+                  setFailReason("");
+                  progressAnim.setValue(0);
+                }}
+              >
+                <Ionicons name="refresh-outline" size={22} color={colors.primaryForeground} />
+                <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+                  Try Again
+                </Text>
+              </Pressable>
+            )}
+          </>
         )}
 
-        {state === "scanning" && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.cancelBtn,
-              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
-            ]}
-            onPress={cancelScan}
-          >
-            <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>
-              Cancel
-            </Text>
-          </Pressable>
-        )}
+        {/* ── Watch mode controls ── */}
+        {mode === "watch" && (
+          <>
+            {(watchScanState === "idle" || watchScanState === "failed") && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={doWatchScan}
+              >
+                <Ionicons name="watch-outline" size={22} color={colors.primaryForeground} />
+                <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
+                  {watchScanState === "failed" ? "Try Again" : "Start Watch Scan"}
+                </Text>
+              </Pressable>
+            )}
 
-        {state === "done" && (
-          <View style={styles.doneButtons}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.retryBtn,
-                { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
-              ]}
-              onPress={() => {
-                setState("idle");
-                setTimeLeft(SCAN_DURATION);
-                setResult(null);
-                progressAnim.setValue(0);
-              }}
-            >
-              <Ionicons name="refresh-outline" size={20} color={colors.foreground} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.saveBtn,
-                { backgroundColor: resultColor, opacity: pressed ? 0.85 : 1, flex: 1 },
-              ]}
-              onPress={saveResult}
-            >
-              <Text style={styles.saveBtnText}>Save & View Results</Text>
-            </Pressable>
-          </View>
-        )}
+            {watchScanState === "scanning" && (
+              <View style={[styles.startBtn, { backgroundColor: colors.muted }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.startBtnText, { color: colors.mutedForeground }]}>
+                  Reading Watch Data...
+                </Text>
+              </View>
+            )}
 
-        {state === "failed" && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.startBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={() => {
-              setState("idle");
-              setTimeLeft(SCAN_DURATION);
-              setFailReason("");
-              progressAnim.setValue(0);
-            }}
-          >
-            <Ionicons name="refresh-outline" size={22} color={colors.primaryForeground} />
-            <Text style={[styles.startBtnText, { color: colors.primaryForeground }]}>
-              Try Again
-            </Text>
-          </Pressable>
+            {watchScanState === "done" && watchRecord && (
+              <View style={styles.doneButtons}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.retryBtn,
+                    { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                  ]}
+                  onPress={() => {
+                    setWatchScanState("idle");
+                    setWatchRecord(null);
+                  }}
+                >
+                  <Ionicons name="refresh-outline" size={20} color={colors.foreground} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.saveBtn,
+                    { backgroundColor: watchScoreColor, opacity: pressed ? 0.85 : 1, flex: 1 },
+                  ]}
+                  onPress={() => {
+                    router.replace({
+                      pathname: "/results",
+                      params: {
+                        recordId: watchRecord.id,
+                        score: watchRecord.score,
+                        label: watchRecord.label,
+                      },
+                    });
+                  }}
+                >
+                  <Text style={styles.saveBtnText}>View Results</Text>
+                </Pressable>
+              </View>
+            )}
+          </>
         )}
       </View>
     </View>
@@ -950,6 +1205,7 @@ const styles = StyleSheet.create({
   timerNumber: { fontSize: 48, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
   timerLabel: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -4 },
   doneContent: { alignItems: "center", gap: 24, width: "100%" },
+  watchDoneContent: { alignItems: "center", gap: 20, width: "100%" },
   resultCircle: {
     width: 160,
     height: 160,

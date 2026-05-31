@@ -187,14 +187,12 @@ export default function HomeScreen() {
     healthSnapshot,
     healthLoading,
     connectHealthKit,
-    runWatchScan,
     writeWaterLog,
   } = useHealth();
   const { todayTotalOz, dailyGoalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const dailyFact = useDailyFact();
-  const [watchScanning, setWatchScanning] = useState(false);
   const [showWaterLog, setShowWaterLog] = useState(false);
   const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
 
@@ -228,37 +226,6 @@ export default function HomeScreen() {
 
   const handleConnectHealth = async () => {
     await connectHealthKit();
-  };
-
-  const handleWatchScan = async () => {
-    if (watchScanning) return;
-    setWatchScanning(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    try {
-      const result = await runWatchScan();
-      if (result === "not-worn") {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Alert.alert(
-          "No Health Data Found",
-          "HydraPulse couldn't read any heart rate or HRV data from Apple Health. Make sure your Apple Watch is paired, Health access is enabled in Settings, and try again.",
-          [{ text: "OK" }]
-        );
-      } else if (result) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        router.push({
-          pathname: "/results",
-          params: { score: result.score, label: result.label },
-        });
-      } else {
-        Alert.alert(
-          "No Watch Data",
-          "No heart rate or HRV data was found. Make sure your Apple Watch is paired and has permission to share health data.",
-          [{ text: "OK" }]
-        );
-      }
-    } finally {
-      setWatchScanning(false);
-    }
   };
 
   const hasHealthData =
@@ -527,26 +494,21 @@ export default function HomeScreen() {
                     </Text>
                   )}
 
-                  {/* Watch scan button */}
+                  {/* Prompt to use the Scan tab for Watch scans */}
                   <Pressable
                     style={({ pressed }) => [
                       styles.watchScanBtn,
                       {
                         backgroundColor: colors.primary + "15",
                         borderColor: colors.primary + "40",
-                        opacity: pressed || watchScanning ? 0.7 : 1,
+                        opacity: pressed ? 0.7 : 1,
                       },
                     ]}
-                    onPress={handleWatchScan}
-                    disabled={watchScanning}
+                    onPress={() => router.push("/scan")}
                   >
-                    {watchScanning ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : (
-                      <Ionicons name="watch-outline" size={16} color={colors.primary} />
-                    )}
+                    <Ionicons name="watch-outline" size={16} color={colors.primary} />
                     <Text style={[styles.watchScanBtnText, { color: colors.primary }]}>
-                      {watchScanning ? "Reading Watch Data..." : "Scan with Watch"}
+                      Scan with Watch
                     </Text>
                   </Pressable>
                 </>

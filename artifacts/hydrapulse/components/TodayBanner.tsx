@@ -43,16 +43,27 @@ function buildDropPath(): string {
   );
 }
 
-// Wave-fill path: extends 24 px beyond each side so translateX slosh
-// never exposes a gap inside the drop clip.
-function buildWaveFill(amp: number): string {
-  const L = -24;              // left overhang
-  const R = DROP_W + 24;      // right overhang
+// Builds a wave-fill path with ABSOLUTE coordinates so no <G transform> is
+// needed. react-native-svg reliably re-renders leaf-element `d` prop changes
+// (same mechanism as AnimatedCircle strokeDashoffset) but does NOT reliably
+// propagate transform-string updates on container <G> elements.
+//
+// fillY  — Y position of the wave baseline in the SVG coordinate system
+//          (0 = top of drop → full; DROP_H = bottom → empty)
+// sloshX — lateral offset; wave bezier control points shift left/right
+// amp    — half-amplitude of the sine crest/trough in pixels
+function buildWavePath(fillY: number, sloshX: number, amp: number): string {
+  const L   = -24;            // left overhang (ensures no gap during slosh)
+  const R   = DROP_W + 24;    // right overhang
   const mid = DROP_W / 2;
+  const bot = fillY + DROP_H + 20; // well below clip boundary — clip handles it
+  const sx  = sloshX;
   return [
-    `M ${L} ${amp}`,
-    `C ${mid * 0.5} 0 ${mid * 1.5} ${amp * 2} ${R} ${amp}`,
-    `V ${DROP_H + 20} H ${L} Z`,
+    `M ${(L + sx).toFixed(1)} ${(fillY + amp).toFixed(1)}`,
+    `C ${(mid * 0.5 + sx).toFixed(1)} ${fillY.toFixed(1)}`,
+    `  ${(mid * 1.5 + sx).toFixed(1)} ${(fillY + amp * 2).toFixed(1)}`,
+    `  ${(R + sx).toFixed(1)} ${(fillY + amp).toFixed(1)}`,
+    `V ${bot.toFixed(1)} H ${L} Z`,
   ].join(" ");
 }
 
@@ -125,10 +136,14 @@ export function TodayBanner({
   const waveRef    = useRef({ y1: DROP_H, y2: DROP_H + 6, mountTime: Date.now() });
   const [wave, setWave] = useState({ x1: 0, y1: DROP_H, x2: 0, y2: DROP_H + 6 });
 
-  // Keep target in sync with the latest fill level
+  // Keep target in sync with the latest fill level.
+  // Minimum 10% visual fill when ANY water has been logged so the animation
+  // is always perceptible; otherwise the wave sits below the drop boundary
+  // and appears completely invisible.
   useEffect(() => {
-    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.04));
-  }, [progress]);
+    const minP = todayTotalOz > 0 ? 0.10 : 0;
+    targetYRef.current = DROP_H * (1 - Math.max(progress, minP));
+  }, [progress, todayTotalOz]);
 
   // Single perpetual RAF loop started once on mount
   useEffect(() => {
@@ -164,8 +179,10 @@ export function TodayBanner({
       ? "🌊" : "💧";
 
   const dropPath  = buildDropPath();
-  const waveFill1 = buildWaveFill(10);
-  const waveFill2 = buildWaveFill(7);
+  // Absolute-coordinate wave paths computed from RAF state each render.
+  // No <G transform> needed — Path `d` prop updates are reliable in rn-svg.
+  const wavePath1 = buildWavePath(wave.y1, wave.x1, 10);
+  const wavePath2 = buildWavePath(wave.y2, wave.x2, 7);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -185,17 +202,14 @@ export function TodayBanner({
             <Path d={dropPath} fill={`${waterColor}16`} />
 
             {/* Water fill clipped to drop shape.
-                Plain G with a transform string updated from RAF state — the
-                only approach that actually animates in react-native-svg. */}
+                Path `d` prop is recomputed from RAF state each frame.
+                rn-svg reliably updates leaf-element props (same path as
+                AnimatedCircle strokeDashoffset); no <G transform> needed. */}
             <G clipPath="url(#drop-clip-tb)">
-              {/* Wave 2 — behind, 71 % slosh amplitude for depth */}
-              <G transform={`translate(${wave.x2.toFixed(1)},${wave.y2.toFixed(1)})`}>
-                <Path d={waveFill2} fill={`${waterColor}40`} />
-              </G>
+              {/* Wave 2 — behind, 71 % slosh for depth */}
+              <Path d={wavePath2} fill={`${waterColor}40`} />
               {/* Wave 1 — front, full slosh amplitude */}
-              <G transform={`translate(${wave.x1.toFixed(1)},${wave.y1.toFixed(1)})`}>
-                <Path d={waveFill1} fill={`${waterColor}70`} />
-              </G>
+              <Path d={wavePath1} fill={`${waterColor}70`} />
             </G>
 
             {/* Drop border — static */}

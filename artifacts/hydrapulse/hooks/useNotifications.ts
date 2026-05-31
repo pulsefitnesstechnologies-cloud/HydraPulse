@@ -47,9 +47,20 @@ export const DEFAULT_SMART_REMINDER: SmartReminder = {
 const SCAN_ALARMS_KEY = "@hydrapulse:scanAlarms";
 const SMART_REMINDERS_KEY = "@hydrapulse:smartReminders";
 
+// ─── Deterministic notification identifiers ───────────────────────────────────
+// Using fixed slot IDs means scheduling a slot always replaces the existing
+// notification — it is physically impossible to accumulate duplicates.
+
+export function scanAlarmId(index: number) {
+  return `hydrapulse-scan-alarm-${index}`;
+}
+export function smartReminderId(index: number) {
+  return `hydrapulse-smart-reminder-${index}`;
+}
+export const SCAN_RESULT_ID = "hydrapulse-scan-result";
+
 // ─── Notification handler (set once at module level) ─────────────────────────
 // Controls behaviour when a notification arrives while the app is FOREGROUND.
-// Sound enabled so banners appear with audio both on iPhone and Apple Watch.
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -69,22 +80,18 @@ function to24h(hour: number, ampm: "AM" | "PM"): number {
   return hour;
 }
 
-async function cancelNotif(id: string | null): Promise<void> {
-  if (!id || Platform.OS === "web") return;
-  await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
-}
-
-async function scheduleScanAlarm(alarm: ScanAlarm): Promise<string | null> {
+async function scheduleScanAlarm(alarm: ScanAlarm, index: number): Promise<string | null> {
+  const identifier = scanAlarmId(index);
+  // Always cancel first — with a deterministic ID this is instant and safe.
+  await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
   if (!alarm.enabled || Platform.OS === "web") return null;
   try {
     return await Notifications.scheduleNotificationAsync({
+      identifier,
       content: {
         title: "Hydration Scan",
         body: "Time for your scheduled hydration check. Open HydraPulse to scan now.",
         sound: "default",
-        // interruptionLevel "timeSensitive" bypasses Focus / Do Not Disturb on
-        // iPhone and Apple Watch — requires the
-        // com.apple.developer.usernotifications.time-sensitive entitlement.
         interruptionLevel: "timeSensitive",
         data: { type: "scan-alarm" },
       },
@@ -99,10 +106,13 @@ async function scheduleScanAlarm(alarm: ScanAlarm): Promise<string | null> {
   }
 }
 
-async function scheduleSmartReminder(reminder: SmartReminder): Promise<string | null> {
+async function scheduleSmartReminder(reminder: SmartReminder, index: number): Promise<string | null> {
+  const identifier = smartReminderId(index);
+  await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
   if (!reminder.enabled || !reminder.message.trim() || Platform.OS === "web") return null;
   try {
     return await Notifications.scheduleNotificationAsync({
+      identifier,
       content: {
         title: "HydraPulse Reminder",
         body: reminder.message.trim(),
@@ -141,7 +151,15 @@ export function useNotifications() {
   const [hasPermission, setHasPermission] = useState(false);
   const [scanAlarms, setScanAlarms] = useState<AlarmTuple>(DEFAULT_ALARMS);
   const [smartReminders, setSmartReminders] = useState<ReminderTuple>(DEFAULT_REMINDERS);
-  const loadedRef = useRef(false);
+
+  // Refs so callbacks always see latest state without stale closures.
+  // Critical for parallel calls (e.g. doSchedule calling all 3 reminder
+  // slots simultaneously) — each read from the ref sees the committed value,
+  // not a snapshot captured at callback-creation time.
+  const scanAlarmsRef = useRef(scanAlarms);
+  const smartRemindersRef = useRef(smartReminders);
+  useEffect(() => { scanAlarmsRef.current = scanAlarms; }, [scanAlarms]);
+  useEffect(() => { smartRemindersRef.current = smartReminders; }, [smartReminders]);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -157,16 +175,9 @@ export function useNotifications() {
       }
       if (alarmsRaw) setScanAlarms(JSON.parse(alarmsRaw) as AlarmTuple);
       if (remindersRaw) setSmartReminders(JSON.parse(remindersRaw) as ReminderTuple);
-      loadedRef.current = true;
     })();
   }, []);
 
-  /**
-   * Request notification permissions. On iOS we explicitly ask for alerts,
-   * sounds, and badges — this is required for notifications to appear on both
-   * iPhone and Apple Watch. Without the sound permission the Watch will not
-   * mirror the notification.
-   */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === "web") return false;
     const { status } = await Notifications.requestPermissionsAsync({
@@ -184,46 +195,43 @@ export function useNotifications() {
 
   const updateScanAlarm = useCallback(
     async (index: 0 | 1 | 2, partial: Partial<ScanAlarm>) => {
-      const updated = [...scanAlarms] as AlarmTuple;
-      const current = updated[index];
-      const next = { ...current, ...partial };
-
-      await cancelNotif(current.notifId);
-      next.notifId = await scheduleScanAlarm(next);
+      // Read from ref so parallel calls each see the current committed state.
+      const updated = [...scanAlarmsRef.current] as AlarmTuple;
+      const next = { ...updated[index], ...partial };
+      next.notifId = await scheduleScanAlarm(next, index);
       updated[index] = next;
-
       setScanAlarms(updated);
+      scanAlarmsRef.current = updated;
       await AsyncStorage.setItem(SCAN_ALARMS_KEY, JSON.stringify(updated)).catch(() => {});
     },
-    [scanAlarms]
+    [] // no state deps — reads via ref
   );
 
   const updateSmartReminder = useCallback(
     async (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => {
-      const updated = [...smartReminders] as ReminderTuple;
-      const current = updated[index];
-      const next = { ...current, ...partial };
-
-      await cancelNotif(current.notifId);
-      next.notifId = await scheduleSmartReminder(next);
+      const updated = [...smartRemindersRef.current] as ReminderTuple;
+      const next = { ...updated[index], ...partial };
+      next.notifId = await scheduleSmartReminder(next, index);
       updated[index] = next;
-
       setSmartReminders(updated);
+      smartRemindersRef.current = updated;
       await AsyncStorage.setItem(SMART_REMINDERS_KEY, JSON.stringify(updated)).catch(() => {});
     },
-    [smartReminders]
+    [] // no state deps — reads via ref
   );
 
   const sendScanResultNotification = useCallback(
     async (score: number, hr: number | null, label: string) => {
       if (!hasPermission || Platform.OS === "web") return;
       const hrPart = hr ? ` · HR ${hr} BPM` : "";
+      // Use a deterministic ID so a new result always replaces the previous
+      // one — tapping the notification navigates to History.
       await Notifications.scheduleNotificationAsync({
+        identifier: SCAN_RESULT_ID,
         content: {
           title: `Hydration: ${label}`,
-          body: `Score ${score}/4${hrPart}`,
+          body: `Score ${score}/4${hrPart} — tap to view your result`,
           sound: "default",
-          // Time Sensitive bypasses Focus / DND — same level as scan alarms
           interruptionLevel: "timeSensitive",
           data: { type: "scan-result" },
         },

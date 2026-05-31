@@ -6,6 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
@@ -21,6 +22,61 @@ import { WorkoutProvider } from "@/context/WorkoutContext";
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+// ─── Notification deep-link handler ───────────────────────────────────────────
+// Runs inside the router tree so useRouter() works.
+// Handles both:
+//   • tap while app is open / in background (addNotificationResponseReceivedListener)
+//   • cold launch from a notification tap (getLastNotificationResponseAsync)
+
+type NotifData = { type?: string };
+
+function routeFromNotification(
+  data: NotifData,
+  router: ReturnType<typeof useRouter>
+) {
+  switch (data?.type) {
+    case "scan-alarm":
+      // Take the user straight to the scan screen.
+      router.push("/scan" as never);
+      break;
+    case "scan-result":
+      // Show the result in History.
+      router.push("/(tabs)/history" as never);
+      break;
+    case "smart-reminder":
+      // General hydration reminder — go to the home tab.
+      router.push("/(tabs)" as never);
+      break;
+    default:
+      break;
+  }
+}
+
+function NotificationHandler() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Handle tap when the app is already running (foreground or background).
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as NotifData;
+      routeFromNotification(data, router);
+    });
+
+    // Handle cold launch — the app was killed and the user tapped a notification.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as NotifData;
+      routeFromNotification(data, router);
+    }).catch(() => {});
+
+    return () => sub.remove();
+  // router identity is stable — safe to omit from deps.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return null;
+}
 
 function NavigationGuard() {
   const { hasOnboarded, isLoaded } = useHydration();
@@ -51,6 +107,7 @@ function RootLayoutNav() {
   return (
     <>
       <NavigationGuard />
+      <NotificationHandler />
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />

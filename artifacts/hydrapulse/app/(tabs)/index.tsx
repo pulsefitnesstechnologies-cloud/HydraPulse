@@ -175,8 +175,7 @@ function HomeLoadingSkeleton() {
 
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
-const STREAK_MILESTONES = [3, 7, 14, 30];
-const CELEBRATED_KEY = "@hydrapulse:celebratedStreaks";
+const LAST_CELEBRATION_DATE_KEY = "@hydrapulse:lastStreakCelebrationDate";
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -199,23 +198,22 @@ export default function HomeScreen() {
   const [showWaterLog, setShowWaterLog] = useState(false);
   const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
 
-  // Fire milestone celebration the first time a streak milestone is reached.
+  // Fire celebration every day the user scans and extends their streak.
+  // Guard: only once per calendar day so repeated app opens don't re-trigger.
   useEffect(() => {
-    if (!isLoaded || currentStreak === 0) return;
-    if (!STREAK_MILESTONES.includes(currentStreak)) return;
-    AsyncStorage.getItem(CELEBRATED_KEY)
-      .then((raw) => {
-        const celebrated: number[] = raw ? JSON.parse(raw) : [];
-        if (!celebrated.includes(currentStreak)) {
+    if (!isLoaded || currentStreak === 0 || todayScans === 0) return;
+    const today = new Date().toISOString().split("T")[0];
+    AsyncStorage.getItem(LAST_CELEBRATION_DATE_KEY)
+      .then((lastDate) => {
+        if (lastDate !== today) {
           setCelebrationStreak(currentStreak);
-          const next = [...celebrated, currentStreak];
-          AsyncStorage.setItem(CELEBRATED_KEY, JSON.stringify(next)).catch(() => {});
+          AsyncStorage.setItem(LAST_CELEBRATION_DATE_KEY, today).catch(() => {});
         }
       })
       .catch(() => {});
-  // Only re-check when the streak value changes.
+  // Re-check whenever streak or today's scan count changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStreak, isLoaded]);
+  }, [currentStreak, todayScans, isLoaded]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();

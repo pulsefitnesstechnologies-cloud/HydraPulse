@@ -105,7 +105,13 @@ export default function ResultsScreen() {
       ]}
     >
       <View style={styles.header}>
-        <Pressable style={styles.doneBtn} onPress={() => router.replace("/(tabs)")}>
+        <Pressable
+          style={styles.doneBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            router.replace("/(tabs)");
+          }}
+        >
           <Text style={[styles.doneBtnText, { color: colors.primary }]}>Done</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Your Results</Text>
@@ -222,7 +228,10 @@ export default function ResultsScreen() {
             styles.rescanBtn,
             { backgroundColor: scoreColor, opacity: pressed ? 0.85 : 1 },
           ]}
-          onPress={() => router.push("/scan")}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            router.push("/scan");
+          }}
         >
           <Ionicons name="scan-outline" size={20} color="#fff" />
           <Text style={styles.rescanBtnText}>Scan Again</Text>

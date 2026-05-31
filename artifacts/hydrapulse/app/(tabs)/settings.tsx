@@ -25,6 +25,7 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { useHealth } from "@/context/HealthContext";
 import { useHydration } from "@/context/HydrationContext";
+import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
 import { ScanAlarm, SmartReminder } from "@/hooks/useNotifications";
 import {
@@ -352,6 +353,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { scansThisWeek, history } = useHydration();
+  const { dailyGoalOz, setDailyGoalOz } = useWaterIntake();
   const {
     healthKitAvailable,
     healthKitEnabled,
@@ -399,6 +401,24 @@ export default function SettingsScreen() {
         [{ text: "Cancel", style: "cancel" }, { text: "Open Settings", onPress: () => Linking.openSettings() }]
       );
     }
+  };
+
+  const handleSetGoal = () => {
+    const opts = [48, 64, 80, 96, 128];
+    Alert.alert(
+      "Daily Water Goal",
+      "How many ounces do you aim to drink each day?",
+      [
+        ...opts.map((oz) => ({
+          text: `${oz} oz${oz === dailyGoalOz ? " (current)" : ""}`,
+          onPress: () => {
+            Haptics.selectionAsync().catch(() => {});
+            setDailyGoalOz(oz).catch(() => {});
+          },
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ]
+    );
   };
 
   const handleAlertThreshold = async (v: AlertThreshold) => {
@@ -449,6 +469,17 @@ export default function SettingsScreen() {
           <SettingsRow icon="diamond" label="Premium Plan" value="Unlocked" />
           <SettingsRow icon="bar-chart-outline" label="Total Scans" value={String(history.length)} />
           <SettingsRow icon="scan-outline" label="Scans This Week" value={`${scansThisWeek} / ∞`} />
+        </View>
+
+        {/* Hydration */}
+        <SectionHeader title="Hydration" />
+        <View style={styles.group}>
+          <SettingsRow
+            icon="water-outline"
+            label="Daily Water Goal"
+            value={`${dailyGoalOz} oz`}
+            onPress={handleSetGoal}
+          />
         </View>
 
         {/* Integrations */}

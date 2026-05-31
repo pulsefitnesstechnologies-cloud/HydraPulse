@@ -185,7 +185,7 @@ export default function HomeScreen() {
     runWatchScan,
     writeWaterLog,
   } = useHealth();
-  const { todayTotalOz, addWaterLog } = useWaterIntake();
+  const { todayTotalOz, dailyGoalOz, addWaterLog } = useWaterIntake();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const dailyFact = useDailyFact();
@@ -361,17 +361,30 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <Text style={[styles.waterTotal, { color: "#0EA5E9" }]}>
-                {todayTotalOz > 0
-                  ? `${todayTotalOz % 1 === 0 ? todayTotalOz : todayTotalOz.toFixed(1)} oz today`
-                  : "0 oz today"}
+                {todayTotalOz % 1 === 0 ? todayTotalOz : todayTotalOz.toFixed(1)} / {dailyGoalOz} oz
               </Text>
+            </View>
+            {/* Progress bar */}
+            <View style={[styles.progressTrack, { backgroundColor: colors.border + "60" }]}>
+              <View
+                style={{
+                  flex: Math.min(todayTotalOz / (dailyGoalOz || 64), 1),
+                  height: 5,
+                  borderRadius: 3,
+                  backgroundColor: todayTotalOz >= dailyGoalOz ? "#10B981" : "#0EA5E9",
+                }}
+              />
+              <View style={{ flex: Math.max(1 - todayTotalOz / (dailyGoalOz || 64), 0) }} />
             </View>
             <Pressable
               style={({ pressed }) => [
                 styles.logWaterBtn,
                 { backgroundColor: "#0EA5E9", opacity: pressed ? 0.85 : 1 },
               ]}
-              onPress={() => setShowWaterLog(true)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowWaterLog(true);
+              }}
             >
               <Ionicons name="add" size={20} color="#fff" />
               <Text style={styles.logWaterBtnText}>Log Water</Text>
@@ -688,6 +701,7 @@ const styles = StyleSheet.create({
   },
   // Water card
   waterTotal: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  progressTrack: { height: 5, borderRadius: 3, overflow: "hidden", flexDirection: "row" as const },
   logWaterBtn: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 
@@ -14,6 +14,8 @@ interface ScoreGaugeProps {
 export function ScoreGauge({ score, size = 200, showLabel = true }: ScoreGaugeProps) {
   const colors = useColors();
   const animValue = useRef(new Animated.Value(0)).current;
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const [displayScore, setDisplayScore] = useState(0);
 
   const strokeWidth = size * 0.07;
   const radius = (size - strokeWidth * 2) / 2;
@@ -28,8 +30,18 @@ export function ScoreGauge({ score, size = 200, showLabel = true }: ScoreGaugePr
         tension: 50,
         friction: 8,
       }).start();
+
+      const listenerId = countAnim.addListener(({ value }) => {
+        setDisplayScore(Math.ceil(value));
+      });
+      Animated.timing(countAnim, {
+        toValue: score,
+        duration: 900,
+        useNativeDriver: false,
+      }).start();
+      return () => countAnim.removeListener(listenerId);
     }
-  }, [score, animValue]);
+  }, [score, animValue, countAnim]);
 
   const scoreColor = score ? getScoreColor(score) : colors.border;
   const scoreLabel = score ? getScoreLabel(score) : "—";
@@ -84,7 +96,7 @@ export function ScoreGauge({ score, size = 200, showLabel = true }: ScoreGaugePr
       </Svg>
       <View style={styles.centerContent}>
         <Text style={[styles.scoreNumber, { color: scoreColor, fontSize: size * 0.22 }]}>
-          {scoreNum > 0 ? scoreNum : "—"}
+          {scoreNum > 0 ? (displayScore > 0 ? displayScore : scoreNum) : "—"}
         </Text>
         {showLabel && (
           <Text style={[styles.scoreLabel, { color: colors.mutedForeground, fontSize: size * 0.09 }]}>

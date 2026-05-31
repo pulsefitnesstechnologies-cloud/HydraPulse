@@ -17,21 +17,29 @@ export interface WaterLog {
 interface WaterIntakeContextType {
   waterLog: WaterLog[];
   todayTotalOz: number;
+  dailyGoalOz: number;
+  setDailyGoalOz: (oz: number) => Promise<void>;
   addWaterLog: (entry: { amountOz: number; time: string }) => Promise<void>;
   deleteWaterLog: (id: string) => Promise<void>;
   clearWaterLog: () => Promise<void>;
 }
 
 const STORAGE_KEY = "@hydrapulse:waterLog";
+const GOAL_KEY = "@hydrapulse:dailyGoalOz";
+const DEFAULT_GOAL_OZ = 64;
 
 const WaterIntakeContext = createContext<WaterIntakeContextType | undefined>(undefined);
 
 export function WaterIntakeProvider({ children }: { children: React.ReactNode }) {
   const [waterLog, setWaterLog] = useState<WaterLog[]>([]);
+  const [dailyGoalOz, setDailyGoalOzState] = useState(DEFAULT_GOAL_OZ);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => { if (raw) setWaterLog(JSON.parse(raw)); })
+      .catch(() => {});
+    AsyncStorage.getItem(GOAL_KEY)
+      .then((raw) => { if (raw) setDailyGoalOzState(Number(raw)); })
       .catch(() => {});
   }, []);
 
@@ -59,6 +67,11 @@ export function WaterIntakeProvider({ children }: { children: React.ReactNode })
     [waterLog, save]
   );
 
+  const setDailyGoalOz = useCallback(async (oz: number) => {
+    setDailyGoalOzState(oz);
+    await AsyncStorage.setItem(GOAL_KEY, String(oz)).catch(() => {});
+  }, []);
+
   const clearWaterLog = useCallback(async () => {
     setWaterLog([]);
     await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
@@ -74,7 +87,7 @@ export function WaterIntakeProvider({ children }: { children: React.ReactNode })
 
   return (
     <WaterIntakeContext.Provider
-      value={{ waterLog, todayTotalOz, addWaterLog, deleteWaterLog, clearWaterLog }}
+      value={{ waterLog, todayTotalOz, dailyGoalOz, setDailyGoalOz, addWaterLog, deleteWaterLog, clearWaterLog }}
     >
       {children}
     </WaterIntakeContext.Provider>

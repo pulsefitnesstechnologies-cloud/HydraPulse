@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useHydration } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
+import { getTodaysFact } from "@/data/waterFacts";
 import { useCoach, TipCategory } from "@/hooks/useCoach";
 import { useColors } from "@/hooks/useColors";
 
@@ -149,6 +150,7 @@ export default function CoachScreen() {
   const { history } = useHydration();
   const { waterLog } = useWaterIntake();
   const { todaysTip, tipHistory, progress, isLoading } = useCoach({ history, waterLog });
+  const todaysFact = getTodaysFact();
 
   const pastTips = tipHistory.filter((t) => t.date !== todaysTip?.date);
 
@@ -216,6 +218,22 @@ export default function CoachScreen() {
             </Text>
           </View>
         )}
+
+        {/* Today's Fact */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>TODAY'S FACT</Text>
+        <View style={[styles.factCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.factIconWrap, { backgroundColor: colors.accent + "15" }]}>
+            <Ionicons name="flask-outline" size={18} color={colors.accent} />
+          </View>
+          <View style={styles.factBody}>
+            <Text style={[styles.factCategory, { color: colors.accent }]}>
+              {todaysFact.category}
+            </Text>
+            <Text style={[styles.factText, { color: colors.foreground }]}>
+              {todaysFact.fact}
+            </Text>
+          </View>
+        </View>
 
         {/* Progress This Week */}
         <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
@@ -354,6 +372,35 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 18, fontFamily: "Inter_700Bold", fontWeight: "700" },
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   statDelta: { fontSize: 10, fontFamily: "Inter_500Medium", fontWeight: "500", marginTop: 1 },
+  factCard: {
+    flexDirection: "row",
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    alignItems: "flex-start",
+  },
+  factIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  factBody: { flex: 1, gap: 4 },
+  factCategory: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  factText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 21,
+  },
   tipList: { gap: 8 },
   tipRow: {
     borderRadius: 16,

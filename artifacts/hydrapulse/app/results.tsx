@@ -138,6 +138,19 @@ export default function ResultsScreen() {
               {getScoreLabel(scoreNum)}
             </Text>
           </View>
+
+          {latestScan && (
+            <View style={[styles.methodPill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <Ionicons
+                name={latestScan.method === "watch" ? "watch-outline" : "flashlight-outline"}
+                size={12}
+                color={colors.mutedForeground}
+              />
+              <Text style={[styles.methodText, { color: colors.mutedForeground }]}>
+                {latestScan.method === "watch" ? "Watch — Resting Baseline" : "Camera — Live Reading"}
+              </Text>
+            </View>
+          )}
         </Animated.View>
 
         <Animated.View
@@ -158,6 +171,30 @@ export default function ResultsScreen() {
             {explanation}
           </Text>
         </Animated.View>
+
+        {latestScan?.method === "watch" && (
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.primary + "08",
+                borderColor: colors.primary + "25",
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={styles.watchNoteHeader}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                Watch vs. Camera Scores
+              </Text>
+            </View>
+            <Text style={[styles.cardBody, { color: colors.mutedForeground }]}>
+              Watch scores reflect your resting baseline — heart rate and HRV recorded during low-activity periods earlier today. Camera scores capture your live state right now. A gap between the two is normal and often means you have hydrated recently.
+            </Text>
+          </Animated.View>
+        )}
 
         <Animated.View
           style={[
@@ -283,6 +320,25 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
     textTransform: "uppercase",
     letterSpacing: 1.5,
+  },
+  methodPill: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  methodText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+  },
+  watchNoteHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
   },
   card: {
     borderRadius: 16,

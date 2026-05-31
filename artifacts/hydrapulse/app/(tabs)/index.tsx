@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { DailyFactModal } from "@/components/DailyFactModal";
-import { DailyGoalRing } from "@/components/DailyGoalRing";
+import { TodayBanner } from "@/components/TodayBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { StreakCelebration } from "@/components/StreakCelebration";
@@ -297,45 +297,18 @@ export default function HomeScreen() {
         ) : (
           <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
 
-          {/* ── Today: daily goal ring + streak ───────────────────────── */}
-          <View style={[styles.todayCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.todayRow}>
-              {/* Ring */}
-              <View style={styles.todayRingCol}>
-                <DailyGoalRing todayScans={todayScans} goalScans={1} size={84} />
-                <Text style={[styles.todayRingLabel, { color: colors.mutedForeground }]}>Today's scan</Text>
-              </View>
-
-              {/* Divider */}
-              <View style={[styles.todayDivider, { backgroundColor: colors.border }]} />
-
-              {/* Streak info */}
-              <View style={styles.todayStreakCol}>
-                <View style={styles.streakMainRow}>
-                  <Text style={[styles.streakNumber, { color: currentStreak > 0 ? "#10B981" : colors.mutedForeground }]}>
-                    {currentStreak}
-                  </Text>
-                  <View>
-                    <Text style={[styles.streakUnitTop, { color: colors.foreground }]}>
-                      {currentStreak === 1 ? "day" : "days"}
-                    </Text>
-                    <Text style={[styles.streakUnitBottom, { color: colors.mutedForeground }]}>streak</Text>
-                  </View>
-                </View>
-                <Text style={[styles.bestStreakText, { color: colors.mutedForeground }]}>
-                  Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
-                </Text>
-                <Text
-                  style={[
-                    styles.streakNudge,
-                    { color: todayScans > 0 ? "#10B981" : colors.primary },
-                  ]}
-                >
-                  {todayScans > 0 ? "Streak active — great work!" : "Scan today to extend your streak"}
-                </Text>
-              </View>
-            </View>
-          </View>
+          {/* ── Today banner: water rising + streak ────────────────────── */}
+          <TodayBanner
+            todayScans={todayScans}
+            currentStreak={currentStreak}
+            bestStreak={bestStreak}
+            todayTotalOz={todayTotalOz}
+            dailyGoalOz={dailyGoalOz}
+            onLogWater={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setShowWaterLog(true);
+            }}
+          />
 
           {/* Main hydration score card */}
           <View
@@ -469,46 +442,6 @@ export default function HomeScreen() {
               </View>
             );
           })()}
-
-          {/* Water Intake card */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.cardHeaderLeft}>
-                <Ionicons name="water" size={16} color="#0EA5E9" />
-                <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-                  Water Intake
-                </Text>
-              </View>
-              <Text style={[styles.waterTotal, { color: "#0EA5E9" }]}>
-                {todayTotalOz % 1 === 0 ? todayTotalOz : todayTotalOz.toFixed(1)} / {dailyGoalOz} oz
-              </Text>
-            </View>
-            {/* Progress bar */}
-            <View style={[styles.progressTrack, { backgroundColor: colors.border + "60" }]}>
-              <View
-                style={{
-                  flex: Math.min(todayTotalOz / (dailyGoalOz || 64), 1),
-                  height: 5,
-                  borderRadius: 3,
-                  backgroundColor: todayTotalOz >= dailyGoalOz ? "#10B981" : "#0EA5E9",
-                }}
-              />
-              <View style={{ flex: Math.max(1 - todayTotalOz / (dailyGoalOz || 64), 0) }} />
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                styles.logWaterBtn,
-                { backgroundColor: "#0EA5E9", opacity: pressed ? 0.85 : 1 },
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                setShowWaterLog(true);
-              }}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.logWaterBtnText}>Log Water</Text>
-            </Pressable>
-          </View>
 
           {/* Apple Health / Watch card */}
           {Platform.OS === "ios" && (

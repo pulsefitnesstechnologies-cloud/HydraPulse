@@ -605,7 +605,9 @@ export default function HomeScreen() {
           <View style={[styles.watchSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="watch-outline" size={40} color={colors.primary} />
 
-            {watchPhase === "scanning" ? (
+            {watchPhase !== "failed" ? (
+              /* scanning OR idle-fading-out: always show spinner so the
+                 modal fade-out animation doesn't briefly flash the error */
               <>
                 <Text style={[styles.watchSheetTitle, { color: colors.foreground }]}>
                   Reading Apple Watch
@@ -616,6 +618,7 @@ export default function HomeScreen() {
                 <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 12 }} />
               </>
             ) : (
+              /* failed: show the error and dismiss button */
               <>
                 <Text style={[styles.watchSheetTitle, { color: colors.foreground }]}>
                   Scan Unavailable

@@ -137,10 +137,10 @@ export function TodayBanner({
   const [wave, setWave] = useState({ x1: 0, y1: DROP_H, x2: 0, y2: DROP_H + 6 });
 
   // Keep target in sync with the latest fill level.
-  // Minimum 25% keeps the wave in the wide circular region of the teardrop
-  // so the fill + slosh are always clearly visible.
+  // Minimum 45% centres the water surface in the wide belly of the teardrop
+  // so the fill level and slosh wave are prominently visible at a glance.
   useEffect(() => {
-    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.25));
+    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.45));
   }, [progress]);
 
   // Single perpetual RAF loop started once on mount
@@ -159,10 +159,10 @@ export function TodayBanner({
       waveRef.current.y1 = y1;
       waveRef.current.y2 = y2;
 
-      // ── Slosh: continuous sine, delayed 1.2 s from mount so fill settles first
-      const sloshMs = Math.max(elapsed - 1200, 0);
-      const x1 = 24 * Math.sin((sloshMs / 1800) * Math.PI);
-      const x2 = x1 * 0.71; // wave-2 has slightly narrower slosh for depth
+      // ── Slosh: continuous sine, delayed 0.8 s from mount so fill settles first
+      const sloshMs = Math.max(elapsed - 800, 0);
+      const x1 = 32 * Math.sin((sloshMs / 1200) * Math.PI); // 2.4 s full cycle, 32 px amplitude
+      const x2 = x1 * 0.71; // wave-2 slightly narrower for depth
 
       setWave({ x1, y1, x2, y2 });
       rafId = requestAnimationFrame(tick);
@@ -179,8 +179,8 @@ export function TodayBanner({
   const dropPath  = buildDropPath();
   // Absolute-coordinate wave paths computed from RAF state each render.
   // No <G transform> needed — Path `d` prop updates are reliable in rn-svg.
-  const wavePath1 = buildWavePath(wave.y1, wave.x1, 10);
-  const wavePath2 = buildWavePath(wave.y2, wave.x2, 7);
+  const wavePath1 = buildWavePath(wave.y1, wave.x1, 18); // 18 px crest-to-trough
+  const wavePath2 = buildWavePath(wave.y2, wave.x2, 13); // slightly shallower rear wave
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>

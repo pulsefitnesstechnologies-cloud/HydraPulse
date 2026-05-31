@@ -1,0 +1,49 @@
+@keyframes wave-fill {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-wave-fill {
+  animation: wave-fill 4s linear infinite;
+}
+
+@keyframes rise {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+.animate-rise {
+  animation: rise 1s ease-out forwards;
+}
+
+@keyframes arc-dash {
+  0% {
+    stroke-dashoffset: 628;
+  }
+  100% {
+    stroke-dashoffset: 251.2; /* 628 * (1 - 0.6) */
+  }
+}
+
+.animate-arc {
+  stroke-dasharray: 628;
+  stroke-dashoffset: 628;
+  animation: arc-dash 1.5s ease-out forwards;
+}
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

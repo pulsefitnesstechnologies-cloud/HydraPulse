@@ -72,17 +72,24 @@ export function estimateHydrationFromMetrics(
     const hrDev  = (hr  - baselineHR)  / baselineHR;
     const hrvDev = (hrv - baselineHRV) / baselineHRV;
 
+    // Thresholds are intentionally wider than pure-research values.
+    // Apple Watch HRV is recorded during sleep and HR is computed overnight —
+    // both can show 5–10% drift from the 30-day baseline purely due to sleep
+    // quality, daily stress, and measurement timing, with no hydration change.
+    // Widening each band by ~3–5 pp creates a dead zone that absorbs that
+    // normal variation and prevents a single poor night's HRV from dropping
+    // an otherwise healthy user a full score level.
     let hrScore: 1 | 2 | 3 | 4;
-    if      (hrDev <= 0.04) hrScore = 4; // at/below baseline — well hydrated
-    else if (hrDev <= 0.10) hrScore = 3; // ≤ 10% elevated — mild stress
-    else if (hrDev <= 0.18) hrScore = 2; // 10–18% elevated — likely dehydrated
-    else                    hrScore = 1; // > 18% — significant dehydration
+    if      (hrDev <= 0.07) hrScore = 4; // at/below baseline — well hydrated
+    else if (hrDev <= 0.14) hrScore = 3; // 7–14% elevated — mild stress
+    else if (hrDev <= 0.22) hrScore = 2; // 14–22% elevated — likely dehydrated
+    else                    hrScore = 1; // > 22% — significant dehydration
 
     let hrvScore: 1 | 2 | 3 | 4;
-    if      (hrvDev >= -0.06) hrvScore = 4; // within 6% of baseline — normal variation
-    else if (hrvDev >= -0.17) hrvScore = 3; // 6–17% below — mild autonomic stress
-    else if (hrvDev >= -0.30) hrvScore = 2; // 17–30% below — moderate suppression
-    else                      hrvScore = 1; // > 30% below — significant suppression
+    if      (hrvDev >= -0.10) hrvScore = 4; // within 10% of baseline — normal variation
+    else if (hrvDev >= -0.22) hrvScore = 3; // 10–22% below — mild autonomic stress
+    else if (hrvDev >= -0.35) hrvScore = 2; // 22–35% below — moderate suppression
+    else                      hrvScore = 1; // > 35% below — significant suppression
 
     // Weighted blend: HR 60% + HRV 40%.
     // HR (resting, filtered by Apple) is the more direct hydration proxy;

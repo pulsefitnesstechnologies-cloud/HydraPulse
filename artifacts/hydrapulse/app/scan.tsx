@@ -123,8 +123,12 @@ function analyzeSignal(samples: number[]): {
 
   // Find the LOCAL MAXIMUM with the highest correlation value.
   // A local maximum at index k means corrCurve[k] > neighbours on both sides.
+  // Minimum threshold lowered to 0.05 (was 0.08).
+  // Motion artefacts compress the autocorrelation peak amplitude without
+  // eliminating it — a real cardiac signal is often detectable at 0.05–0.07
+  // even with mild hand movement. 0.08 was rejecting valid scans.
   let bestIdx = -1;
-  let bestCorrVal = 0.08; // minimum threshold — below this is noise
+  let bestCorrVal = 0.05; // minimum threshold — below this is noise
   for (let k = 1; k < corrCurve.length - 1; k++) {
     if (corrCurve[k] > corrCurve[k - 1] &&
         corrCurve[k] > corrCurve[k + 1] &&
@@ -260,7 +264,10 @@ export default function ScanScreen() {
     if (recent.length < 10) return;
     const lo = Math.min(...recent);
     const hi = Math.max(...recent);
-    setSignalQuality(hi - lo > 0.8 ? "good" : "weak");
+    // Threshold lowered to 0.5 (was 0.8) — gives positive "signal good"
+    // feedback sooner once the finger is properly placed, which encourages
+    // users to hold still rather than adjusting their grip mid-scan.
+    setSignalQuality(hi - lo > 0.5 ? "good" : "weak");
   }, []);
 
   // Stable JS-thread callback that the worklet can call via useRunOnJS
@@ -317,7 +324,13 @@ export default function ScanScreen() {
     const buf = sampleBuffer.current.slice();
     sampleBuffer.current = [];
     setSignalQuality("none");
-    const analyzed = analyzeSignal(buf);
+    // Primary attempt: full buffer.
+    // Fallback: final two-thirds — if the user started moving but then held
+    // still, the later portion of the signal is cleaner and often analysable.
+    const analyzed =
+      analyzeSignal(buf) ??
+      analyzeSignal(buf.slice(Math.floor(buf.length / 3)));
+
     if (analyzed) {
       setResult(analyzed);
       setState("done");

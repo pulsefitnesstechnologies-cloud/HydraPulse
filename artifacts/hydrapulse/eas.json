@@ -52,6 +52,7 @@
       }
     },
     "production": {
+      "channel": "production",
       "ios": {
         "buildConfiguration": "Release",
         "resourceClass": "m-medium"

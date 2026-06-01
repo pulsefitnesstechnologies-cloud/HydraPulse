@@ -58,7 +58,6 @@ export function smartReminderId(index: number) {
   return `hydrapulse-smart-reminder-${index}`;
 }
 export const SCAN_RESULT_ID = "hydrapulse-scan-result";
-export const STREAK_REMINDER_ID = "hydrapulse-streak-reminder";
 
 // ─── Notification handler (set once at module level) ─────────────────────────
 // Controls behaviour when a notification arrives while the app is FOREGROUND.
@@ -105,27 +104,6 @@ async function scheduleScanAlarm(alarm: ScanAlarm, index: number): Promise<strin
   } catch {
     return null;
   }
-}
-
-async function scheduleStreakReminderNotif(): Promise<void> {
-  if (Platform.OS === "web") return;
-  // Always cancel first so rescheduling replaces the old one cleanly.
-  await Notifications.cancelScheduledNotificationAsync(STREAK_REMINDER_ID).catch(() => {});
-  await Notifications.scheduleNotificationAsync({
-    identifier: STREAK_REMINDER_ID,
-    content: {
-      title: "Keep your streak alive",
-      body: "Scan your hydration today before your streak resets at midnight.",
-      sound: "default",
-      interruptionLevel: "active",
-      data: { type: "scan-alarm" }, // tapping opens the scan screen
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: 9,
-      minute: 0,
-    },
-  }).catch(() => {});
 }
 
 async function scheduleSmartReminder(reminder: SmartReminder, index: number): Promise<string | null> {
@@ -195,9 +173,6 @@ export function useNotifications() {
       if (permResult && "status" in permResult) {
         const granted = permResult.status === "granted";
         setHasPermission(granted);
-        // Ensure the streak reminder is scheduled whenever the app opens
-        // with permission already granted.
-        if (granted) scheduleStreakReminderNotif().catch(() => {});
       }
       if (alarmsRaw) setScanAlarms(JSON.parse(alarmsRaw) as AlarmTuple);
       if (remindersRaw) setSmartReminders(JSON.parse(remindersRaw) as ReminderTuple);
@@ -216,7 +191,6 @@ export function useNotifications() {
     });
     const granted = status === "granted";
     setHasPermission(granted);
-    if (granted) scheduleStreakReminderNotif().catch(() => {});
     return granted;
   }, []);
 

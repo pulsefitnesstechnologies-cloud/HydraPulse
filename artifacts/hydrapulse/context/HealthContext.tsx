@@ -141,8 +141,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       [{ text: "OK" }]
     );
 
-    // Also send a result notification for when the phone is locked / Watch only
-    await notif.sendScanResultNotification(record.score, record.heartRate ?? null, record.label);
     return record.score;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hk.fetchLatest, addScanResult, notif.sendScanResultNotification]);

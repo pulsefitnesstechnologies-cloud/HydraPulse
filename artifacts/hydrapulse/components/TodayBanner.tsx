@@ -172,10 +172,6 @@ export function TodayBanner({
     return () => cancelAnimationFrame(rafId);
   }, []); // starts once, runs until unmount
 
-  const streakEmoji = currentStreak > 0 &&
-    [30, 14, 7].some((n) => currentStreak >= n && currentStreak % n === 0)
-      ? "🌊" : "💧";
-
   const dropPath  = buildDropPath();
   // Absolute-coordinate wave paths computed from RAF state each render.
   // No <G transform> needed — Path `d` prop updates are reliable in rn-svg.
@@ -267,34 +263,64 @@ export function TodayBanner({
         <Text style={[styles.pctSub, { color: colors.mutedForeground }]}>
           of daily goal
         </Text>
-        {/* ── Stats row ─────────────────────────────────────────────────── */}
-        <View style={styles.statsRow}>
-          <View style={styles.statLeft}>
-            <View style={styles.streakRow}>
+        {/* ── Streak hero ───────────────────────────────────────────────── */}
+        <View
+          style={[
+            styles.streakCard,
+            {
+              backgroundColor: currentStreak > 0
+                ? "#10B98114"
+                : colors.background + "80",
+              borderColor: currentStreak > 0
+                ? "#10B98130"
+                : colors.border,
+            },
+          ]}
+        >
+          {/* Left: number + label */}
+          <View style={styles.streakLeft}>
+            <View style={styles.streakHeroRow}>
+              <Ionicons
+                name="flame"
+                size={28}
+                color={currentStreak > 0 ? "#10B981" : colors.mutedForeground}
+                style={{ marginTop: 2 }}
+              />
               <Text
                 style={[
-                  styles.streakNum,
+                  styles.streakHeroNum,
                   { color: currentStreak > 0 ? "#10B981" : colors.mutedForeground },
                 ]}
               >
                 {currentStreak}
               </Text>
-              <Text style={styles.streakEmoji}>{streakEmoji}</Text>
             </View>
-            <Text style={[styles.streakLabel, { color: colors.mutedForeground }]}>
-              Day Streak
+            <Text style={[styles.streakHeroLabel, { color: colors.mutedForeground }]}>
+              {currentStreak === 1 ? "day streak" : "day streak"}
             </Text>
           </View>
-          <View style={styles.statRight}>
-            <Text
-              style={[
-                styles.scanBadge,
-                { color: todayScans > 0 ? "#10B981" : colors.primary },
-              ]}
-            >
-              {todayScans > 0 ? "Scanned today" : "No scan yet"}
-            </Text>
-            <Text style={[styles.bestText, { color: colors.mutedForeground }]}>
+
+          {/* Divider */}
+          <View style={[styles.streakDivider, { backgroundColor: colors.border }]} />
+
+          {/* Right: scan status + best */}
+          <View style={styles.streakRight}>
+            <View style={styles.streakBadgeRow}>
+              <Ionicons
+                name={todayScans > 0 ? "checkmark-circle" : "radio-button-off"}
+                size={14}
+                color={todayScans > 0 ? "#10B981" : colors.mutedForeground}
+              />
+              <Text
+                style={[
+                  styles.streakBadgeText,
+                  { color: todayScans > 0 ? "#10B981" : colors.mutedForeground },
+                ]}
+              >
+                {todayScans > 0 ? "Scanned today" : "No scan yet"}
+              </Text>
+            </View>
+            <Text style={[styles.streakBestText, { color: colors.mutedForeground }]}>
               Best: {bestStreak} {bestStreak === 1 ? "day" : "days"}
             </Text>
           </View>
@@ -382,30 +408,65 @@ const styles = StyleSheet.create({
     marginTop:     -4,
   },
 
-  // Stats
-  statsRow: {
+  // Streak hero card
+  streakCard: {
     flexDirection: "row",
     alignItems:    "center",
     width:         "100%",
-    marginTop:     4,
+    borderRadius:  16,
+    borderWidth:   1,
+    paddingVertical:   14,
+    paddingHorizontal: 16,
+    marginTop: 4,
+    gap: 14,
   },
-  statLeft:  { flex: 1, gap: 2 },
-  statRight: { alignItems: "flex-end", gap: 3 },
-  streakRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  streakNum: {
-    fontSize:   26,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700",
-    lineHeight: 30,
+  streakLeft: {
+    flex: 1,
+    gap: 2,
   },
-  streakEmoji: { fontSize: 22, lineHeight: 26 },
-  streakLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  scanBadge: {
+  streakHeroRow: {
+    flexDirection: "row",
+    alignItems:    "center",
+    gap:           6,
+  },
+  streakHeroNum: {
+    fontSize:      44,
+    fontFamily:    "Inter_700Bold",
+    fontWeight:    "700",
+    lineHeight:    50,
+    letterSpacing: -1,
+  },
+  streakHeroLabel: {
+    fontSize:   13,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginTop: -2,
+  },
+  streakDivider: {
+    width:        1,
+    height:       48,
+    borderRadius: 1,
+  },
+  streakRight: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  streakBadgeRow: {
+    flexDirection: "row",
+    alignItems:    "center",
+    gap:           5,
+  },
+  streakBadgeText: {
     fontSize:   13,
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600",
   },
-  bestText: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  streakBestText: {
+    fontSize:   11,
+    fontFamily: "Inter_400Regular",
+  },
 
   // Log Water button
   logBtn: {

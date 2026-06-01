@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -202,22 +202,23 @@ export default function HomeScreen() {
   const [watchPhase, setWatchPhase] = useState<WatchPhase>("idle");
   const [watchError, setWatchError] = useState("");
 
-  // Fire celebration every day the user scans and extends their streak.
-  // Guard: only once per calendar day so repeated app opens don't re-trigger.
-  useEffect(() => {
-    if (!isLoaded || currentStreak === 0 || todayScans === 0) return;
-    const today = new Date().toISOString().split("T")[0];
-    AsyncStorage.getItem(LAST_CELEBRATION_DATE_KEY)
-      .then((lastDate) => {
-        if (lastDate !== today) {
-          setCelebrationStreak(currentStreak);
-          AsyncStorage.setItem(LAST_CELEBRATION_DATE_KEY, today).catch(() => {});
-        }
-      })
-      .catch(() => {});
-  // Re-check whenever streak or today's scan count changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStreak, todayScans, isLoaded]);
+  // Fire celebration when home screen comes into focus — ensures the user
+  // actually sees it rather than having it auto-dismiss while they were on
+  // the results screen. Guard: only once per calendar day.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoaded || currentStreak === 0 || todayScans === 0) return;
+      const today = new Date().toISOString().split("T")[0];
+      AsyncStorage.getItem(LAST_CELEBRATION_DATE_KEY)
+        .then((lastDate) => {
+          if (lastDate !== today) {
+            setCelebrationStreak(currentStreak);
+            AsyncStorage.setItem(LAST_CELEBRATION_DATE_KEY, today).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, [isLoaded, currentStreak, todayScans])
+  );
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();

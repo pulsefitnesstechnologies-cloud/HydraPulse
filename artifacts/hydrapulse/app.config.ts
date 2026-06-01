@@ -416,6 +416,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-font",
       "expo-web-browser",
       [
+        "expo-media-library",
+        {
+          photosPermission: "HydraPulse saves your hydration scan results to your photo library.",
+          savePhotosPermission: "HydraPulse saves your hydration scan results to your photo library.",
+          isAccessMediaLocationEnabled: false,
+        },
+      ],
+      [
         "expo-notifications",
         {
           icon: "./assets/images/icon.png",

@@ -2,21 +2,29 @@ export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ViewShot from "react-native-view-shot";
 
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
+import { ShareCard } from "@/components/ShareCard";
 import { HydrationScore, getScoreColor, getScoreLabel, useHydration } from "@/context/HydrationContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -71,7 +79,7 @@ export default function ResultsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { score, label } = useLocalSearchParams<{ score: string; label: string }>();
+  const { score } = useLocalSearchParams<{ score: string; label: string }>();
   const { latestScan } = useHydration();
 
   const scoreNum = (Number(score) || latestScan?.score || 3) as HydrationScore;
@@ -81,6 +89,12 @@ export default function ResultsScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+
+  // Share state
+  const viewShotRef = useRef<ViewShot>(null);
+  const [shareVisible, setShareVisible] = useState(false);
+  const [hideMetrics, setHideMetrics] = useState(false);
+  const [capturing, setCapturing] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -93,6 +107,64 @@ export default function ResultsScreen() {
         : Haptics.NotificationFeedbackType.Warning
     ).catch(() => {});
   }, []);
+
+  async function captureCard(): Promise<string | null> {
+    if (!viewShotRef.current) return null;
+    setCapturing(true);
+    try {
+      const uri = await (viewShotRef.current as any).capture();
+      return uri as string;
+    } catch {
+      return null;
+    } finally {
+      setCapturing(false);
+    }
+  }
+
+  async function handleSaveToPhotos() {
+    if (!latestScan) return;
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Allow HydraPulse to save to your photo library in Settings.",
+      );
+      return;
+    }
+    const uri = await captureCard();
+    if (!uri) {
+      Alert.alert("Error", "Could not capture the card. Please try again.");
+      return;
+    }
+    try {
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setShareVisible(false);
+      Alert.alert("Saved", "Your result card has been saved to your photo library.");
+    } catch {
+      Alert.alert("Error", "Could not save the image. Please try again.");
+    }
+  }
+
+  async function handleShare() {
+    if (!latestScan) return;
+    const available = await Sharing.isAvailableAsync();
+    if (!available) {
+      Alert.alert("Not Available", "Sharing is not supported on this device.");
+      return;
+    }
+    const uri = await captureCard();
+    if (!uri) {
+      Alert.alert("Error", "Could not capture the card. Please try again.");
+      return;
+    }
+    try {
+      setShareVisible(false);
+      await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share your hydration result" });
+    } catch {
+      // User cancelled sharing — no error needed
+    }
+  }
 
   return (
     <View
@@ -115,7 +187,19 @@ export default function ResultsScreen() {
           <Text style={[styles.doneBtnText, { color: colors.primary }]}>Done</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Your Results</Text>
-        <View style={{ width: 60 }} />
+        {latestScan ? (
+          <Pressable
+            style={styles.shareBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setShareVisible(true);
+            }}
+          >
+            <Ionicons name="share-outline" size={22} color={colors.primary} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 60 }} />
+        )}
       </View>
 
       <ScrollView
@@ -139,7 +223,6 @@ export default function ResultsScreen() {
             </Text>
           </View>
 
-          {/* Metrics right under the score — most important numbers visible first */}
           {latestScan && (
             <View style={styles.metricsRow}>
               {(latestScan.liveHeartRate ?? latestScan.heartRate) && (
@@ -271,6 +354,87 @@ export default function ResultsScreen() {
           <Text style={styles.rescanBtnText}>Scan Again</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Share Modal */}
+      {latestScan && (
+        <Modal
+          visible={shareVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShareVisible(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setShareVisible(false)} />
+          <View style={[styles.shareSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 }]}>
+            {/* Handle */}
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>Share Results</Text>
+
+            {/* Card preview */}
+            <View style={styles.cardPreviewWrapper}>
+              <ViewShot
+                ref={viewShotRef}
+                options={{ format: "png", quality: 1, result: "tmpfile" }}
+              >
+                <ShareCard scan={latestScan} hideMetrics={hideMetrics} />
+              </ViewShot>
+            </View>
+
+            {/* Privacy toggle */}
+            <View style={[styles.privacyRow, { borderColor: colors.border }]}>
+              <View style={styles.privacyLabel}>
+                <Ionicons name="eye-off-outline" size={18} color={colors.mutedForeground} />
+                <Text style={[styles.privacyText, { color: colors.foreground }]}>
+                  Hide health numbers
+                </Text>
+              </View>
+              <Switch
+                value={hideMetrics}
+                onValueChange={setHideMetrics}
+                trackColor={{ false: colors.border, true: colors.primary + "80" }}
+                thumbColor={hideMetrics ? colors.primary : colors.mutedForeground}
+              />
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: colors.muted, opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                ]}
+                onPress={handleSaveToPhotos}
+                disabled={capturing}
+              >
+                {capturing ? (
+                  <ActivityIndicator size="small" color={colors.foreground} />
+                ) : (
+                  <Ionicons name="download-outline" size={20} color={colors.foreground} />
+                )}
+                <Text style={[styles.actionBtnText, { color: colors.foreground }]}>
+                  Save to Photos
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: scoreColor, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                ]}
+                onPress={handleShare}
+                disabled={capturing}
+              >
+                {capturing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="share-outline" size={20} color="#fff" />
+                )}
+                <Text style={[styles.actionBtnText, { color: "#fff" }]}>Share</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -284,7 +448,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  doneBtn: { paddingHorizontal: 4, paddingVertical: 8 },
+  doneBtn: { paddingHorizontal: 4, paddingVertical: 8, minWidth: 60 },
   doneBtnText: {
     fontSize: 16,
     fontFamily: "Inter_600SemiBold",
@@ -294,6 +458,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600" as const,
+  },
+  shareBtn: {
+    minWidth: 60,
+    alignItems: "flex-end",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -407,5 +577,69 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600" as const,
     color: "#FFFFFF",
+  },
+  // Share modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  shareSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    gap: 16,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "700" as const,
+    textAlign: "center",
+  },
+  cardPreviewWrapper: {
+    alignItems: "center",
+  },
+  privacyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  privacyLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  privacyText: {
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  actionBtnText: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
   },
 });

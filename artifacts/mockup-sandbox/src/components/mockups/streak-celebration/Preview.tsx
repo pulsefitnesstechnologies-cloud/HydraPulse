@@ -7,202 +7,279 @@ const MILESTONE: Record<number, { headline: string; sub: string }> = {
   14: { headline: "Two weeks strong!", sub: "Your body is thanking you." },
   30: { headline: "30 day streak!",    sub: "Elite-level consistency." },
 };
-const msg = (n: number) => MILESTONE[n] ?? { headline: `${n} day streak!`, sub: "Keep scanning every day." };
+const getMsg = (n: number) =>
+  MILESTONE[n] ?? { headline: `${n} day streak!`, sub: "Keep scanning every day." };
 
 const PRESETS = [2, 3, 7, 14, 30];
 
-// ── Water jet config ──────────────────────────────────────────────────────────
-// angleDeg = degrees from vertical (0 = straight up, +right, -left)
-// Each jet spawns `count` drops with staggered animation delays.
-const JETS = [
-  // Central column — thick, fast, very elongated
-  { angleDeg:   0, reach: 155, count: 8, w: 4,  h: 28, speed: 0.38 },
-  { angleDeg:   0, reach: 140, count: 5, w: 3,  h: 22, speed: 0.42 },
-  // Inner fan — clear upward streams
-  { angleDeg: -12, reach: 130, count: 5, w: 3,  h: 20, speed: 0.40 },
-  { angleDeg:  12, reach: 130, count: 5, w: 3,  h: 20, speed: 0.40 },
-  { angleDeg: -24, reach: 110, count: 4, w: 3,  h: 17, speed: 0.45 },
-  { angleDeg:  24, reach: 110, count: 4, w: 3,  h: 17, speed: 0.45 },
-  // Mid fan
-  { angleDeg: -38, reach: 88,  count: 3, w: 2,  h: 13, speed: 0.50 },
-  { angleDeg:  38, reach: 88,  count: 3, w: 2,  h: 13, speed: 0.50 },
-  // Outer spray — finer drops
-  { angleDeg: -55, reach: 68,  count: 3, w: 2,  h: 10, speed: 0.55 },
-  { angleDeg:  55, reach: 68,  count: 3, w: 2,  h: 10, speed: 0.55 },
-  { angleDeg: -72, reach: 48,  count: 2, w: 2,  h: 8,  speed: 0.60 },
-  { angleDeg:  72, reach: 48,  count: 2, w: 2,  h: 8,  speed: 0.60 },
+// ── Splash droplets — arc out from the column mid-point ───────────────────────
+const DROPS = [
+  // [angle from vertical °, reach px, size, speed s, delay s]
+  // Left side
+  { ax: -110, ay: -55,  r: 5, spd: 0.90, del: 0.0  },
+  { ax: -130, ay: -30,  r: 4, spd: 0.80, del: 0.15 },
+  { ax: -100, ay: -70,  r: 3, spd: 1.00, del: 0.30 },
+  { ax: -145, ay: -15,  r: 3, spd: 0.75, del: 0.45 },
+  { ax: -90,  ay: -85,  r: 4, spd: 1.10, del: 0.10 },
+  { ax: -120, ay: -45,  r: 3, spd: 0.85, del: 0.55 },
+  // Right side (mirror)
+  { ax:  110, ay: -55,  r: 5, spd: 0.90, del: 0.05 },
+  { ax:  130, ay: -30,  r: 4, spd: 0.80, del: 0.20 },
+  { ax:  100, ay: -70,  r: 3, spd: 1.00, del: 0.35 },
+  { ax:  145, ay: -15,  r: 3, spd: 0.75, del: 0.50 },
+  { ax:  90,  ay: -85,  r: 4, spd: 1.10, del: 0.15 },
+  { ax:  120, ay: -45,  r: 3, spd: 0.85, del: 0.60 },
+  // Top sprays (near vertical)
+  { ax: -20,  ay: -110, r: 3, spd: 1.10, del: 0.05 },
+  { ax:  20,  ay: -110, r: 3, spd: 1.10, del: 0.10 },
+  { ax: -40,  ay: -105, r: 2, spd: 0.95, del: 0.25 },
+  { ax:  40,  ay: -105, r: 2, spd: 0.95, del: 0.30 },
 ];
 
-// Precompute all drops so we don't recalculate on every render
-const ALL_DROPS = JETS.flatMap(({ angleDeg, reach, count, w, h, speed }) => {
-  const rad = (angleDeg * Math.PI) / 180;
-  const tx  = reach * Math.sin(rad);   // x displacement
-  const ty  = -reach * Math.cos(rad);  // y displacement (up = negative)
-  return Array.from({ length: count }, (_, i) => ({
-    tx, ty, w, h, speed,
-    delay: (i / count) * speed,          // evenly stagger within the jet cycle
-    rotate: angleDeg,
-    // Brightness varies slightly per drop for visual interest
-    opacity: 0.75 + (i % 3) * 0.08,
-  }));
-});
+// ── Flow lines inside the column ──────────────────────────────────────────────
+const FLOW_LINES = [
+  { x: -12, w: 4, dur: 0.55, del: 0.00 },
+  { x:  0,  w: 6, dur: 0.50, del: 0.10 },
+  { x:  12, w: 4, dur: 0.55, del: 0.20 },
+  { x: -6,  w: 3, dur: 0.60, del: 0.30 },
+  { x:  6,  w: 3, dur: 0.60, del: 0.40 },
+];
 
 function GeyserScene({ active }: { active: boolean }) {
   return (
-    <div
-      style={{
-        position: "relative", width: "100%", height: 220,
-        overflow: "hidden", backgroundColor: "#040912",
-      }}
-    >
-      {/* Sky gradient */}
+    <div style={{
+      position: "relative", width: "100%", height: 250,
+      overflow: "hidden",
+    }}>
+
+      {/* ── Cave / rocky background ─────────────────────────────────────── */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse at 50% 110%, #07233A 0%, #040912 65%)",
+        background: "linear-gradient(160deg, #2A2218 0%, #1E1C1A 40%, #1A1F26 70%, #141820 100%)",
       }} />
 
-      {/* Stars */}
-      {([
-        [8,12],[22,5],[40,18],[58,8],[75,20],[90,10],
-        [15,32],[33,25],[52,38],[68,28],[82,35],[95,22],
-        [5,50],[28,45],[47,55],[65,48],[88,50],[12,65],
-      ] as [number,number][]).map(([x, y], i) => (
+      {/* Rock vein / crack lines */}
+      {[
+        { left: "18%", top: "5%",  w: 1, h: "45%", rot: "12deg",  op: 0.15 },
+        { left: "72%", top: "8%",  w: 1, h: "38%", rot: "-18deg", op: 0.12 },
+        { left: "35%", top: "2%",  w: 1, h: "28%", rot: "5deg",   op: 0.10 },
+        { left: "60%", top: "15%", w: 1, h: "35%", rot: "-8deg",  op: 0.13 },
+      ].map((c, i) => (
         <div key={i} style={{
-          position: "absolute", left: `${x}%`, top: `${y}%`,
-          width: i % 4 === 0 ? 2 : 1.5,
-          height: i % 4 === 0 ? 2 : 1.5,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          opacity: 0.2 + (i % 5) * 0.1,
-          animation: `starTwinkle ${1.6 + (i % 7) * 0.35}s ${(i % 5) * 0.25}s ease-in-out infinite alternate`,
+          position: "absolute", left: c.left, top: c.top,
+          width: c.w, height: c.h,
+          background: "rgba(200,180,140,0.6)",
+          transform: `rotate(${c.rot})`,
+          opacity: c.op,
+          borderRadius: 1,
         }} />
       ))}
 
-      {/* ── Rocky ground ─────────────────────────────────────────────────── */}
+      {/* ── Ground — warm rocky terrain ─────────────────────────────────── */}
       {/* Back ridge */}
       <div style={{
-        position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: 260, height: 40,
-        background: "linear-gradient(to top, #0A1220, #0D1928)",
-        borderRadius: "55% 55% 0 0",
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 72,
+        background: "linear-gradient(to top, #1C1510 0%, #2B2018 60%, transparent 100%)",
       }} />
-      {/* Main rock mound */}
+      {/* Left rock mass */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, width: "38%", height: 60,
+        background: "linear-gradient(135deg, #3D2E18 0%, #5A4225 50%, #2E2214 100%)",
+        borderRadius: "0 60% 0 0",
+      }} />
+      {/* Left rock highlight */}
+      <div style={{
+        position: "absolute", bottom: 25, left: "8%", width: "22%", height: 20,
+        background: "linear-gradient(135deg, #7A6035 0%, #9C7840 60%, transparent 100%)",
+        borderRadius: "0 50% 50% 0",
+        opacity: 0.7,
+      }} />
+      {/* Right rock mass */}
+      <div style={{
+        position: "absolute", bottom: 0, right: 0, width: "38%", height: 60,
+        background: "linear-gradient(225deg, #3D2E18 0%, #5A4225 50%, #2E2214 100%)",
+        borderRadius: "60% 0 0 0",
+      }} />
+      {/* Right rock highlight */}
+      <div style={{
+        position: "absolute", bottom: 25, right: "8%", width: "22%", height: 20,
+        background: "linear-gradient(225deg, #7A6035 0%, #9C7840 60%, transparent 100%)",
+        borderRadius: "50% 0 0 50%",
+        opacity: 0.7,
+      }} />
+      {/* Center rock / vent platform */}
       <div style={{
         position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: 160, height: 62,
-        background: "radial-gradient(ellipse at 50% 100%, #17253A 0%, #0C1828 100%)",
+        width: 130, height: 40,
+        background: "radial-gradient(ellipse at 50% 100%, #3A2D1A 0%, #231A0C 100%)",
         borderRadius: "50% 50% 0 0",
       }} />
-      {/* Rock texture highlights */}
-      <div style={{
-        position: "absolute", bottom: 30, left: "50%", transform: "translateX(-60px)",
-        width: 28, height: 8,
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 4,
-        transform: "translateX(-60px) rotate(-8deg)",
-      }} />
 
-      {/* ── Vent opening ─────────────────────────────────────────────────── */}
-      {/* Vent glow ring */}
+      {/* ── Teal water pool ──────────────────────────────────────────────── */}
       <div style={{
-        position: "absolute", bottom: 52, left: "50%",
-        transform: "translateX(-50%)",
-        width: 48, height: 22,
+        position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
+        width: 110, height: 30,
+        background: "radial-gradient(ellipse at 50% 60%, #1ABECE 60%, #0A8898 100%)",
         borderRadius: "50%",
-        background: "radial-gradient(ellipse, rgba(160,225,255,0.22) 0%, transparent 70%)",
-        animation: active ? "ventPulse 0.6s ease-in-out infinite alternate" : undefined,
-      }} />
-      {/* Vent hole */}
-      <div style={{
-        position: "absolute", bottom: 56, left: "50%",
-        transform: "translateX(-50%)",
-        width: 20, height: 10,
-        borderRadius: "50%",
-        backgroundColor: "#060D18",
-        boxShadow: active ? "0 0 10px 3px rgba(150,220,255,0.45), inset 0 0 6px rgba(150,220,255,0.3)" : "none",
+        boxShadow: active ? "0 0 18px 4px rgba(18,200,220,0.35)" : undefined,
       }} />
 
-      {/* ── Static water column (background) ─────────────────────────────── */}
-      {active && (
-        <>
-          {/* Outer column glow */}
-          <div style={{
-            position: "absolute", bottom: 56, left: "50%",
-            transform: "translateX(-50%)",
-            width: 28, height: 130,
-            transformOrigin: "bottom center",
-            background: "linear-gradient(to top, rgba(140,215,255,0.18) 0%, transparent 100%)",
-            borderRadius: "50% 50% 30% 30%",
-            filter: "blur(5px)",
-            animation: "columnGlow 0.55s ease-in-out infinite alternate",
-          }} />
-          {/* Main column core */}
-          <div style={{
-            position: "absolute", bottom: 56, left: "50%",
-            transform: "translateX(-50%)",
-            width: 10, height: 110,
-            transformOrigin: "bottom center",
-            background: "linear-gradient(to top, rgba(215,240,255,0.9) 0%, rgba(215,240,255,0) 100%)",
-            borderRadius: "5px 5px 2px 2px",
-            animation: "columnCore 0.55s ease-in-out infinite alternate",
-          }} />
-        </>
-      )}
-
-      {/* ── Animated water drops ──────────────────────────────────────────── */}
-      {active && ALL_DROPS.map((d, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          bottom: 64,    // just above the vent
-          left: "50%",
-          width: d.w,
-          height: d.h,
-          marginLeft: -d.w / 2,
+      {/* ── Ripple rings ─────────────────────────────────────────────────── */}
+      {active && [0, 0.4, 0.8].map((del) => (
+        <div key={del} style={{
+          position: "absolute", bottom: 26, left: "50%",
+          transform: "translateX(-50%)",
+          width: 110, height: 30,
           borderRadius: "50%",
-          backgroundColor: "rgba(215,240,255,0.92)",
-          boxShadow: "0 0 2px rgba(180,225,255,0.5)",
-          transformOrigin: "center center",
-          animationName: "waterDrop",
-          animationDuration: `${d.speed}s`,
-          animationDelay: `${d.delay}s`,
-          animationTimingFunction: "ease-out",
-          animationIterationCount: "infinite",
-          animationFillMode: "both",
-          ["--tx" as string]: `${d.tx}px`,
-          ["--ty" as string]: `${d.ty}px`,
-          ["--rot" as string]: `${d.rotate}deg`,
-          opacity: d.opacity,
+          border: "1.5px solid rgba(18,200,220,0.7)",
+          animation: `rippleRing 1.2s ${del}s ease-out infinite`,
+          pointerEvents: "none",
         }} />
       ))}
 
-      {/* ── Mist at the peak ─────────────────────────────────────────────── */}
+      {/* ── Main water column (SVG) ───────────────────────────────────────── */}
+      <svg
+        style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", overflow: "visible" }}
+        width="120" height="200" viewBox="0 0 120 200"
+      >
+        <defs>
+          {/* Outer column gradient — teal body */}
+          <linearGradient id="colOuter" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stopColor="#0898A8" />
+            <stop offset="30%"  stopColor="#0CC0D4" />
+            <stop offset="50%"  stopColor="#18D4E8" />
+            <stop offset="70%"  stopColor="#0CC0D4" />
+            <stop offset="100%" stopColor="#0898A8" />
+          </linearGradient>
+          {/* Inner highlight — bright core */}
+          <linearGradient id="colInner" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stopColor="rgba(120,240,255,0)" />
+            <stop offset="35%"  stopColor="rgba(180,248,255,0.55)" />
+            <stop offset="50%"  stopColor="rgba(220,252,255,0.80)" />
+            <stop offset="65%"  stopColor="rgba(180,248,255,0.55)" />
+            <stop offset="100%" stopColor="rgba(120,240,255,0)" />
+          </linearGradient>
+          {/* Top froth gradient */}
+          <radialGradient id="frothGrad" cx="50%" cy="80%" r="60%">
+            <stop offset="0%"   stopColor="rgba(255,255,255,0.95)" />
+            <stop offset="60%"  stopColor="rgba(180,248,255,0.7)" />
+            <stop offset="100%" stopColor="rgba(12,192,212,0)" />
+          </radialGradient>
+          {/* Side arch stream gradient */}
+          <linearGradient id="archL" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stopColor="rgba(12,192,212,0.9)" />
+            <stop offset="100%" stopColor="rgba(12,192,212,0)" />
+          </linearGradient>
+          <linearGradient id="archR" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="rgba(12,192,212,0.9)" />
+            <stop offset="100%" stopColor="rgba(12,192,212,0)" />
+          </linearGradient>
+        </defs>
+
+        {/* Main body — column widens toward top like a fountain crown */}
+        <path
+          d="M 44 198 C 40 160 28 100 22 50 C 20 30 30 8 60 2 C 90 8 100 30 98 50 C 92 100 80 160 76 198 Z"
+          fill="url(#colOuter)"
+          opacity={active ? 1 : 0}
+          style={{ animation: active ? "colSurge 0.7s ease-in-out infinite alternate" : undefined }}
+        />
+
+        {/* Inner highlight */}
+        <path
+          d="M 50 195 C 48 158 40 98 38 50 C 37 32 45 14 60 10 C 75 14 83 32 82 50 C 80 98 72 158 70 195 Z"
+          fill="url(#colInner)"
+          opacity={active ? 1 : 0}
+        />
+
+        {/* Left side arch stream */}
+        <path
+          d="M 42 120 C 20 100 -10 80 -30 50"
+          stroke="url(#archL)" strokeWidth="6" fill="none" strokeLinecap="round"
+          opacity={active ? 0.85 : 0}
+          style={{ animation: active ? "archPulse 0.9s ease-in-out infinite alternate" : undefined }}
+        />
+        <path
+          d="M 38 100 C 15 85 -15 65 -38 30"
+          stroke="rgba(12,200,220,0.5)" strokeWidth="3.5" fill="none" strokeLinecap="round"
+          opacity={active ? 0.7 : 0}
+          style={{ animation: active ? "archPulse 0.9s 0.2s ease-in-out infinite alternate" : undefined }}
+        />
+
+        {/* Right side arch stream */}
+        <path
+          d="M 78 120 C 100 100 130 80 150 50"
+          stroke="url(#archR)" strokeWidth="6" fill="none" strokeLinecap="round"
+          opacity={active ? 0.85 : 0}
+          style={{ animation: active ? "archPulse 0.9s 0.15s ease-in-out infinite alternate" : undefined }}
+        />
+        <path
+          d="M 82 100 C 105 85 135 65 158 30"
+          stroke="rgba(12,200,220,0.5)" strokeWidth="3.5" fill="none" strokeLinecap="round"
+          opacity={active ? 0.7 : 0}
+          style={{ animation: active ? "archPulse 0.9s 0.35s ease-in-out infinite alternate" : undefined }}
+        />
+
+        {/* Froth blob at the top */}
+        {active && (
+          <>
+            <ellipse cx="60" cy="12" rx="38" ry="14" fill="url(#frothGrad)"
+              style={{ animation: "frothPulse 0.65s ease-in-out infinite alternate" }} />
+            <ellipse cx="42" cy="18" rx="18" ry="8" fill="rgba(255,255,255,0.55)"
+              style={{ animation: "frothPulse 0.65s 0.1s ease-in-out infinite alternate" }} />
+            <ellipse cx="78" cy="18" rx="18" ry="8" fill="rgba(255,255,255,0.55)"
+              style={{ animation: "frothPulse 0.65s 0.2s ease-in-out infinite alternate" }} />
+          </>
+        )}
+      </svg>
+
+      {/* ── Inner flow lines (moving upward inside column) ─────────────── */}
       {active && (
-        <>
-          <div style={{
-            position: "absolute", bottom: 160, left: "50%",
-            transform: "translateX(-50%)",
-            width: 90, height: 50,
-            borderRadius: "50%",
-            background: "radial-gradient(ellipse, rgba(180,225,255,0.18) 0%, transparent 70%)",
-            filter: "blur(8px)",
-            animation: "mistPulse 0.9s ease-in-out infinite alternate",
-          }} />
-          <div style={{
-            position: "absolute", bottom: 140, left: "50%",
-            transform: "translateX(-50%)",
-            width: 50, height: 30,
-            borderRadius: "50%",
-            background: "radial-gradient(ellipse, rgba(220,242,255,0.25) 0%, transparent 65%)",
-            filter: "blur(4px)",
-            animation: "mistPulse 0.7s 0.15s ease-in-out infinite alternate",
-          }} />
-        </>
+        <div style={{
+          position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)",
+          width: 38, height: 180, overflow: "hidden",
+          borderRadius: "30% 30% 0 0",
+        }}>
+          {FLOW_LINES.map((fl, i) => (
+            <div key={i} style={{
+              position: "absolute",
+              left: `calc(50% + ${fl.x}px)`,
+              width: fl.w,
+              height: 50,
+              borderRadius: 9,
+              background: "linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(220,252,255,0.7) 50%, rgba(255,255,255,0) 100%)",
+              animation: `flowLine ${fl.dur}s ${fl.del}s linear infinite`,
+            }} />
+          ))}
+        </div>
       )}
 
-      {/* Gradient fade to card bg */}
+      {/* ── Splash droplets (fly out from column) ────────────────────────── */}
+      {active && DROPS.map((d, i) => (
+        <div key={i} style={{
+          position: "absolute",
+          bottom: 100,           // origin: mid-column height
+          left: "50%",
+          width: d.r * 2,
+          height: d.r * 2,
+          marginLeft: -d.r,
+          marginBottom: -d.r,
+          borderRadius: "50%",
+          backgroundColor: i % 4 === 0 ? "rgba(255,255,255,0.92)" : "rgba(12,210,230,0.88)",
+          ["--tx" as string]: `${d.ax}px`,
+          ["--ty" as string]: `${d.ay}px`,
+          animationName: "splashDrop",
+          animationDuration: `${d.spd}s`,
+          animationDelay: `${d.del}s`,
+          animationTimingFunction: "cubic-bezier(0.25,0.46,0.45,0.94)",
+          animationIterationCount: "infinite",
+          animationFillMode: "both",
+        }} />
+      ))}
+
+      {/* ── Scene fade overlay to card bg ──────────────────────────────── */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(to bottom, transparent 50%, #0D1520 100%)",
+        background: "linear-gradient(to bottom, transparent 55%, #0D1520 100%)",
         pointerEvents: "none",
       }} />
     </div>
@@ -225,41 +302,35 @@ export function Preview() {
 
   useEffect(() => {
     if (phase === "in")   { const t = setTimeout(() => setPhase("hold"), 500); return () => clearTimeout(t); }
-    if (phase === "hold") { const t = setTimeout(() => setPhase("out"),  3200); return () => clearTimeout(t); }
+    if (phase === "hold") { const t = setTimeout(() => setPhase("out"),  3500); return () => clearTimeout(t); }
     if (phase === "out")  { const t = setTimeout(() => setPhase("idle"), 350);  return () => clearTimeout(t); }
   }, [phase]);
 
   useEffect(() => { play(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const m       = msg(streak);
+  const m       = getMsg(streak);
   const visible = phase !== "idle";
 
   return (
-    <div
-      className="min-h-screen bg-[#080D12] flex flex-col items-center justify-center gap-6 p-6 select-none"
-    >
-      <div
-        className="fixed inset-0 pointer-events-none transition-colors duration-300"
-        style={{ backgroundColor: visible ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0)", zIndex: 10 }}
-      />
+    <div className="min-h-screen bg-[#080D12] flex flex-col items-center justify-center gap-6 p-6 select-none">
+
+      {/* Backdrop */}
+      <div className="fixed inset-0 pointer-events-none transition-colors duration-300"
+           style={{ backgroundColor: visible ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0)", zIndex: 10 }} />
 
       {visible && (
-        <div
-          key={animKey}
-          className="fixed inset-0 flex items-center justify-center px-8 z-20"
-          style={{ pointerEvents: "none" }}
-        >
-          <div
-            className="w-full max-w-sm overflow-hidden rounded-[28px] border"
-            style={{
-              backgroundColor: "#0D1520",
-              borderColor: "rgba(14,165,233,0.3)",
-              boxShadow: "0 0 80px rgba(14,165,233,0.12), 0 24px 48px rgba(0,0,0,0.5)",
-              animation: phase === "out"
-                ? "celebOut 0.35s ease forwards"
-                : "celebIn 0.5s cubic-bezier(0.34,1.48,0.64,1) forwards",
-            }}
-          >
+        <div key={animKey} className="fixed inset-0 flex items-center justify-center px-6 z-20"
+             style={{ pointerEvents: "none" }}>
+          <div className="w-full max-w-sm overflow-hidden rounded-[28px] border"
+               style={{
+                 backgroundColor: "#0D1520",
+                 borderColor: "rgba(12,192,212,0.35)",
+                 boxShadow: "0 0 80px rgba(12,192,212,0.15), 0 24px 48px rgba(0,0,0,0.6)",
+                 animation: phase === "out"
+                   ? "celebOut 0.35s ease forwards"
+                   : "celebIn 0.5s cubic-bezier(0.34,1.48,0.64,1) forwards",
+               }}>
+
             <GeyserScene active={phase === "hold"} />
 
             {/* Day badge */}
@@ -268,7 +339,7 @@ export function Preview() {
               display: "flex", justifyContent: "flex-end",
             }}>
               <span style={{
-                backgroundColor: "rgba(14,165,233,0.92)", color: "#fff",
+                backgroundColor: "rgba(12,192,212,0.92)", color: "#fff",
                 fontSize: 11, fontWeight: 700, letterSpacing: 1,
                 padding: "3px 10px", borderRadius: 99,
                 fontFamily: "'Inter', sans-serif",
@@ -280,7 +351,7 @@ export function Preview() {
             {/* Content */}
             <div className="flex flex-col items-center gap-2 px-7 pb-7 pt-2">
               <span style={{
-                fontSize: 62, color: "#0EA5E9", fontFamily: "'Inter', sans-serif",
+                fontSize: 62, color: "#0CC8DC", fontFamily: "'Inter', sans-serif",
                 fontWeight: 900, letterSpacing: -2, lineHeight: 1,
               }}>
                 {streak}
@@ -301,7 +372,7 @@ export function Preview() {
                 {Array.from({ length: Math.min(streak, 7) }).map((_, i) => (
                   <div key={i} style={{
                     width: 8, height: 8, borderRadius: "50%",
-                    backgroundColor: "#0EA5E9",
+                    backgroundColor: "#0CC8DC",
                     opacity: 0.3 + (i / Math.min(streak, 7)) * 0.7,
                     animation: `dotPop 0.3s ${i * 0.05}s ease both`,
                   }} />
@@ -321,7 +392,7 @@ export function Preview() {
       <div className="relative z-30 flex flex-col items-center gap-4 mt-auto">
         <p style={{
           color: "#475569", fontSize: 11, textTransform: "uppercase",
-          letterSpacing: 3, fontFamily: "'Inter',sans-serif",
+          letterSpacing: 3, fontFamily: "'Inter', sans-serif",
         }}>
           Preview streak day
         </p>
@@ -329,9 +400,9 @@ export function Preview() {
           {PRESETS.map((n) => (
             <button key={n} onClick={() => play(n)} style={{
               borderRadius: 99, padding: "6px 16px", fontSize: 13, fontWeight: 600,
-              backgroundColor: streak === n ? "#0EA5E9" : "rgba(14,165,233,0.1)",
-              color: streak === n ? "#fff" : "#0EA5E9",
-              border: "1px solid rgba(14,165,233,0.25)",
+              backgroundColor: streak === n ? "#0CC8DC" : "rgba(12,200,220,0.1)",
+              color: streak === n ? "#fff" : "#0CC8DC",
+              border: "1px solid rgba(12,200,220,0.3)",
               fontFamily: "'Inter', sans-serif", cursor: "pointer",
             }}>
               Day {n}

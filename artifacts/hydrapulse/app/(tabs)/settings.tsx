@@ -22,6 +22,25 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import * as Updates from "expo-updates";
+import Constants from "expo-constants";
+
+const legalBase: string | null =
+  (Constants.expoConfig?.extra as { legalBaseUrl?: string | null } | undefined)
+    ?.legalBaseUrl ?? null;
+
+function openLegal(path: "privacy" | "terms") {
+  const url = legalBase ? `${legalBase}/${path}` : null;
+  if (!url) {
+    Alert.alert(
+      "Not Available",
+      "The privacy policy is not yet configured for this build.",
+    );
+    return;
+  }
+  Linking.openURL(url).catch(() =>
+    Alert.alert("Error", "Could not open the page. Please try again later."),
+  );
+}
 
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
@@ -755,8 +774,8 @@ export default function SettingsScreen() {
         {/* Privacy & Data */}
         <SectionHeader title="Privacy & Data" />
         <View style={styles.group}>
-          <SettingsRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => {}} />
-          <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => {}} />
+          <SettingsRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => openLegal("privacy")} />
+          <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => openLegal("terms")} />
         </View>
 
         {/* About */}

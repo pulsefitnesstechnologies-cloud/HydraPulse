@@ -434,6 +434,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       eas: {
         projectId: "15fd2666-3b4a-448c-bfe4-efdd1d70f44a",
       },
+      // Resolved at build time from the Replit environment.
+      // REPLIT_DOMAINS is a comma-separated list of public domains for this
+      // deployment. We take the first one so Settings can open the hosted
+      // privacy policy in the system browser. Falls back to null when building
+      // outside Replit (e.g. local EAS builds) — update LEGAL_BASE_URL in
+      // that case or set EXPO_PUBLIC_LEGAL_BASE_URL.
+      legalBaseUrl: process.env.EXPO_PUBLIC_LEGAL_BASE_URL
+        ?? (process.env.REPLIT_DOMAINS
+          ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}/api`
+          : null),
     },
   };
 

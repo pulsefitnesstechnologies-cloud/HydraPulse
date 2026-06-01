@@ -191,34 +191,6 @@ function GeyserScene({ active }: { active: boolean }) {
           opacity={active ? 1 : 0}
         />
 
-        {/* Left side arch stream */}
-        <path
-          d="M 42 120 C 20 100 -10 80 -30 50"
-          stroke="url(#archL)" strokeWidth="6" fill="none" strokeLinecap="round"
-          opacity={active ? 0.85 : 0}
-          style={{ animation: active ? "archPulse 0.9s ease-in-out infinite alternate" : undefined }}
-        />
-        <path
-          d="M 38 100 C 15 85 -15 65 -38 30"
-          stroke="rgba(12,200,220,0.5)" strokeWidth="3.5" fill="none" strokeLinecap="round"
-          opacity={active ? 0.7 : 0}
-          style={{ animation: active ? "archPulse 0.9s 0.2s ease-in-out infinite alternate" : undefined }}
-        />
-
-        {/* Right side arch stream */}
-        <path
-          d="M 78 120 C 100 100 130 80 150 50"
-          stroke="url(#archR)" strokeWidth="6" fill="none" strokeLinecap="round"
-          opacity={active ? 0.85 : 0}
-          style={{ animation: active ? "archPulse 0.9s 0.15s ease-in-out infinite alternate" : undefined }}
-        />
-        <path
-          d="M 82 100 C 105 85 135 65 158 30"
-          stroke="rgba(12,200,220,0.5)" strokeWidth="3.5" fill="none" strokeLinecap="round"
-          opacity={active ? 0.7 : 0}
-          style={{ animation: active ? "archPulse 0.9s 0.35s ease-in-out infinite alternate" : undefined }}
-        />
-
         {/* Froth blob at the top */}
         {active && (
           <>

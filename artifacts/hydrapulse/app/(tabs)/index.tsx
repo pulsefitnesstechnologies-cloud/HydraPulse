@@ -336,7 +336,7 @@ export default function HomeScreen() {
         {!isLoaded ? (
           <HomeLoadingSkeleton />
         ) : (
-          <Animated.View style={{ opacity: fadeAnim, gap: 16 }}>
+          <Animated.View style={{ opacity: fadeAnim, gap: 12 }}>
 
           {/* ── Today banner: water rising + streak ────────────────────── */}
           <TodayBanner
@@ -683,7 +683,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 16 },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   // Today card
   todayCard: {
     borderRadius: 20,
@@ -755,8 +755,8 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 14, fontFamily: "Inter_400Regular", marginBottom: 2 },
   appName: { fontSize: 28, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
-  scoreCard: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 16 },
-  card: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 14 },
+  scoreCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
   sectionLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",

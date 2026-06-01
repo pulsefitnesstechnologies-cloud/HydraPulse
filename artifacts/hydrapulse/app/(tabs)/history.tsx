@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: { fontSize: 14 },
   tabContent: { flex: 1 },
-  listContent: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
+  listContent: { paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   listHeader: { gap: 16, marginBottom: 8 },
   statsRow: { flexDirection: "row", gap: 10 },
   statCard: {

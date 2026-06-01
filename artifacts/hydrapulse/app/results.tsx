@@ -297,13 +297,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 16,
+    paddingTop: 16,
+    gap: 12,
   },
   scoreSection: {
     alignItems: "center",
-    gap: 16,
-    paddingVertical: 12,
+    gap: 12,
+    paddingVertical: 8,
   },
   scoreBadge: {
     paddingHorizontal: 20,
@@ -340,11 +340,11 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
     gap: 12,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600" as const,
   },

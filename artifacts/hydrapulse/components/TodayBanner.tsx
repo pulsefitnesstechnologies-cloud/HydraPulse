@@ -56,14 +56,17 @@ function buildWavePath(fillY: number, sloshX: number, amp: number): string {
   const L   = -24;            // left overhang (ensures no gap during slosh)
   const R   = DROP_W + 24;    // right overhang
   const mid = DROP_W / 2;
-  const bot = fillY + DROP_H + 20; // well below clip boundary — clip handles it
+  const bot = DROP_H * 2;     // well below clip boundary — clip handles it
   const sx  = sloshX;
+  // Anchors (M start and bezier endpoint) stay at fixed L/R so the closing
+  // edge is always a clean vertical — no diagonal gap at top corners when
+  // the wave sloshes left or right. Only the bezier control points carry sx.
   return [
-    `M ${(L + sx).toFixed(1)} ${(fillY + amp).toFixed(1)}`,
+    `M ${L} ${(fillY + amp).toFixed(1)}`,
     `C ${(mid * 0.5 + sx).toFixed(1)} ${fillY.toFixed(1)}`,
     `  ${(mid * 1.5 + sx).toFixed(1)} ${(fillY + amp * 2).toFixed(1)}`,
-    `  ${(R + sx).toFixed(1)} ${(fillY + amp).toFixed(1)}`,
-    `V ${bot.toFixed(1)} H ${L} Z`,
+    `  ${R} ${(fillY + amp).toFixed(1)}`,
+    `V ${bot} H ${L} Z`,
   ].join(" ");
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import {
+  AccessibilityInfo,
   Animated,
   Modal,
   Pressable,
@@ -97,6 +98,18 @@ export function StreakCelebration({ streak, visible, onDismiss }: Props) {
   const f4 = useRef(new Animated.Value(0)).current;
   const flowAnims = [f0, f1, f2, f3, f4];
 
+  // Track system reduce-motion preference
+  const reduceMotion = useRef(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((val) => {
+      reduceMotion.current = val;
+    });
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (val) => {
+      reduceMotion.current = val;
+    });
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     if (!visible) return;
 
@@ -111,55 +124,57 @@ export function StreakCelebration({ streak, visible, onDismiss }: Props) {
     const loops: Animated.CompositeAnimation[] = [];
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    // Column surge
-    const surgeLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(surge, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(surge, { toValue: 0, duration: 600, useNativeDriver: true }),
-      ])
-    );
-    surgeLoop.start();
-    loops.push(surgeLoop);
+    if (!reduceMotion.current) {
+      // Column surge
+      const surgeLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(surge, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.timing(surge, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      surgeLoop.start();
+      loops.push(surgeLoop);
 
-    // Ripple rings — staggered
-    ([ring1, ring2, ring3] as Animated.Value[]).forEach((anim, idx) => {
-      const t = setTimeout(() => {
-        anim.setValue(0);
-        const loop = Animated.loop(
-          Animated.timing(anim, { toValue: 1, duration: 1200, useNativeDriver: true })
-        );
-        loop.start();
-        loops.push(loop);
-      }, idx * 400);
-      timers.push(t);
-    });
+      // Ripple rings — staggered
+      ([ring1, ring2, ring3] as Animated.Value[]).forEach((anim, idx) => {
+        const t = setTimeout(() => {
+          anim.setValue(0);
+          const loop = Animated.loop(
+            Animated.timing(anim, { toValue: 1, duration: 1200, useNativeDriver: true })
+          );
+          loop.start();
+          loops.push(loop);
+        }, idx * 400);
+        timers.push(t);
+      });
 
-    // Splash drops
-    DROPS.forEach(([, , del], i) => {
-      dropAnims[i].setValue(0);
-      const t = setTimeout(() => {
-        const dur = 850 + (i % 4) * 55;
-        const loop = Animated.loop(
-          Animated.timing(dropAnims[i], { toValue: 1, duration: dur, useNativeDriver: true })
-        );
-        loop.start();
-        loops.push(loop);
-      }, del);
-      timers.push(t);
-    });
+      // Splash drops
+      DROPS.forEach(([, , del], i) => {
+        dropAnims[i].setValue(0);
+        const t = setTimeout(() => {
+          const dur = 850 + (i % 4) * 55;
+          const loop = Animated.loop(
+            Animated.timing(dropAnims[i], { toValue: 1, duration: dur, useNativeDriver: true })
+          );
+          loop.start();
+          loops.push(loop);
+        }, del);
+        timers.push(t);
+      });
 
-    // Flow lines
-    FLOW.forEach((fl, i) => {
-      flowAnims[i].setValue(0);
-      const t = setTimeout(() => {
-        const loop = Animated.loop(
-          Animated.timing(flowAnims[i], { toValue: 1, duration: fl.dur, useNativeDriver: true })
-        );
-        loop.start();
-        loops.push(loop);
-      }, fl.del);
-      timers.push(t);
-    });
+      // Flow lines
+      FLOW.forEach((fl, i) => {
+        flowAnims[i].setValue(0);
+        const t = setTimeout(() => {
+          const loop = Animated.loop(
+            Animated.timing(flowAnims[i], { toValue: 1, duration: fl.dur, useNativeDriver: true })
+          );
+          loop.start();
+          loops.push(loop);
+        }, fl.del);
+        timers.push(t);
+      });
+    }
 
     const dismissTimer = setTimeout(onDismiss, 5000);
     timers.push(dismissTimer);

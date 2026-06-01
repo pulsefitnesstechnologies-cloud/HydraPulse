@@ -6,6 +6,18 @@ uri = "file://artifacts/hydrapulse/assets/images/icon.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "rd8EaOG8VIdle5U1qLbVw"
+uri = "file://artifacts/mockup-sandbox/public/images/geyser.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "_EUtptsuv2Ji0vRO9L1yh"
+uri = "file://artifacts/mockup-sandbox/public/images/drinking-water.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "k4S_BXshPRmJhYieADyDO"
 uri = "file://attached_assets/hydrapulse-dev-qr.png"

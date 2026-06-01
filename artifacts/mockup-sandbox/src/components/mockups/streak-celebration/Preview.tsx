@@ -9,12 +9,7 @@ const MILESTONE_MESSAGES: Record<number, { headline: string; sub: string }> = {
 };
 
 function getMessage(streak: number) {
-  return (
-    MILESTONE_MESSAGES[streak] ?? {
-      headline: `${streak} day streak!`,
-      sub: "Keep scanning every day.",
-    }
-  );
+  return MILESTONE_MESSAGES[streak] ?? { headline: `${streak} day streak!`, sub: "Keep scanning every day." };
 }
 
 const PRESETS = [2, 3, 7, 14, 30];
@@ -22,159 +17,152 @@ const PRESETS = [2, 3, 7, 14, 30];
 export function Preview() {
   const [streak, setStreak] = useState(7);
   const [animKey, setAnimKey] = useState(0);
-  const [phase, setPhase] = useState<"in" | "hold" | "out" | "idle">("in");
+  const [phase, setPhase] = useState<"in" | "hold" | "out" | "idle">("idle");
 
   const play = useCallback((s?: number) => {
     if (s !== undefined) setStreak(s);
     setPhase("idle");
-    // tick needed so CSS re-triggers
     requestAnimationFrame(() => {
       setAnimKey((k) => k + 1);
       setPhase("in");
     });
   }, []);
 
-  // auto-advance from "in" → "hold" → "out" → "idle"
   useEffect(() => {
-    if (phase === "in") {
-      const t = setTimeout(() => setPhase("hold"), 400);
-      return () => clearTimeout(t);
-    }
-    if (phase === "hold") {
-      const t = setTimeout(() => setPhase("out"), 2800);
-      return () => clearTimeout(t);
-    }
-    if (phase === "out") {
-      const t = setTimeout(() => setPhase("idle"), 300);
-      return () => clearTimeout(t);
-    }
+    if (phase === "in")   { const t = setTimeout(() => setPhase("hold"), 500); return () => clearTimeout(t); }
+    if (phase === "hold") { const t = setTimeout(() => setPhase("out"),  2800); return () => clearTimeout(t); }
+    if (phase === "out")  { const t = setTimeout(() => setPhase("idle"), 350); return () => clearTimeout(t); }
   }, [phase]);
 
-  // auto-play on mount
   useEffect(() => { play(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const msg = getMessage(streak);
-  const visible = phase === "in" || phase === "hold" || phase === "out";
+  const visible = phase !== "idle";
 
   return (
-    <div className="min-h-screen bg-[#0A0F14] flex flex-col items-center justify-center gap-8 p-8 select-none">
+    <div className="min-h-screen bg-[#080D12] flex flex-col items-center justify-center gap-6 p-6 select-none">
 
-      {/* Modal overlay */}
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 flex items-center justify-center px-10 pointer-events-none"
-        style={{
-          backgroundColor: visible ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0)",
-          transition: "background-color 0.3s ease",
-          zIndex: 10,
-        }}
-      >
-        {visible && (
+        className="fixed inset-0 pointer-events-none transition-colors duration-300"
+        style={{ backgroundColor: visible ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0)", zIndex: 10 }}
+      />
+
+      {/* Card */}
+      {visible && (
+        <div
+          key={animKey}
+          className="fixed inset-0 flex items-center justify-center px-8 z-20"
+          style={{ pointerEvents: "none" }}
+        >
           <div
-            key={animKey}
-            className="w-full max-w-sm pointer-events-auto"
+            className="w-full max-w-sm overflow-hidden rounded-[28px] border"
             style={{
-              animation:
-                phase === "out"
-                  ? "celebFadeOut 0.28s ease forwards"
-                  : "celebSpringIn 0.42s cubic-bezier(0.34,1.56,0.64,1) forwards",
+              backgroundColor: "#0D1520",
+              borderColor: "rgba(14,165,233,0.3)",
+              boxShadow: "0 0 80px rgba(14,165,233,0.12), 0 24px 48px rgba(0,0,0,0.5)",
+              animation: phase === "out"
+                ? "celebOut 0.35s ease forwards"
+                : "celebIn 0.5s cubic-bezier(0.34,1.48,0.64,1) forwards",
             }}
           >
-            <div
-              className="rounded-[28px] border p-8 flex flex-col items-center gap-2"
-              style={{
-                backgroundColor: "#111827",
-                borderColor: "rgba(16,185,129,0.25)",
-                boxShadow: "0 0 60px rgba(16,185,129,0.08)",
-              }}
-            >
-              {/* Flame icon */}
+            {/* Geyser image */}
+            <div className="relative w-full overflow-hidden" style={{ height: 220 }}>
+              <img
+                src="/__mockup/images/geyser.png"
+                alt="Geyser"
+                className="w-full h-full object-cover"
+                style={{
+                  animation: phase === "in" ? "geyserZoom 3.2s ease-out forwards" : undefined,
+                }}
+              />
+              {/* Overlay gradient */}
               <div
-                className="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center mb-1"
-                style={{ backgroundColor: "rgba(16,185,129,0.1)" }}
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0) 40%, #0D1520 100%)" }}
+              />
+              {/* Day badge */}
+              <div
+                className="absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-bold tracking-wide"
+                style={{ backgroundColor: "rgba(14,165,233,0.9)", color: "#fff", fontFamily: "'Inter', sans-serif" }}
               >
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="#10B981">
-                  <path d="M12 2C9.5 4.5 8 7.5 8 10c0 1.38.56 2.63 1.46 3.54A3 3 0 0 1 12 11c.83 0 1.58.34 2.12.88C15.02 11.25 16 9.75 16 8c0-2.5-1.5-5-4-6zM10 20c0 1.1.9 2 2 2s2-.9 2-2c0-.7-.36-1.32-.9-1.68C12.74 18.12 12 16.65 12 15c-.83.97-1.5 2.14-1.5 3.5 0 .18.01.35.03.52C10.22 19.23 10 19.6 10 20z"/>
-                  <path d="M17.83 8.18A8.99 8.99 0 0 1 18 9.5c0 3.27-1.77 6.13-4.39 7.64C14.47 17.68 15 18.77 15 20c0 1.66-1.34 3-3 3s-3-1.34-3-3c0-1.23.53-2.32 1.39-3.07A9.03 9.03 0 0 1 6 9.5c0-1.08.2-2.12.55-3.08C5.56 7.64 5 9 5 10.5c0 3.87 3.13 7 7 7s7-3.13 7-7c0-1.01-.22-1.97-.6-2.84l-.57.52z" opacity="0"/>
-                </svg>
+                Day {streak}
               </div>
+            </div>
 
-              {/* Big streak number */}
+            {/* Content */}
+            <div className="flex flex-col items-center gap-2 px-7 pb-7 pt-3">
               <span
                 className="font-black leading-none"
-                style={{
-                  fontSize: 64,
-                  color: "#10B981",
-                  fontFamily: "'Inter', sans-serif",
-                  lineHeight: 1,
-                  letterSpacing: -2,
-                }}
+                style={{ fontSize: 60, color: "#0EA5E9", fontFamily: "'Inter', sans-serif", letterSpacing: -2, lineHeight: 1 }}
               >
                 {streak}
               </span>
-
-              {/* Headline */}
               <span
-                className="text-xl font-bold text-center mt-1"
-                style={{ color: "#F9FAFB", fontFamily: "'Inter', sans-serif" }}
+                className="text-lg font-bold text-center"
+                style={{ color: "#F1F5F9", fontFamily: "'Inter', sans-serif" }}
               >
                 {msg.headline}
               </span>
-
-              {/* Sub */}
               <span
                 className="text-sm text-center leading-snug"
-                style={{ color: "#9CA3AF", fontFamily: "'Inter', sans-serif" }}
+                style={{ color: "#64748B", fontFamily: "'Inter', sans-serif" }}
               >
                 {msg.sub}
               </span>
-
-              {/* Dismiss hint */}
-              <span
-                className="text-xs mt-2"
-                style={{ color: "#6B7280", fontFamily: "'Inter', sans-serif" }}
-              >
+              <div className="flex gap-1 mt-2">
+                {Array.from({ length: Math.min(streak, 7) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-full"
+                    style={{
+                      width: 8, height: 8,
+                      backgroundColor: "#0EA5E9",
+                      opacity: 0.4 + (i / Math.min(streak, 7)) * 0.6,
+                      animation: `dotPop 0.3s ${i * 0.05}s ease both`,
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs mt-1" style={{ color: "#475569", fontFamily: "'Inter', sans-serif" }}>
                 Tap to dismiss
               </span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Controls (below the modal) */}
-      <div className="relative z-20 flex flex-col items-center gap-5 mt-auto pt-4">
-        <p className="text-[#6B7280] text-xs uppercase tracking-widest">
-          Preview streak value
-        </p>
-
+      {/* Controls */}
+      <div className="relative z-30 flex flex-col items-center gap-4 mt-auto">
+        <p className="text-[#475569] text-xs uppercase tracking-widest">Preview streak value</p>
         <div className="flex gap-2 flex-wrap justify-center">
           {PRESETS.map((n) => (
             <button
               key={n}
               onClick={() => play(n)}
-              className="rounded-full px-4 py-2 text-sm font-semibold transition-all"
+              className="rounded-full px-4 py-1.5 text-sm font-semibold transition-all"
               style={{
-                backgroundColor: streak === n ? "#10B981" : "rgba(16,185,129,0.12)",
-                color: streak === n ? "#fff" : "#10B981",
-                border: "1px solid rgba(16,185,129,0.3)",
+                backgroundColor: streak === n ? "#0EA5E9" : "rgba(14,165,233,0.1)",
+                color: streak === n ? "#fff" : "#0EA5E9",
+                border: "1px solid rgba(14,165,233,0.25)",
                 fontFamily: "'Inter', sans-serif",
               }}
             >
-              {n} {n === 1 ? "day" : "days"}
+              {n}d
             </button>
           ))}
         </div>
-
         <button
           onClick={() => play()}
-          className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+          className="flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
           style={{
-            backgroundColor: "rgba(255,255,255,0.06)",
-            color: "#D1D5DB",
-            border: "1px solid rgba(255,255,255,0.1)",
+            backgroundColor: "rgba(255,255,255,0.05)",
+            color: "#94A3B8",
+            border: "1px solid rgba(255,255,255,0.08)",
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
           </svg>
           Replay

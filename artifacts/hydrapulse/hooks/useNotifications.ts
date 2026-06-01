@@ -171,12 +171,41 @@ export function useNotifications() {
         AsyncStorage.getItem(SMART_REMINDERS_KEY),
       ]).catch(() => [null, null, null] as const);
 
+      const loadedAlarms: AlarmTuple = alarmsRaw
+        ? (JSON.parse(alarmsRaw) as AlarmTuple)
+        : DEFAULT_ALARMS;
+      const loadedReminders: ReminderTuple = remindersRaw
+        ? (JSON.parse(remindersRaw) as ReminderTuple)
+        : DEFAULT_REMINDERS;
+
+      // Cancel ALL scheduled notifications before rescheduling.
+      // This clears any stale notifications from old builds that used
+      // different identifiers — the only safe way to remove them.
+      await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+
+      // Reschedule only from current saved state.
+      const [updatedAlarms, updatedReminders] = await Promise.all([
+        Promise.all(
+          loadedAlarms.map(async (alarm, i) => ({
+            ...alarm,
+            notifId: await scheduleScanAlarm(alarm, i),
+          }))
+        ),
+        Promise.all(
+          loadedReminders.map(async (reminder, i) => ({
+            ...reminder,
+            notifId: await scheduleSmartReminder(reminder, i),
+          }))
+        ),
+      ]);
+
       if (permResult && "status" in permResult) {
-        const granted = permResult.status === "granted";
-        setHasPermission(granted);
+        setHasPermission(permResult.status === "granted");
       }
-      if (alarmsRaw) setScanAlarms(JSON.parse(alarmsRaw) as AlarmTuple);
-      if (remindersRaw) setSmartReminders(JSON.parse(remindersRaw) as ReminderTuple);
+      setScanAlarms(updatedAlarms as AlarmTuple);
+      scanAlarmsRef.current = updatedAlarms as AlarmTuple;
+      setSmartReminders(updatedReminders as ReminderTuple);
+      smartRemindersRef.current = updatedReminders as ReminderTuple;
     })();
   }, []);
 

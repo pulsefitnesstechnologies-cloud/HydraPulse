@@ -20,7 +20,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ViewShot from "react-native-view-shot";
+// ViewShot is a native module — safe-require so the modal renders correctly
+// even on Expo Go or builds that predate this feature.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ViewShot: React.ForwardRefExoticComponent<{ options?: object; style?: object; children?: React.ReactNode } & React.RefAttributes<any>> | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ViewShot = require("react-native-view-shot").default ?? null;
+} catch {
+  ViewShot = null;
+}
 
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
@@ -91,7 +100,8 @@ export default function ResultsScreen() {
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   // Share state
-  const viewShotRef = useRef<ViewShot>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const viewShotRef = useRef<any>(null);
   const [shareVisible, setShareVisible] = useState(false);
   const [hideMetrics, setHideMetrics] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -109,12 +119,19 @@ export default function ResultsScreen() {
   }, []);
 
   async function captureCard(): Promise<string | null> {
-    if (!viewShotRef.current) return null;
+    if (!ViewShot || !viewShotRef.current) {
+      Alert.alert(
+        "Build Update Required",
+        "Photo capture requires a newer app build. Pull down to check for updates in Settings, or reinstall from the EAS dashboard.",
+      );
+      return null;
+    }
     setCapturing(true);
     try {
       const uri = await (viewShotRef.current as any).capture();
       return uri as string;
     } catch {
+      Alert.alert("Error", "Could not capture the card. Please try again.");
       return null;
     } finally {
       setCapturing(false);
@@ -372,12 +389,16 @@ export default function ResultsScreen() {
 
             {/* Card preview */}
             <View style={styles.cardPreviewWrapper}>
-              <ViewShot
-                ref={viewShotRef}
-                options={{ format: "png", quality: 1, result: "tmpfile" }}
-              >
+              {ViewShot ? (
+                <ViewShot
+                  ref={viewShotRef}
+                  options={{ format: "png", quality: 1, result: "tmpfile" }}
+                >
+                  <ShareCard scan={latestScan} hideMetrics={hideMetrics} />
+                </ViewShot>
+              ) : (
                 <ShareCard scan={latestScan} hideMetrics={hideMetrics} />
-              </ViewShot>
+              )}
             </View>
 
             {/* Privacy toggle */}

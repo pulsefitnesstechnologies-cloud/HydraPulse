@@ -192,7 +192,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { latestScan, history, isLoaded, currentStreak, bestStreak, todayScans } = useHydration();
+  const { latestScan, history, isLoaded, currentStreak, bestStreak, todayScans, scansThisWeek } = useHydration();
   const {
     healthKitEnabled,
     healthSnapshot,
@@ -240,7 +240,7 @@ export default function HomeScreen() {
   // Weekly reward — once per calendar week when streak is active
   useFocusEffect(
     useCallback(() => {
-      if (!isLoaded || currentStreak === 0) return;
+      if (!isLoaded || currentStreak < 7 || scansThisWeek === 0) return;
       const monday = getThisWeekMonday();
       AsyncStorage.getItem(LAST_WEEKLY_REWARD_KEY)
         .then((last) => {
@@ -250,7 +250,7 @@ export default function HomeScreen() {
           }
         })
         .catch(() => {});
-    }, [isLoaded, currentStreak])
+    }, [isLoaded, currentStreak, scansThisWeek])
   );
 
   useEffect(() => {

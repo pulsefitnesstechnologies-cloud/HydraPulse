@@ -64,7 +64,6 @@ export const SCAN_RESULT_ID = "hydrapulse-scan-result";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,

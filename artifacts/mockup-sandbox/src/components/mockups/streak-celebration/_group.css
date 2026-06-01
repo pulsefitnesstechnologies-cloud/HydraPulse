@@ -12,39 +12,47 @@
   100% { opacity: 0; transform: scale(0.88); }
 }
 
+/* ── Geyser — elongated water drops ───────────────────────────────────────── */
+/* Each drop starts at origin (vent), shoots in --rot direction for --tx/--ty */
+@keyframes waterDrop {
+  0%   {
+    transform: translate(0, 0) rotate(var(--rot)) scaleX(1) scaleY(1);
+    opacity: 0.9;
+  }
+  15%  { opacity: 1; }
+  85%  { opacity: 0.35; }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scaleX(0.6) scaleY(0.4);
+    opacity: 0;
+  }
+}
+
 /* ── Geyser — water column ─────────────────────────────────────────────────── */
-@keyframes columnSurge {
-  0%   { height: 60px;  opacity: 0.75; }
-  100% { height: 130px; opacity: 1; }
+@keyframes columnCore {
+  0%   { height: 80px;  opacity: 0.85; }
+  100% { height: 115px; opacity: 1; }
 }
-@keyframes columnSurge2 {
-  0%   { height: 40px;  opacity: 0.6; }
-  100% { height: 100px; opacity: 0.95; }
-}
-
-/* ── Geyser — spray drops ──────────────────────────────────────────────────── */
-@keyframes dropFly {
-  0%   { opacity: 0.95; transform: translate(0, 0) scale(1); }
-  80%  { opacity: 0.4; }
-  100% { opacity: 0;   transform: translate(var(--tx), var(--ty)) scale(0.3); }
+@keyframes columnGlow {
+  0%   { height: 100px; opacity: 0.5; }
+  100% { height: 140px; opacity: 0.85; }
 }
 
-/* ── Geyser — vent glow ────────────────────────────────────────────────────── */
+/* ── Geyser — vent ─────────────────────────────────────────────────────────── */
 @keyframes ventPulse {
-  0%   { transform: translateX(-50%) scale(0.8); opacity: 0.6; }
-  100% { transform: translateX(-50%) scale(1.3); opacity: 1; }
+  0%   { transform: translateX(-50%) scale(0.75); opacity: 0.5; }
+  100% { transform: translateX(-50%) scale(1.3);  opacity: 1; }
 }
 
 /* ── Geyser — mist ─────────────────────────────────────────────────────────── */
 @keyframes mistPulse {
-  0%   { opacity: 0.4; transform: translateX(-50%) scale(0.8); }
-  100% { opacity: 0.9; transform: translateX(-50%) scale(1.2); }
+  0%   { opacity: 0.5; transform: translateX(-50%) scale(0.85); }
+  100% { opacity: 1;   transform: translateX(-50%) scale(1.15); }
 }
 
 /* ── Stars ─────────────────────────────────────────────────────────────────── */
 @keyframes starTwinkle {
-  0%   { opacity: 0.2; }
-  100% { opacity: 0.7; }
+  0%   { opacity: 0.15; }
+  100% { opacity: 0.6; }
 }
 
 /* ── Day dots ──────────────────────────────────────────────────────────────── */
@@ -54,13 +62,13 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* ── Image zoom-in ─────────────────────────────────────────────────────────── */
+/* ── Weekly — image zoom ───────────────────────────────────────────────────── */
 @keyframes geyserZoom {
   0%   { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 
-/* ── Progress bar grow ─────────────────────────────────────────────────────── */
+/* ── Weekly — progress bar ─────────────────────────────────────────────────── */
 @keyframes barGrow {
   0%   { transform: scaleX(0); }
   100% { transform: scaleX(1); }

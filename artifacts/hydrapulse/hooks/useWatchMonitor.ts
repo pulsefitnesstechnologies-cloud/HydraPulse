@@ -149,6 +149,7 @@ async function sendThresholdAlert(score: number): Promise<void> {
   };
   try {
     await Notifications.scheduleNotificationAsync({
+      identifier: "hydrapulse-hydration-alert",
       content: {
         title: `Hydration Level ${score} — ${levelName}`,
         body: tips[score] ?? "Your hydration level changed. Consider drinking some water.",

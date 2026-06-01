@@ -24,6 +24,7 @@ import { TodayBanner } from "@/components/TodayBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { SkeletonBlock } from "@/components/SkeletonBlock";
 import { StreakCelebration } from "@/components/StreakCelebration";
+import { WeeklyReward } from "@/components/WeeklyReward";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import { useDailyFact } from "@/hooks/useDailyFact";
@@ -175,7 +176,17 @@ function HomeLoadingSkeleton() {
 
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
-const LAST_CELEBRATION_DATE_KEY = "@hydrapulse:lastStreakCelebrationDate";
+const LAST_CELEBRATION_DATE_KEY  = "@hydrapulse:lastStreakCelebrationDate";
+const LAST_WEEKLY_REWARD_KEY     = "@hydrapulse:lastWeeklyRewardMonday";
+
+function getThisWeekMonday(): string {
+  const d   = new Date();
+  const day = d.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + offset);
+  return mon.toISOString().split("T")[0];
+}
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -196,6 +207,12 @@ export default function HomeScreen() {
   const dailyFact = useDailyFact();
   const [showWaterLog, setShowWaterLog] = useState(false);
   const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
+  const [showWeeklyReward, setShowWeeklyReward] = useState(false);
+
+  const totalUniqueDays = React.useMemo(
+    () => new Set(history.map((r) => r.date.split("T")[0])).size,
+    [history]
+  );
 
   // ── Inline watch scan ──────────────────────────────────────────────────────
   type WatchPhase = "idle" | "scanning" | "failed";
@@ -218,6 +235,22 @@ export default function HomeScreen() {
         })
         .catch(() => {});
     }, [isLoaded, currentStreak, todayScans])
+  );
+
+  // Weekly reward — once per calendar week when streak is active
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoaded || currentStreak === 0) return;
+      const monday = getThisWeekMonday();
+      AsyncStorage.getItem(LAST_WEEKLY_REWARD_KEY)
+        .then((last) => {
+          if (last !== monday) {
+            setShowWeeklyReward(true);
+            AsyncStorage.setItem(LAST_WEEKLY_REWARD_KEY, monday).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, [isLoaded, currentStreak])
   );
 
   useEffect(() => {
@@ -593,6 +626,12 @@ export default function HomeScreen() {
         streak={celebrationStreak ?? 0}
         visible={celebrationStreak !== null}
         onDismiss={() => setCelebrationStreak(null)}
+      />
+
+      <WeeklyReward
+        totalDays={totalUniqueDays}
+        visible={showWeeklyReward && celebrationStreak === null}
+        onDismiss={() => setShowWeeklyReward(false)}
       />
 
       {/* ── Watch scan overlay: scanning / failed ──────────────────────── */}

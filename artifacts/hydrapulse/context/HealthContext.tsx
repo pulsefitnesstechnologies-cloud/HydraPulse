@@ -155,6 +155,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     history,
     updateSmartReminder: notif.updateSmartReminder,
     hasPermission: notif.hasPermission,
+    scanAlarms: notif.scanAlarms,
   });
 
   // Restore health connection on mount

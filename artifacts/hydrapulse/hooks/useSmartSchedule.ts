@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 
 import { ScanRecord } from "@/context/HydrationContext";
 import { WaterLog } from "@/context/WaterIntakeContext";
-import { SmartReminder } from "./useNotifications";
+import { ScanAlarm, SmartReminder } from "./useNotifications";
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
@@ -27,6 +27,33 @@ function formatDisplay(hour24: number, minute: number): string {
   if (h === 0) h = 12;
   const m = String(minute).padStart(2, "0");
   return `${h}:${m} ${ampm}`;
+}
+
+function alarmTo24h(hour: number, ampm: "AM" | "PM"): number {
+  if (ampm === "AM" && hour === 12) return 0;
+  if (ampm === "PM" && hour !== 12) return hour + 12;
+  return hour;
+}
+
+/** Shift a SmartScheduleTime forward by `minutes`, wrapping midnight. */
+function shiftTime(t: SmartScheduleTime, minutes: number): SmartScheduleTime {
+  const h24 = alarmTo24h(t.hour, t.ampm);
+  const total = (h24 * 60 + t.minute + minutes) % (24 * 60);
+  const newH24 = Math.floor(total / 60);
+  const newMin = total % 60;
+  const newAmpm: "AM" | "PM" = newH24 >= 12 ? "PM" : "AM";
+  let newHour = newH24 % 12;
+  if (newHour === 0) newHour = 12;
+  return { ...t, hour: newHour, minute: newMin, ampm: newAmpm, displayTime: formatDisplay(newH24, newMin) };
+}
+
+/** Return a set of "H24:MM" keys for every enabled ScanAlarm. */
+function enabledAlarmKeys(alarms: ScanAlarm[]): Set<string> {
+  return new Set(
+    alarms
+      .filter((a) => a.enabled)
+      .map((a) => `${alarmTo24h(a.hour, a.ampm)}:${String(a.minute).padStart(2, "0")}`)
+  );
 }
 
 function messageForHour(hour24: number): string {
@@ -52,10 +79,12 @@ export interface SmartScheduleTime {
 // lands in the user's natural gap rather than competing with an existing habit.
 // Falls back to 9 AM / 1 PM / 6 PM when there's not enough history.
 
+// Fallback times are intentionally offset from the ScanAlarm defaults (8 AM, 12 PM, 6 PM)
+// to prevent a second notification landing at the same minute as a scheduled scan alarm.
 const DEFAULTS: SmartScheduleTime[] = [
   { hour: 9,  minute: 0, ampm: "AM", displayTime: "9:00 AM",  message: messageForHour(9)  },
   { hour: 1,  minute: 0, ampm: "PM", displayTime: "1:00 PM",  message: messageForHour(13) },
-  { hour: 6,  minute: 0, ampm: "PM", displayTime: "6:00 PM",  message: messageForHour(18) },
+  { hour: 7,  minute: 0, ampm: "PM", displayTime: "7:00 PM",  message: messageForHour(19) },
 ];
 
 export function computeSmartTimes(
@@ -129,11 +158,13 @@ export function useSmartSchedule({
   history,
   updateSmartReminder,
   hasPermission,
+  scanAlarms,
 }: {
   waterLog: WaterLog[];
   history: ScanRecord[];
   updateSmartReminder: (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => Promise<void>;
   hasPermission: boolean;
+  scanAlarms?: ScanAlarm[];
 }): SmartScheduleHook {
   const [enabled, setEnabled] = useState(false);
   const [lastScheduledDate, setLastScheduledDate] = useState<string | null>(null);
@@ -200,9 +231,17 @@ export function useSmartSchedule({
       ];
       const times = computeSmartTimes(events);
 
+      // Avoid double-firing: if the algorithm picks a time that coincides with
+      // an enabled ScanAlarm, shift the SmartReminder forward by 30 minutes.
+      const alarmKeys = enabledAlarmKeys(scanAlarms ?? []);
+      const adjustedTimes = times.map((t) => {
+        const key = `${alarmTo24h(t.hour, t.ampm)}:${String(t.minute).padStart(2, "0")}`;
+        return alarmKeys.has(key) ? shiftTime(t, 30) : t;
+      });
+
       // Write all 3 slots (enabled only if notification permission is granted)
       await Promise.all(
-        times.map((t, i) =>
+        adjustedTimes.map((t, i) =>
           updateSmartReminder(i as 0 | 1 | 2, {
             enabled: hasPermission,
             hour: t.hour,
@@ -214,12 +253,12 @@ export function useSmartSchedule({
       );
 
       const now = new Date().toISOString();
-      setScheduledTimes(times);
+      setScheduledTimes(adjustedTimes);
       setLastScheduledDate(now);
       await AsyncStorage.setItem(DATE_KEY, now).catch(() => {});
     } catch {}
     setIsScheduling(false);
-  }, [waterLog, history, updateSmartReminder, hasPermission]);
+  }, [waterLog, history, updateSmartReminder, hasPermission, scanAlarms]);
 
   // When storage is loaded and smart schedule is on, apply immediately.
   // This re-schedules on each app open so the pattern stays current.

@@ -138,10 +138,12 @@ const DEFAULT_ALARMS: AlarmTuple = [
   { ...DEFAULT_SCAN_ALARM, hour: 6, ampm: "PM" },
 ];
 
+// Offset from ScanAlarm defaults (8 AM / 12 PM / 6 PM) so enabling a reminder
+// slot at its default time never double-fires with an alarm at the same minute.
 const DEFAULT_REMINDERS: ReminderTuple = [
-  { ...DEFAULT_SMART_REMINDER, hour: 8, ampm: "AM" },
-  { ...DEFAULT_SMART_REMINDER, hour: 12, ampm: "PM" },
-  { ...DEFAULT_SMART_REMINDER, hour: 6, ampm: "PM" },
+  { ...DEFAULT_SMART_REMINDER, hour: 9, ampm: "AM" },
+  { ...DEFAULT_SMART_REMINDER, hour: 1, ampm: "PM" },
+  { ...DEFAULT_SMART_REMINDER, hour: 7, ampm: "PM" },
 ];
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────

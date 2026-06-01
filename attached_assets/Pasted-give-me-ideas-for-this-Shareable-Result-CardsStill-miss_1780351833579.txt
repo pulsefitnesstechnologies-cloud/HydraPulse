@@ -1,0 +1,61 @@
+give me ideas for this: Shareable Result CardsStill missingMedium1–2 daysLegal / Privacy PolicyMissingRequired2–3 daysHere are practical, high-value ideas for both remaining items:
+
+1. Shareable Result Cards (1–2 days effort)
+This is one of the best organic marketing features you can add right now.
+Core Idea:
+After a scan completes (on the Results screen), show a beautiful, ready-to-share card that users can screenshot or save directly.
+Design Ideas (Ranked)
+Best Option: “Science-Backed Hydration Snapshot”
+
+Large central score (e.g. “4.2” with “Great” label)
+“Live Torch Reading” or “Watch Baseline” tag
+Key metrics: HR, HRV, Signal Quality, Estimated Hydration
+Timestamp + date
+Subtle watermark: “HydraPulse • Measured with PPG”
+Background: Dark with subtle water ripple or gradient
+Brand colors (teal/blue)
+
+Alternative Versions:
+
+“Streak Edition” — if they hit a streak milestone
+“Weekly Summary” card
+“Before vs After” (if they do multiple scans)
+
+Features to Include:
+
+“Save to Photos” button (using expo-media-library)
+“Share” button (using expo-sharing)
+Copy text version for social media
+Option to toggle “Include Health Data” (for privacy-conscious users)
+
+Implementation Tip:
+Create a new component ShareableResultCard.tsx that takes the scan result as props and renders a clean card. Then add it prominently on the Results screen with confetti on good scores.
+
+2. Legal / Privacy Policy (Required for App Store)
+You must have these before submitting to Apple or Google.
+What You Need:
+
+Privacy Policy (Most Important)
+Terms of Service (Recommended)
+Data Handling Notice in the app (Settings → Privacy)
+
+Recommended Approach:
+A. Quick & Professional Route (Recommended)
+
+Use a service like Termly.io, Iubenda, or FreePrivacyPolicy.com (paid versions are better)
+Generate a policy tailored to:
+Camera access
+HealthKit / biometric data
+PPG measurements
+Local storage (AsyncStorage)
+
+Cost: $10–50 one-time or yearly
+
+B. DIY Version
+I can help you write a solid basic Privacy Policy. Key sections to include:
+
+What data we collect (scan results, HealthKit read-only data)
+What we don’t do (no selling data, no cloud upload unless user chooses)
+Camera usage (only used during active scan, not background)
+Data retention (local only)
+User rights (delete all data)

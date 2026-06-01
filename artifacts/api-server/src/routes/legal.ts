@@ -3,7 +3,7 @@ import { Router } from "express";
 const router = Router();
 
 const EFFECTIVE_DATE = "June 1, 2026";
-const CONTACT_EMAIL = "privacy@hydrapulse.app";
+const CONTACT_EMAIL = "pulsefitnesstechnologies@gmail.com";
 
 function page(title: string, body: string): string {
   return `<!DOCTYPE html>

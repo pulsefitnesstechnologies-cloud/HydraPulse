@@ -449,15 +449,21 @@ function ScansTab() {
 
   const ListEmpty = () => (
     <View style={styles.empty}>
-      <Ionicons name="bar-chart-outline" size={48} color={colors.border} />
-      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No history yet</Text>
+      <View style={[styles.emptyIconWrap, { backgroundColor: colors.primary + "15" }]}>
+        <Ionicons name="water-outline" size={40} color={colors.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
       <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-        Your scan history will appear here.
+        Place your fingertip over the rear camera and run a 12-second PPG scan. Your history will build up here automatically.
       </Text>
       <Pressable
-        style={({ pressed }) => [styles.scanNowBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+        style={({ pressed }) => [
+          styles.scanNowBtn,
+          { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        ]}
         onPress={() => router.push("/scan")}
       >
+        <Ionicons name="scan-outline" size={16} color={colors.primaryForeground} />
         <Text style={[styles.scanNowText, { color: colors.primaryForeground }]}>Start First Scan</Text>
       </Pressable>
     </View>
@@ -623,7 +629,7 @@ function WaterTab() {
       <Pressable
         style={({ pressed }) => [
           styles.logWaterBtn,
-          { backgroundColor: "#0EA5E9", opacity: pressed ? 0.85 : 1 },
+          { backgroundColor: "#0EA5E9", opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
         ]}
         onPress={() => setShowLogModal(true)}
       >
@@ -910,7 +916,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 10 },
   statCard: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     paddingVertical: 16,
     alignItems: "center",
@@ -925,7 +931,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: "center",
   },
-  chartCard: { borderRadius: 20, borderWidth: 1, padding: 18, gap: 12 },
+  chartCard: { borderRadius: 16, borderWidth: 1, padding: 18, gap: 12 },
   sectionLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
@@ -974,9 +980,10 @@ const styles = StyleSheet.create({
   },
   swipeDeleteText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   emptySubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20, paddingHorizontal: 20 },
-  scanNowBtn: { marginTop: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
+  scanNowBtn: { marginTop: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, flexDirection: "row" as const, alignItems: "center" as const, gap: 8 },
   scanNowText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   // Water tab
   waterRow: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 16, borderWidth: 1, padding: 14 },
@@ -1072,7 +1079,7 @@ const styles = StyleSheet.create({
   dateNavBtn: { padding: 4 },
   dateNavLabel: { fontSize: 17, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   // Tips card
-  tipsCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 10 },
+  tipsCard: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 10 },
   tipsTitle: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",

@@ -139,6 +139,37 @@ export default function ResultsScreen() {
             </Text>
           </View>
 
+          {/* Metrics right under the score — most important numbers visible first */}
+          {latestScan && (
+            <View style={styles.metricsRow}>
+              {(latestScan.liveHeartRate ?? latestScan.heartRate) && (
+                <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Ionicons name="heart-outline" size={16} color={colors.primary} />
+                  <Text style={[styles.metricVal, { color: colors.foreground }]}>
+                    {latestScan.method === "watch"
+                      ? (latestScan.heartRate ?? latestScan.liveHeartRate)
+                      : (latestScan.liveHeartRate ?? latestScan.heartRate)}
+                  </Text>
+                  <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>
+                    {latestScan.method === "watch" ? "RHR" : "BPM"}
+                  </Text>
+                </View>
+              )}
+              {latestScan.hrv && (
+                <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Ionicons name="pulse-outline" size={16} color={colors.accent} />
+                  <Text style={[styles.metricVal, { color: colors.foreground }]}>{latestScan.hrv}</Text>
+                  <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>HRV</Text>
+                </View>
+              )}
+              <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={colors.accent} />
+                <Text style={[styles.metricVal, { color: colors.foreground }]}>{latestScan.confidence}%</Text>
+                <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>Confidence</Text>
+              </View>
+            </View>
+          )}
+
           {latestScan && (
             <View style={[styles.methodPill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <Ionicons
@@ -222,40 +253,6 @@ export default function ResultsScreen() {
           </View>
         </Animated.View>
 
-        {latestScan && (
-          <View style={[styles.metricsRow]}>
-            {(latestScan.liveHeartRate ?? latestScan.heartRate) && (
-              <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="heart-outline" size={16} color={colors.primary} />
-                <Text style={[styles.metricVal, { color: colors.foreground }]}>
-                  {latestScan.method === "watch"
-                    ? (latestScan.heartRate ?? latestScan.liveHeartRate)
-                    : (latestScan.liveHeartRate ?? latestScan.heartRate)}
-                </Text>
-                <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>
-                  {latestScan.method === "watch" ? "RHR" : "BPM"}
-                </Text>
-              </View>
-            )}
-            {latestScan.hrv && (
-              <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="pulse-outline" size={16} color={colors.accent} />
-                <Text style={[styles.metricVal, { color: colors.foreground }]}>
-                  {latestScan.hrv}
-                </Text>
-                <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>HRV</Text>
-              </View>
-            )}
-            <View style={[styles.metricPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Ionicons name="checkmark-circle-outline" size={16} color={colors.accent} />
-              <Text style={[styles.metricVal, { color: colors.foreground }]}>
-                {latestScan.confidence}%
-              </Text>
-              <Text style={[styles.metricUnit, { color: colors.mutedForeground }]}>Confidence</Text>
-            </View>
-          </View>
-        )}
-
         <View style={styles.disclaimerWrapper}>
           <DisclaimerBanner />
         </View>
@@ -263,7 +260,7 @@ export default function ResultsScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.rescanBtn,
-            { backgroundColor: scoreColor, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: scoreColor, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
           ]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -379,7 +376,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 4,
   },

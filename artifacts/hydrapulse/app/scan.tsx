@@ -913,7 +913,7 @@ export default function ScanScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.startBtn,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
                 onPress={startScan}
                 disabled={state === "requesting"}
@@ -958,7 +958,7 @@ export default function ScanScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.saveBtn,
-                    { backgroundColor: resultColor, opacity: pressed ? 0.85 : 1, flex: 1 },
+                    { backgroundColor: resultColor, opacity: pressed ? 0.85 : 1, flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                   ]}
                   onPress={saveResult}
                 >
@@ -971,7 +971,7 @@ export default function ScanScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.startBtn,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
                 onPress={() => {
                   setState("idle");
@@ -996,7 +996,7 @@ export default function ScanScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.startBtn,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
                 onPress={doWatchScan}
               >
@@ -1247,7 +1247,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 4,
   },

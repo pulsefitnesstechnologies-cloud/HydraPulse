@@ -420,7 +420,7 @@ export default function HomeScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.scanBtnHalf,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
                 onPress={() => handleScan("camera")}
               >

@@ -171,15 +171,14 @@ export default function ResultsScreen() {
       return;
     }
     const uri = await captureCard();
-    if (!uri) {
-      Alert.alert("Error", "Could not capture the card. Please try again.");
-      return;
-    }
+    if (!uri) return;
     try {
-      setShareVisible(false);
+      // Keep the modal open while the native share sheet is presented —
+      // closing it first drops the presentation context and the sheet fails.
       await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share your hydration result" });
+      setShareVisible(false);
     } catch {
-      // User cancelled sharing — no error needed
+      // User cancelled — no error needed
     }
   }
 

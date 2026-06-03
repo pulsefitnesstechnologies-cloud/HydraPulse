@@ -142,8 +142,14 @@ export function TodayBanner({
   // Keep target in sync with the latest fill level.
   // Minimum 45% centres the water surface in the wide belly of the teardrop
   // so the fill level and slosh wave are prominently visible at a glance.
+  // At 100% fill we push the target well above y=0 (negative) so the lerp
+  // converges past the drop tip (y=6) quickly — otherwise the asymptotic
+  // approach leaves a visible sliver of empty background at the top.
+  const FULL_OVERSHOOT = -40; // wave edges reach -40+18 = -22 px (above the tip at y=6)
   useEffect(() => {
-    targetYRef.current = DROP_H * (1 - Math.max(progress, 0.45));
+    targetYRef.current = progress >= 1
+      ? FULL_OVERSHOOT
+      : DROP_H * (1 - Math.max(progress, 0.45));
   }, [progress]);
 
   // Single perpetual RAF loop started once on mount

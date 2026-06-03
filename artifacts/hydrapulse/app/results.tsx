@@ -31,11 +31,16 @@ try {
   ViewShot = null;
 }
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { ShareCard } from "@/components/ShareCard";
+import { StreakCelebration } from "@/components/StreakCelebration";
 import { HydrationScore, getScoreColor, getScoreLabel, useHydration } from "@/context/HydrationContext";
 import { useColors } from "@/hooks/useColors";
+
+const LAST_CELEBRATION_DATE_KEY = "@hydrapulse:lastStreakCelebrationDate";
 
 const SCORE_TIPS: Record<HydrationScore, { title: string; tips: string[] }> = {
   1: {
@@ -89,7 +94,7 @@ export default function ResultsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { score } = useLocalSearchParams<{ score: string; label: string }>();
-  const { latestScan } = useHydration();
+  const { latestScan, currentStreak, todayScans } = useHydration();
 
   const scoreNum = (Number(score) || latestScan?.score || 3) as HydrationScore;
   const scoreColor = getScoreColor(scoreNum);
@@ -105,6 +110,26 @@ export default function ResultsScreen() {
   const [shareVisible, setShareVisible] = useState(false);
   const [hideMetrics, setHideMetrics] = useState(false);
   const [capturing, setCapturing] = useState(false);
+
+  // Streak celebration — fires here (results screen) so it appears the moment
+  // the streak is extended, not hours later when the user opens the home tab.
+  const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (currentStreak === 0 || todayScans === 0) return;
+    const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
+    AsyncStorage.getItem(LAST_CELEBRATION_DATE_KEY)
+      .then((lastDate) => {
+        if (lastDate !== today) {
+          // Short delay so the score animation plays first
+          setTimeout(() => setCelebrationStreak(currentStreak), 800);
+          AsyncStorage.setItem(LAST_CELEBRATION_DATE_KEY, today).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  // Run once when the screen mounts (after the scan result is saved).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -455,6 +480,13 @@ export default function ResultsScreen() {
           </View>
         </Modal>
       )}
+
+      {/* Streak celebration — fires 800ms after mount so score animation plays first */}
+      <StreakCelebration
+        streak={celebrationStreak ?? 0}
+        visible={celebrationStreak !== null}
+        onDismiss={() => setCelebrationStreak(null)}
+      />
     </View>
   );
 }

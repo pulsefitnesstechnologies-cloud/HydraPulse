@@ -225,7 +225,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!isLoaded || currentStreak === 0 || todayScans === 0) return;
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local time
       AsyncStorage.getItem(LAST_CELEBRATION_DATE_KEY)
         .then((lastDate) => {
           if (lastDate !== today) {

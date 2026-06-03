@@ -203,6 +203,16 @@ export function TodayBanner({
                 rn-svg reliably updates leaf-element props (same path as
                 AnimatedCircle strokeDashoffset); no <G transform> needed. */}
             <G clipPath="url(#drop-clip-tb)">
+              {/* Solid floor — covers from the wave crest (wave.y1 = fillY,
+                  the highest point of the surface) to the bottom.
+                  The wave S-curve edges sit amp pixels BELOW the crest, so
+                  without this floor a thin strip at the drop edges is above
+                  the edge-level but below the crest and appears blank.
+                  This rect eliminates that gap at all fill levels. */}
+              <Path
+                d={`M -24 ${wave.y1} H ${DROP_W + 24} V ${DROP_H * 2} H -24 Z`}
+                fill={`${waterColor}30`}
+              />
               {/* Wave 2 — behind, 71 % slosh for depth */}
               <Path d={wavePath2} fill={`${waterColor}40`} />
               {/* Wave 1 — front, full slosh amplitude */}

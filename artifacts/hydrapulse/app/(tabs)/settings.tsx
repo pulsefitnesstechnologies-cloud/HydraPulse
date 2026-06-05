@@ -381,6 +381,8 @@ export default function SettingsScreen() {
     scanAlarms,
     smartReminders,
     alertThreshold,
+    nudgeEnabled,
+    setNudgeEnabled,
     smartScheduleEnabled,
     smartScheduledTimes,
     lastScheduledDate,
@@ -598,10 +600,50 @@ export default function SettingsScreen() {
         <View style={[styles.sectionBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.boxTitle, { color: colors.foreground }]}>Daily Reminders</Text>
           <Text style={[styles.boxSub, { color: colors.mutedForeground }]}>
-            {smartScheduleEnabled
-              ? "HydraPulse is learning your drinking patterns and automatically scheduling reminders during your natural hydration gaps."
-              : "Set reminders manually, or turn on Auto-Schedule to let HydraPulse learn your habits and fill in the gaps automatically."}
+            Two layers of reminders work together: Gap & Goal Nudges fire the moment you return to the app after a long gap or fall behind on your daily goal. Auto-Schedule learns your patterns and sets fixed-time reminders in your natural hydration windows.
           </Text>
+
+          {/* Gap & Goal Nudges toggle */}
+          <View style={[styles.autoScheduleRow, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>
+            <View style={[styles.alarmIconWrap, { backgroundColor: colors.primary + "20" }]}>
+              <Ionicons name="pulse-outline" size={16} color={colors.primary} />
+            </View>
+            <View style={styles.alarmMiddle}>
+              <Text style={[styles.alarmLabel, { color: colors.foreground }]}>Gap & Goal Nudges</Text>
+              <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground }]}>
+                Fires when 3h gap detected or goal is behind
+              </Text>
+            </View>
+            <Switch
+              value={nudgeEnabled}
+              onValueChange={async (on) => {
+                Haptics.selectionAsync().catch(() => {});
+                if (on) {
+                  const granted = await requestNotificationPermission();
+                  if (!granted) {
+                    Alert.alert(
+                      "Notifications Required",
+                      "Enable notifications in iPhone Settings to use Gap & Goal Nudges.",
+                      [{ text: "OK" }],
+                    );
+                    return;
+                  }
+                }
+                await setNudgeEnabled(on);
+              }}
+              trackColor={{ false: colors.border, true: colors.primary + "80" }}
+              thumbColor={nudgeEnabled ? colors.primary : colors.mutedForeground}
+            />
+          </View>
+
+          {nudgeEnabled && (
+            <View style={[styles.infoRow, { backgroundColor: colors.primary + "08", borderColor: colors.primary + "20" }]}>
+              <Ionicons name="information-circle-outline" size={15} color={colors.primary} />
+              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+                Checks for a 3-hour gap (3.5 h on weekends) since your last water log or scan. After 6 PM, also checks if you're below 50% of your daily goal. Fires at most once per hour during 7 AM–9 PM.
+              </Text>
+            </View>
+          )}
 
           {/* Pattern suggestion card — shown when enough data exists and user hasn't enabled Auto-Schedule or dismissed */}
           {!smartScheduleEnabled && hasEnoughData && !suggestionDismissed && (

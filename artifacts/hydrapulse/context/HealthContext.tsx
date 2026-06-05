@@ -17,6 +17,7 @@ import {
   SmartScheduleTime,
   useSmartSchedule,
 } from "@/hooks/useSmartSchedule";
+import { SmartNudgeHook, useSmartNudge } from "@/hooks/useSmartNudge";
 import {
   AlertThreshold,
   estimateHydrationFromMetrics,
@@ -74,6 +75,9 @@ interface HealthContextType {
   scanAlarms: AlarmTuple;
   smartReminders: ReminderTuple;
   alertThreshold: AlertThreshold;
+  // Smart nudge (gap detection + goal awareness)
+  nudgeEnabled: boolean;
+  setNudgeEnabled: SmartNudgeHook["setNudgeEnabled"];
   // Smart schedule
   smartScheduleEnabled: boolean;
   smartScheduledTimes: SmartScheduleTime[];
@@ -103,7 +107,7 @@ const HealthContext = createContext<HealthContextType | undefined>(undefined);
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const { addScanResult, history } = useHydration();
-  const { waterLog } = useWaterIntake();
+  const { waterLog, todayTotalOz, dailyGoalOz } = useWaterIntake();
   const hk = useHealthKit();
   const notif = useNotifications();
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
@@ -156,6 +160,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     updateSmartReminder: notif.updateSmartReminder,
     hasPermission: notif.hasPermission,
     scanAlarms: notif.scanAlarms,
+  });
+
+  const nudge = useSmartNudge({
+    waterLog,
+    history,
+    todayTotalOz,
+    dailyGoalOz,
+    hasPermission: notif.hasPermission,
   });
 
   // Restore health connection on mount
@@ -230,6 +242,9 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         scanAlarms: notif.scanAlarms,
         smartReminders: notif.smartReminders,
         alertThreshold: monitor.alertThreshold,
+        // Smart nudge
+        nudgeEnabled: nudge.nudgeEnabled,
+        setNudgeEnabled: nudge.setNudgeEnabled,
         // Smart schedule
         smartScheduleEnabled: smartSchedule.smartScheduleEnabled,
         smartScheduledTimes: smartSchedule.smartScheduledTimes,

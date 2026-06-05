@@ -382,7 +382,10 @@ export default function SettingsScreen() {
     smartReminders,
     alertThreshold,
     nudgeEnabled,
+    nudgeWindowStart,
+    nudgeWindowEnd,
     setNudgeEnabled,
+    setNudgeWindow,
     smartScheduleEnabled,
     smartScheduledTimes,
     lastScheduledDate,
@@ -403,6 +406,27 @@ export default function SettingsScreen() {
   } = useHealth();
 
   const [showThreshold, setShowThreshold] = useState(false);
+  const [showNudgeStart, setShowNudgeStart] = useState(false);
+  const [showNudgeEnd, setShowNudgeEnd]     = useState(false);
+
+  // Convert a 24-hour integer (0–23) to the TimeValue the TimePicker expects
+  function hour24ToTimeValue(h24: number): TimeValue {
+    const ampm: "AM" | "PM" = h24 >= 12 ? "PM" : "AM";
+    let hour = h24 % 12;
+    if (hour === 0) hour = 12;
+    return { hour, minute: 0, ampm };
+  }
+  function timeValueToHour24(v: TimeValue): number {
+    if (v.ampm === "AM" && v.hour === 12) return 0;
+    if (v.ampm === "PM" && v.hour !== 12) return v.hour + 12;
+    return v.hour;
+  }
+  function formatHour24(h24: number): string {
+    const ampm = h24 >= 12 ? "PM" : "AM";
+    let h = h24 % 12;
+    if (h === 0) h = 12;
+    return `${h}:00 ${ampm}`;
+  }
 
   const handleConnectHealth = async () => {
     if (Platform.OS !== "ios") {
@@ -637,11 +661,57 @@ export default function SettingsScreen() {
           </View>
 
           {nudgeEnabled && (
-            <View style={[styles.infoRow, { backgroundColor: colors.primary + "08", borderColor: colors.primary + "20" }]}>
-              <Ionicons name="information-circle-outline" size={15} color={colors.primary} />
-              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
-                Checks for a 3-hour gap (3.5 h on weekends) since your last water log or scan. After 6 PM, also checks if you're below 50% of your daily goal. Fires at most once per hour during 7 AM–9 PM.
-              </Text>
+            <View style={styles.slotGroup}>
+              {/* Active from */}
+              <View style={[styles.alarmCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <View style={[styles.alarmIconWrap, { backgroundColor: colors.primary + "15" }]}>
+                  <Ionicons name="play-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={styles.alarmMiddle}>
+                  <Text style={[styles.alarmLabel, { color: colors.mutedForeground }]}>Active from</Text>
+                  <Pressable onPress={() => setShowNudgeStart(true)} hitSlop={8}>
+                    <Text style={[styles.alarmTime, { color: colors.primary }]}>
+                      {formatHour24(nudgeWindowStart)}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Pressable
+                  onPress={() => setShowNudgeStart(true)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+
+              {/* Active until */}
+              <View style={[styles.alarmCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <View style={[styles.alarmIconWrap, { backgroundColor: colors.primary + "15" }]}>
+                  <Ionicons name="stop-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={styles.alarmMiddle}>
+                  <Text style={[styles.alarmLabel, { color: colors.mutedForeground }]}>Active until</Text>
+                  <Pressable onPress={() => setShowNudgeEnd(true)} hitSlop={8}>
+                    <Text style={[styles.alarmTime, { color: colors.primary }]}>
+                      {formatHour24(nudgeWindowEnd)}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Pressable
+                  onPress={() => setShowNudgeEnd(true)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+
+              <View style={[styles.infoRow, { backgroundColor: colors.primary + "08", borderColor: colors.primary + "20" }]}>
+                <Ionicons name="information-circle-outline" size={15} color={colors.primary} />
+                <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+                  Nudges only fire between {formatHour24(nudgeWindowStart)} and {formatHour24(nudgeWindowEnd)}. Gap check: 3 h on weekdays, 3.5 h on weekends. Goal check fires in the last part of the window if you're below 50% of your daily goal. At most once per hour.
+                </Text>
+              </View>
             </View>
           )}
 
@@ -849,6 +919,21 @@ export default function SettingsScreen() {
         current={alertThreshold}
         onSelect={handleAlertThreshold}
         onClose={() => setShowThreshold(false)}
+      />
+
+      <TimePickerModal
+        visible={showNudgeStart}
+        title="Nudges active from"
+        value={hour24ToTimeValue(nudgeWindowStart)}
+        onSave={(v) => setNudgeWindow(timeValueToHour24(v), nudgeWindowEnd)}
+        onClose={() => setShowNudgeStart(false)}
+      />
+      <TimePickerModal
+        visible={showNudgeEnd}
+        title="Nudges active until"
+        value={hour24ToTimeValue(nudgeWindowEnd)}
+        onSave={(v) => setNudgeWindow(nudgeWindowStart, timeValueToHour24(v))}
+        onClose={() => setShowNudgeEnd(false)}
       />
     </View>
   );

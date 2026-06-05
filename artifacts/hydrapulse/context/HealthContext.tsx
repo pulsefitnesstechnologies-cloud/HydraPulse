@@ -77,7 +77,10 @@ interface HealthContextType {
   alertThreshold: AlertThreshold;
   // Smart nudge (gap detection + goal awareness)
   nudgeEnabled: boolean;
+  nudgeWindowStart: number;
+  nudgeWindowEnd: number;
   setNudgeEnabled: SmartNudgeHook["setNudgeEnabled"];
+  setNudgeWindow: SmartNudgeHook["setNudgeWindow"];
   // Smart schedule
   smartScheduleEnabled: boolean;
   smartScheduledTimes: SmartScheduleTime[];
@@ -244,7 +247,10 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         alertThreshold: monitor.alertThreshold,
         // Smart nudge
         nudgeEnabled: nudge.nudgeEnabled,
+        nudgeWindowStart: nudge.nudgeWindowStart,
+        nudgeWindowEnd: nudge.nudgeWindowEnd,
         setNudgeEnabled: nudge.setNudgeEnabled,
+        setNudgeWindow: nudge.setNudgeWindow,
         // Smart schedule
         smartScheduleEnabled: smartSchedule.smartScheduleEnabled,
         smartScheduledTimes: smartSchedule.smartScheduledTimes,

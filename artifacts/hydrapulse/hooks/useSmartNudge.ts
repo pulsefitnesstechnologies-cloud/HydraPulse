@@ -8,16 +8,18 @@ import { WaterLog } from "@/context/WaterIntakeContext";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const NUDGE_ID      = "hydrapulse-smart-nudge";
-const ENABLED_KEY   = "@hydrapulse:nudgeEnabled";
-const COOLDOWN_KEY  = "@hydrapulse:lastNudgeMs";
+const NUDGE_ID          = "hydrapulse-smart-nudge";
+const ENABLED_KEY       = "@hydrapulse:nudgeEnabled";
+const COOLDOWN_KEY      = "@hydrapulse:lastNudgeMs";
+const WINDOW_START_KEY  = "@hydrapulse:nudgeWindowStart";
+const WINDOW_END_KEY    = "@hydrapulse:nudgeWindowEnd";
 
-const WAKING_START      = 7;                       // 7 AM — earliest nudge
-const WAKING_END        = 21;                      // 9 PM — latest nudge
+export const DEFAULT_WINDOW_START = 7;             // 7 AM default
+export const DEFAULT_WINDOW_END   = 21;            // 9 PM default
+
 const GAP_WEEKDAY_MS    = 3 * 60 * 60 * 1000;     // 3 h gap on weekdays
 const GAP_WEEKEND_MS    = 3.5 * 60 * 60 * 1000;   // 3.5 h gap on weekends (looser)
 const COOLDOWN_MS       = 60 * 60 * 1000;          // min 1 h between nudges
-const GOAL_BEHIND_HOUR  = 18;                      // only check goal deficit after 6 PM
 const GOAL_BEHIND_RATIO = 0.5;                     // "behind" = < 50% of daily goal
 
 // ─── Contextual message picker ────────────────────────────────────────────────
@@ -33,7 +35,7 @@ function pickMessage(
   isWeekend: boolean,
 ): { title: string; body: string } {
   const behindOnGoal =
-    goalProgress < GOAL_BEHIND_RATIO && hour24 >= GOAL_BEHIND_HOUR;
+    goalProgress < GOAL_BEHIND_RATIO && hour24 >= 18;
 
   // Both conditions: behind on goal AND a meaningful gap
   if (behindOnGoal && gapHours >= 2) {
@@ -84,7 +86,10 @@ function pickMessage(
 
 export interface SmartNudgeHook {
   nudgeEnabled: boolean;
+  nudgeWindowStart: number; // hour24, e.g. 7 = 7 AM
+  nudgeWindowEnd: number;   // hour24, e.g. 21 = 9 PM
   setNudgeEnabled: (on: boolean) => Promise<void>;
+  setNudgeWindow: (startHour24: number, endHour24: number) => Promise<void>;
 }
 
 export function useSmartNudge({
@@ -101,10 +106,14 @@ export function useSmartNudge({
   hasPermission: boolean;
 }): SmartNudgeHook {
   const [nudgeEnabled, setNudgeEnabledState] = useState(false);
+  const [nudgeWindowStart, setWindowStartState] = useState(DEFAULT_WINDOW_START);
+  const [nudgeWindowEnd, setWindowEndState]     = useState(DEFAULT_WINDOW_END);
 
-  // Ref so the AppState callback always sees the latest value without
+  // Refs so the AppState callback always sees the latest values without
   // needing to re-register the listener every time state changes.
-  const enabledRef = useRef(false);
+  const enabledRef     = useRef(false);
+  const windowStartRef = useRef(DEFAULT_WINDOW_START);
+  const windowEndRef   = useRef(DEFAULT_WINDOW_END);
 
   // Stable ref for all data that changes frequently — avoids stale closures
   // in tryNudge without making it unstable via useCallback deps.
@@ -119,16 +128,24 @@ export function useSmartNudge({
     latestRef.current = { waterLog, history, todayTotalOz, dailyGoalOz, hasPermission };
   });
 
-  // Load persisted enabled state on mount
+  // Load persisted state on mount
   useEffect(() => {
     if (Platform.OS === "web") return;
-    AsyncStorage.getItem(ENABLED_KEY)
-      .then((raw) => {
-        const on = raw === "true";
-        enabledRef.current = on;
-        setNudgeEnabledState(on);
-      })
-      .catch(() => {});
+    Promise.all([
+      AsyncStorage.getItem(ENABLED_KEY),
+      AsyncStorage.getItem(WINDOW_START_KEY),
+      AsyncStorage.getItem(WINDOW_END_KEY),
+    ]).then(([enabledRaw, startRaw, endRaw]) => {
+      const on    = enabledRaw === "true";
+      const start = startRaw !== null ? Number(startRaw) : DEFAULT_WINDOW_START;
+      const end   = endRaw   !== null ? Number(endRaw)   : DEFAULT_WINDOW_END;
+      enabledRef.current     = on;
+      windowStartRef.current = isNaN(start) ? DEFAULT_WINDOW_START : start;
+      windowEndRef.current   = isNaN(end)   ? DEFAULT_WINDOW_END   : end;
+      setNudgeEnabledState(on);
+      setWindowStartState(windowStartRef.current);
+      setWindowEndState(windowEndRef.current);
+    }).catch(() => {});
   }, []);
 
   const setNudgeEnabled = useCallback(async (on: boolean) => {
@@ -141,6 +158,17 @@ export function useSmartNudge({
     }
   }, []);
 
+  const setNudgeWindow = useCallback(async (startHour24: number, endHour24: number) => {
+    windowStartRef.current = startHour24;
+    windowEndRef.current   = endHour24;
+    setWindowStartState(startHour24);
+    setWindowEndState(endHour24);
+    await Promise.all([
+      AsyncStorage.setItem(WINDOW_START_KEY, String(startHour24)),
+      AsyncStorage.setItem(WINDOW_END_KEY,   String(endHour24)),
+    ]).catch(() => {});
+  }, []);
+
   // Core logic — called on every app foreground transition.
   const tryNudge = useCallback(async () => {
     if (Platform.OS === "web") return;
@@ -150,10 +178,17 @@ export function useSmartNudge({
       latestRef.current;
     if (!hasPermission) return;
 
-    // ── Waking-hours gate ──
+    // ── Active-window gate (user-configurable) ──
     const now = new Date();
     const hour24 = now.getHours();
-    if (hour24 < WAKING_START || hour24 >= WAKING_END) return;
+    const winStart = windowStartRef.current;
+    const winEnd   = windowEndRef.current;
+    // Support windows that cross midnight (e.g. 10 PM–6 AM) by checking
+    // whether start > end, meaning the window wraps around.
+    const inWindow = winStart <= winEnd
+      ? hour24 >= winStart && hour24 < winEnd
+      : hour24 >= winStart || hour24 < winEnd;
+    if (!inWindow) return;
 
     // ── Cooldown gate: don't fire more than once per hour ──
     const lastRaw = await AsyncStorage.getItem(COOLDOWN_KEY).catch(() => null);
@@ -179,10 +214,14 @@ export function useSmartNudge({
     const gapThresholdMs = isWeekend ? GAP_WEEKEND_MS : GAP_WEEKDAY_MS;
     const gapMs = lastActivityMs > 0 ? Date.now() - lastActivityMs : Infinity;
 
-    // ── Goal check (after 6 PM only) ──
+    // ── Goal check: applies in the last portion of the user's active window,
+    //    but only if that window extends into evening (end hour > 18).
+    //    Anchored to 6 PM minimum so goal nudges always feel contextually
+    //    appropriate regardless of how the window is configured.
+    const goalCheckHour = Math.max(18, winEnd - 3);
     const goalProgress = dailyGoalOz > 0 ? todayTotalOz / dailyGoalOz : 1;
     const behindOnGoal =
-      goalProgress < GOAL_BEHIND_RATIO && hour24 >= GOAL_BEHIND_HOUR;
+      goalProgress < GOAL_BEHIND_RATIO && hour24 >= goalCheckHour && winEnd > 18;
 
     // Fire only when at least one condition is met
     if (gapMs < gapThresholdMs && !behindOnGoal) return;
@@ -216,5 +255,11 @@ export function useSmartNudge({
     return () => sub.remove();
   }, [tryNudge]);
 
-  return { nudgeEnabled, setNudgeEnabled };
+  return {
+    nudgeEnabled,
+    nudgeWindowStart,
+    nudgeWindowEnd,
+    setNudgeEnabled,
+    setNudgeWindow,
+  };
 }

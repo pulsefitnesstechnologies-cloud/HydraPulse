@@ -14,10 +14,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { FeatureTour } from "@/components/FeatureTour";
 import { HealthProvider } from "@/context/HealthContext";
 import { HydrationProvider, useHydration } from "@/context/HydrationContext";
 import { WaterIntakeProvider } from "@/context/WaterIntakeContext";
 import { WorkoutProvider } from "@/context/WorkoutContext";
+import { useTour } from "@/hooks/useTour";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -103,11 +105,21 @@ function NavigationGuard() {
   return null;
 }
 
+// Shows the feature tour once after onboarding completes, and on replay.
+function TourController() {
+  const { hasOnboarded } = useHydration();
+  const { tourCompleted, tourLoaded, completeTour } = useTour();
+  // Only show after onboarding is done and tour hasn't been seen yet
+  const show = hasOnboarded && tourLoaded && !tourCompleted;
+  return <FeatureTour visible={show} onDone={completeTour} />;
+}
+
 function RootLayoutNav() {
   return (
     <>
       <NavigationGuard />
       <NotificationHandler />
+      <TourController />
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />

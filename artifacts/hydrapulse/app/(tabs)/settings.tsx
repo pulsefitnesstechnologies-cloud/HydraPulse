@@ -49,6 +49,7 @@ import { useHydration } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
 import { ScanAlarm, SmartReminder } from "@/hooks/useNotifications";
+import { useTour } from "@/hooks/useTour";
 import {
   ALERT_THRESHOLD_LABELS,
   ALERT_THRESHOLDS,
@@ -404,6 +405,8 @@ export default function SettingsScreen() {
     updateSmartReminder,
     setAlertThreshold,
   } = useHealth();
+
+  const { resetTour } = useTour();
 
   const [showThreshold, setShowThreshold] = useState(false);
   const [showNudgeStart, setShowNudgeStart] = useState(false);
@@ -895,6 +898,15 @@ export default function SettingsScreen() {
         <View style={styles.group}>
           <SettingsRow icon="information-circle-outline" label="Version" value="1.0.0" />
           <SettingsRow icon="code-slash-outline" label="Mode" value="Camera + Watch PPG" />
+          <SettingsRow
+            icon="map-outline"
+            label="Feature Tour"
+            value="Replay"
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              resetTour();
+            }}
+          />
           <SettingsRow
             icon="cloud-download-outline"
             label="Check for Updates"

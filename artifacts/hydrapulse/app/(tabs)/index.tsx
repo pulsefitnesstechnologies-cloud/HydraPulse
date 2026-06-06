@@ -81,6 +81,14 @@ function WaterLogModal({
   const [amountText, setAmountText] = useState("");
   const [timeVal, setTimeVal] = useState<TimeValue>(nowTimeValue());
 
+  // Reset to current time every time the modal opens
+  useEffect(() => {
+    if (visible) {
+      setAmountText("");
+      setTimeVal(nowTimeValue());
+    }
+  }, [visible]);
+
   const handleLog = () => {
     const oz = parseFloat(amountText);
     if (isNaN(oz) || oz <= 0) {

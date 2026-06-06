@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -223,6 +223,14 @@ function WaterLogModal({
   const insets = useSafeAreaInsets();
   const [amountText, setAmountText] = useState("");
   const [timeVal, setTimeVal] = useState<TimeValue>(nowTimeValue());
+
+  // Reset to current time every time the modal opens
+  useEffect(() => {
+    if (visible) {
+      setAmountText("");
+      setTimeVal(nowTimeValue());
+    }
+  }, [visible]);
 
   const handleLog = () => {
     const oz = parseFloat(amountText);

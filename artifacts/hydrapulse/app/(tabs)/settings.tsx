@@ -58,10 +58,17 @@ import {
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ title, iosOnly }: { title: string; iosOnly?: boolean }) {
   const colors = useColors();
   return (
-    <Text style={[styles.sectionHeader, { color: colors.mutedForeground }]}>{title}</Text>
+    <View style={styles.sectionHeaderRow}>
+      <Text style={[styles.sectionHeader, { color: colors.mutedForeground }]}>{title}</Text>
+      {iosOnly && Platform.OS !== "ios" && (
+        <View style={[styles.iosBadge, { backgroundColor: colors.mutedForeground + "18", borderColor: colors.mutedForeground + "30" }]}>
+          <Text style={[styles.iosBadgeText, { color: colors.mutedForeground }]}>iOS only</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -590,7 +597,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Watch Scan Alarms */}
-        <SectionHeader title="Watch Scan Alarms" />
+        <SectionHeader title="Watch Scan Alarms" iosOnly />
         <View style={[styles.sectionBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.boxTitle, { color: colors.foreground }]}>Scheduled Scans</Text>
           <Text style={[styles.boxSub, { color: colors.mutedForeground }]}>
@@ -598,6 +605,16 @@ export default function SettingsScreen() {
             then automatically reads your Apple Watch data and saves a hydration scan.
             Requires Apple Health to be connected.
           </Text>
+
+          {/* Android notice */}
+          {Platform.OS !== "ios" && (
+            <View style={[styles.infoRow, { backgroundColor: colors.mutedForeground + "10", borderColor: colors.mutedForeground + "25" }]}>
+              <Ionicons name="logo-apple" size={16} color={colors.mutedForeground} />
+              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+                Watch Scan Alarms require an Apple Watch and iOS. These settings have no effect on Android.
+              </Text>
+            </View>
+          )}
 
           {/* Exercise HR note */}
           <View style={[styles.infoRow, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>
@@ -964,6 +981,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   testingText: { fontSize: 15, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   sectionHeader: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
@@ -972,6 +994,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 4,
     paddingHorizontal: 4,
+  },
+  iosBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  iosBadgeText: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   group: { gap: 2 },
   settingsRow: {

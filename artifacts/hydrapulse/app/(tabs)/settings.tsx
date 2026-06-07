@@ -48,7 +48,14 @@ import { useHealth } from "@/context/HealthContext";
 import { useHydration } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { useColors } from "@/hooks/useColors";
-import { ScanAlarm, SmartReminder } from "@/hooks/useNotifications";
+import {
+  REMINDER_TEMPLATES,
+  REMINDER_TONE_LABELS,
+  ReminderTone,
+  ScanAlarm,
+  SmartReminder,
+  formatHour24Display,
+} from "@/hooks/useNotifications";
 import { useTour } from "@/hooks/useTour";
 import {
   ALERT_THRESHOLD_LABELS,
@@ -397,6 +404,13 @@ export default function SettingsScreen() {
     scanAlarms,
     smartReminders,
     alertThreshold,
+    streakProtection,
+    quietHours,
+    reminderTone,
+    updateStreakProtection,
+    updateQuietHours,
+    setReminderTone,
+    applyToneToReminders,
     nudgeEnabled,
     nudgeWindowStart,
     nudgeWindowEnd,
@@ -426,6 +440,10 @@ export default function SettingsScreen() {
   const [showThreshold, setShowThreshold] = useState(false);
   const [showNudgeStart, setShowNudgeStart] = useState(false);
   const [showNudgeEnd, setShowNudgeEnd]     = useState(false);
+  const [showStreakPicker, setShowStreakPicker] = useState(false);
+  const [showQuietStart, setShowQuietStart]    = useState(false);
+  const [showQuietEnd, setShowQuietEnd]        = useState(false);
+  const [toneApplied, setToneApplied]          = useState(false);
 
   // Convert a 24-hour integer (0–23) to the TimeValue the TimePicker expects
   function hour24ToTimeValue(h24: number): TimeValue {
@@ -743,6 +761,245 @@ export default function SettingsScreen() {
             </View>
           )}
 
+          {/* ── Streak Protection ───────────────────────────────────────────────── */}
+          <View
+            style={[
+              styles.autoScheduleRow,
+              { backgroundColor: "#F9731610", borderColor: "#F9731630" },
+            ]}
+          >
+            <View style={[styles.alarmIconWrap, { backgroundColor: "#F9731620" }]}>
+              <Ionicons name="flame-outline" size={16} color="#F97316" />
+            </View>
+            <View style={styles.alarmMiddle}>
+              <Text style={[styles.alarmLabel, { color: colors.foreground }]}>Streak Protection</Text>
+              <Pressable onPress={() => setShowStreakPicker(true)} hitSlop={8}>
+                <Text
+                  style={[
+                    styles.alarmTime,
+                    { color: streakProtection.enabled ? "#F97316" : colors.mutedForeground },
+                  ]}
+                >
+                  {streakProtection.hour}:{String(streakProtection.minute).padStart(2, "0")}{" "}
+                  {streakProtection.ampm}
+                </Text>
+              </Pressable>
+            </View>
+            <Switch
+              value={streakProtection.enabled}
+              onValueChange={async (on) => {
+                Haptics.selectionAsync().catch(() => {});
+                if (on) {
+                  const granted = await requestNotificationPermission();
+                  if (!granted) {
+                    Alert.alert(
+                      "Notifications Required",
+                      "Enable notifications in iPhone Settings to use Streak Protection.",
+                      [{ text: "OK" }]
+                    );
+                    return;
+                  }
+                }
+                await updateStreakProtection({ enabled: on });
+              }}
+              trackColor={{ false: colors.border, true: "#F9731680" }}
+              thumbColor={streakProtection.enabled ? "#F97316" : colors.mutedForeground}
+            />
+          </View>
+          {streakProtection.enabled && (
+            <View
+              style={[
+                styles.infoRow,
+                { backgroundColor: "#F9731608", borderColor: "#F9731620" },
+              ]}
+            >
+              <Ionicons name="information-circle-outline" size={15} color="#F97316" />
+              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+                Fires daily at{" "}
+                {streakProtection.hour}:{String(streakProtection.minute).padStart(2, "0")}{" "}
+                {streakProtection.ampm} to remind you to scan before your streak resets. Tap the
+                time above to change it.
+              </Text>
+            </View>
+          )}
+
+          {/* ── Message Tone ─────────────────────────────────────────────────────── */}
+          <View
+            style={[
+              styles.autoScheduleRow,
+              { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30", flexWrap: "wrap", gap: 10 },
+            ]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+              <View style={[styles.alarmIconWrap, { backgroundColor: colors.primary + "20" }]}>
+                <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
+              </View>
+              <View style={styles.alarmMiddle}>
+                <Text style={[styles.alarmLabel, { color: colors.foreground }]}>Message Tone</Text>
+                <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground }]}>
+                  {REMINDER_TONE_LABELS[reminderTone]}
+                </Text>
+              </View>
+            </View>
+            {/* Segmented tone picker */}
+            <View style={styles.toneSegmented}>
+              {(["gentle", "motivational", "data-driven"] as ReminderTone[]).map((tone) => (
+                <Pressable
+                  key={tone}
+                  style={({ pressed }) => [
+                    styles.toneSegmentBtn,
+                    {
+                      backgroundColor:
+                        reminderTone === tone
+                          ? colors.primary
+                          : colors.primary + "15",
+                      borderColor:
+                        reminderTone === tone
+                          ? colors.primary
+                          : colors.primary + "30",
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                  onPress={async () => {
+                    Haptics.selectionAsync().catch(() => {});
+                    await setReminderTone(tone);
+                    setToneApplied(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.toneSegmentLabel,
+                      { color: reminderTone === tone ? "#fff" : colors.primary },
+                    ]}
+                  >
+                    {REMINDER_TONE_LABELS[tone]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* Apply to slots button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.applyToneBtn,
+                {
+                  backgroundColor: toneApplied
+                    ? colors.primary + "25"
+                    : colors.primary,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+              onPress={async () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                await applyToneToReminders(reminderTone);
+                setToneApplied(true);
+              }}
+            >
+              <Ionicons
+                name={toneApplied ? "checkmark-circle-outline" : "color-wand-outline"}
+                size={14}
+                color={toneApplied ? colors.primary : "#fff"}
+              />
+              <Text
+                style={[
+                  styles.applyToneBtnText,
+                  { color: toneApplied ? colors.primary : "#fff" },
+                ]}
+              >
+                {toneApplied ? "Applied to all slots" : "Apply to reminder slots"}
+              </Text>
+            </Pressable>
+            <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground, width: "100%" }]}>
+              Pre-fills all 3 reminder message slots with{" "}
+              {REMINDER_TONE_LABELS[reminderTone].toLowerCase()} templates. You can still edit
+              each slot individually.
+            </Text>
+          </View>
+
+          {/* ── Quiet Hours ──────────────────────────────────────────────────────── */}
+          <View
+            style={[
+              styles.autoScheduleRow,
+              { backgroundColor: colors.accent + "10", borderColor: colors.accent + "30" },
+            ]}
+          >
+            <View style={[styles.alarmIconWrap, { backgroundColor: colors.accent + "20" }]}>
+              <Ionicons name="moon-outline" size={16} color={colors.accent} />
+            </View>
+            <View style={styles.alarmMiddle}>
+              <Text style={[styles.alarmLabel, { color: colors.foreground }]}>Quiet Hours</Text>
+              <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground }]}>
+                No follow-up nudges during this window
+              </Text>
+            </View>
+            <Switch
+              value={quietHours.enabled}
+              onValueChange={async (on) => {
+                Haptics.selectionAsync().catch(() => {});
+                await updateQuietHours({ enabled: on });
+              }}
+              trackColor={{ false: colors.border, true: colors.accent + "80" }}
+              thumbColor={quietHours.enabled ? colors.accent : colors.mutedForeground}
+            />
+          </View>
+          {quietHours.enabled && (
+            <View style={styles.slotGroup}>
+              <View
+                style={[styles.alarmCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+              >
+                <View style={[styles.alarmIconWrap, { backgroundColor: colors.accent + "15" }]}>
+                  <Ionicons name="moon-outline" size={15} color={colors.accent} />
+                </View>
+                <View style={styles.alarmMiddle}>
+                  <Text style={[styles.alarmLabel, { color: colors.mutedForeground }]}>Quiet from</Text>
+                  <Pressable onPress={() => setShowQuietStart(true)} hitSlop={8}>
+                    <Text style={[styles.alarmTime, { color: colors.accent }]}>
+                      {formatHour24Display(quietHours.startHour, quietHours.startMinute)}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Pressable
+                  onPress={() => setShowQuietStart(true)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+              <View
+                style={[styles.alarmCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+              >
+                <View style={[styles.alarmIconWrap, { backgroundColor: colors.accent + "15" }]}>
+                  <Ionicons name="sunny-outline" size={15} color={colors.accent} />
+                </View>
+                <View style={styles.alarmMiddle}>
+                  <Text style={[styles.alarmLabel, { color: colors.mutedForeground }]}>Quiet until</Text>
+                  <Pressable onPress={() => setShowQuietEnd(true)} hitSlop={8}>
+                    <Text style={[styles.alarmTime, { color: colors.accent }]}>
+                      {formatHour24Display(quietHours.endHour, quietHours.endMinute)}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Pressable
+                  onPress={() => setShowQuietEnd(true)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+              <View
+                style={[styles.infoRow, { backgroundColor: colors.accent + "08", borderColor: colors.accent + "20" }]}
+              >
+                <Ionicons name="information-circle-outline" size={15} color={colors.accent} />
+                <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
+                  Low-score follow-up nudges will not fire between{" "}
+                  {formatHour24Display(quietHours.startHour, quietHours.startMinute)} and{" "}
+                  {formatHour24Display(quietHours.endHour, quietHours.endMinute)}.
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Pattern suggestion card — shown when enough data exists and user hasn't enabled Auto-Schedule or dismissed */}
           {!smartScheduleEnabled && hasEnoughData && !suggestionDismissed && (
             <View style={[styles.suggestionCard, { backgroundColor: colors.accent + "08", borderColor: colors.accent + "30" }]}>
@@ -971,6 +1228,27 @@ export default function SettingsScreen() {
         value={hour24ToTimeValue(nudgeWindowEnd)}
         onSave={(v) => setNudgeWindow(nudgeWindowStart, timeValueToHour24(v))}
         onClose={() => setShowNudgeEnd(false)}
+      />
+      <TimePickerModal
+        visible={showStreakPicker}
+        title="Streak Protection — Set Time"
+        value={{ hour: streakProtection.hour, minute: streakProtection.minute, ampm: streakProtection.ampm }}
+        onSave={(v) => updateStreakProtection({ hour: v.hour, minute: v.minute, ampm: v.ampm })}
+        onClose={() => setShowStreakPicker(false)}
+      />
+      <TimePickerModal
+        visible={showQuietStart}
+        title="Quiet Hours — Start"
+        value={hour24ToTimeValue(quietHours.startHour)}
+        onSave={(v) => updateQuietHours({ startHour: timeValueToHour24(v), startMinute: v.minute })}
+        onClose={() => setShowQuietStart(false)}
+      />
+      <TimePickerModal
+        visible={showQuietEnd}
+        title="Quiet Hours — End"
+        value={hour24ToTimeValue(quietHours.endHour)}
+        onSave={(v) => updateQuietHours({ endHour: timeValueToHour24(v), endMinute: v.minute })}
+        onClose={() => setShowQuietEnd(false)}
       />
     </View>
   );
@@ -1212,4 +1490,36 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   refreshBtnText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  toneSegmented: {
+    flexDirection: "row" as const,
+    gap: 6,
+    flexWrap: "wrap" as const,
+    width: "100%",
+  },
+  toneSegmentBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  toneSegmentLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+  },
+  applyToneBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    width: "100%",
+    justifyContent: "center" as const,
+  },
+  applyToneBtnText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
 });

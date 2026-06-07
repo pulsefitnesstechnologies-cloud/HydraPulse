@@ -37,6 +37,7 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { ShareCard } from "@/components/ShareCard";
 import { StreakCelebration } from "@/components/StreakCelebration";
+import { useHealth } from "@/context/HealthContext";
 import { HydrationScore, getScoreColor, getScoreLabel, useHydration } from "@/context/HydrationContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -95,6 +96,7 @@ export default function ResultsScreen() {
   const router = useRouter();
   const { score } = useLocalSearchParams<{ score: string; label: string }>();
   const { latestScan, currentStreak, todayScans } = useHydration();
+  const { scheduleFollowUpNudge } = useHealth();
 
   const scoreNum = (Number(score) || latestScan?.score || 3) as HydrationScore;
   const scoreColor = getScoreColor(scoreNum);
@@ -141,6 +143,12 @@ export default function ResultsScreen() {
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Warning
     ).catch(() => {});
+    // Schedule a 90-minute follow-up nudge for low scores so the user
+    // is reminded to recheck after drinking water.
+    if (scoreNum <= 2) {
+      scheduleFollowUpNudge(scoreNum as 1 | 2).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function captureCard(): Promise<string | null> {

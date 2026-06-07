@@ -22,8 +22,54 @@ export interface SmartReminder {
   notifId: string | null;
 }
 
+export interface StreakProtection {
+  enabled: boolean;
+  hour: number; // 1-12
+  minute: number; // 0-59
+  ampm: "AM" | "PM";
+}
+
+export interface QuietHours {
+  enabled: boolean;
+  startHour: number; // 0-23
+  startMinute: number; // 0-59
+  endHour: number; // 0-23
+  endMinute: number; // 0-59
+}
+
+export type ReminderTone = "gentle" | "motivational" | "data-driven";
 export type AlarmTuple = [ScanAlarm, ScanAlarm, ScanAlarm];
 export type ReminderTuple = [SmartReminder, SmartReminder, SmartReminder];
+
+// ─── Message template library ─────────────────────────────────────────────────
+// Three tones × three slots — one entry per reminder slot so each fires a
+// different message. Users pick a tone; the app pre-fills all three slots.
+
+export const REMINDER_TEMPLATES: Record<ReminderTone, [string, string, string]> = {
+  gentle: [
+    "Your body will thank you — time for a glass of water.",
+    "A gentle nudge: have you had water recently?",
+    "Small sip, big difference. Time to hydrate.",
+  ],
+  motivational: [
+    "Champions stay hydrated. Don't let dehydration slow you down.",
+    "Hydration fuels performance — time to drink up!",
+    "You're crushing your goals. Stay hydrated and keep pushing.",
+  ],
+  "data-driven": [
+    "HydraPulse tip: consistent hydration improves your HRV score.",
+    "Optimal hydration is 2-3 L daily. How are you tracking?",
+    "Blood volume peaks when you are well hydrated — it shows in your scans.",
+  ],
+};
+
+export const REMINDER_TONE_LABELS: Record<ReminderTone, string> = {
+  gentle: "Gentle",
+  motivational: "Motivational",
+  "data-driven": "Data-driven",
+};
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
 
 export const DEFAULT_SCAN_ALARM: ScanAlarm = {
   enabled: false,
@@ -42,10 +88,28 @@ export const DEFAULT_SMART_REMINDER: SmartReminder = {
   notifId: null,
 };
 
+export const DEFAULT_STREAK_PROTECTION: StreakProtection = {
+  enabled: false,
+  hour: 7,
+  minute: 0,
+  ampm: "PM",
+};
+
+export const DEFAULT_QUIET_HOURS: QuietHours = {
+  enabled: false,
+  startHour: 22,
+  startMinute: 0,
+  endHour: 7,
+  endMinute: 0,
+};
+
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
 const SCAN_ALARMS_KEY = "@hydrapulse:scanAlarms";
 const SMART_REMINDERS_KEY = "@hydrapulse:smartReminders";
+const STREAK_PROTECTION_KEY = "@hydrapulse:streakProtection";
+const QUIET_HOURS_KEY = "@hydrapulse:quietHours";
+const REMINDER_TONE_KEY = "@hydrapulse:reminderTone";
 
 // ─── Deterministic notification identifiers ───────────────────────────────────
 // Using fixed slot IDs means scheduling a slot always replaces the existing
@@ -58,9 +122,10 @@ export function smartReminderId(index: number) {
   return `hydrapulse-smart-reminder-${index}`;
 }
 export const SCAN_RESULT_ID = "hydrapulse-scan-result";
+export const STREAK_PROTECT_ID = "hydrapulse-streak-protect";
+export const FOLLOW_UP_NUDGE_ID = "hydrapulse-follow-up-nudge";
 
 // ─── Notification handler (set once at module level) ─────────────────────────
-// Controls behaviour when a notification arrives while the app is FOREGROUND.
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -79,9 +144,32 @@ function to24h(hour: number, ampm: "AM" | "PM"): number {
   return hour;
 }
 
+/**
+ * Returns true if the given time (24-hour) falls inside the quiet-hours window.
+ * Handles overnight windows (e.g. 22:00 – 07:00) correctly.
+ */
+export function isInQuietHours(h24: number, minute: number, qh: QuietHours): boolean {
+  if (!qh.enabled) return false;
+  const t = h24 * 60 + minute;
+  const start = qh.startHour * 60 + qh.startMinute;
+  const end = qh.endHour * 60 + qh.endMinute;
+  if (start === end) return false;
+  if (start < end) return t >= start && t < end; // same-day window
+  return t >= start || t < end; // overnight window
+}
+
+export function formatHour24Display(h24: number, minute: number): string {
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  let h = h24 % 12;
+  if (h === 0) h = 12;
+  const mm = minute.toString().padStart(2, "0");
+  return `${h}:${mm} ${ampm}`;
+}
+
+// ─── Scheduling functions ─────────────────────────────────────────────────────
+
 async function scheduleScanAlarm(alarm: ScanAlarm, index: number): Promise<string | null> {
   const identifier = scanAlarmId(index);
-  // Always cancel first — with a deterministic ID this is instant and safe.
   await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
   if (!alarm.enabled || Platform.OS === "web") return null;
   try {
@@ -130,6 +218,35 @@ async function scheduleSmartReminder(reminder: SmartReminder, index: number): Pr
   }
 }
 
+async function scheduleStreakProtectionNotif(sp: StreakProtection): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(STREAK_PROTECT_ID).catch(() => {});
+  if (!sp.enabled || Platform.OS === "web") return;
+  try {
+    await Notifications.scheduleNotificationAsync({
+      identifier: STREAK_PROTECT_ID,
+      content: {
+        title: "Streak at Risk",
+        body: "Don't break your streak — tap to run today's hydration scan.",
+        sound: "default",
+        interruptionLevel: "timeSensitive",
+        data: { type: "streak-protection" },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: to24h(sp.hour, sp.ampm),
+        minute: sp.minute,
+      },
+    });
+  } catch {
+    // silently ignore
+  }
+}
+
+const FOLLOW_UP_MESSAGES: Record<1 | 2, string> = {
+  1: "Your hydration score was critical. Have you had water? Run a follow-up scan.",
+  2: "Checking in: your hydration was low 90 minutes ago. Feeling more hydrated? Run a quick scan.",
+};
+
 // ─── Default state ────────────────────────────────────────────────────────────
 
 const DEFAULT_ALARMS: AlarmTuple = [
@@ -138,8 +255,6 @@ const DEFAULT_ALARMS: AlarmTuple = [
   { ...DEFAULT_SCAN_ALARM, hour: 6, ampm: "PM" },
 ];
 
-// Offset from ScanAlarm defaults (8 AM / 12 PM / 6 PM) so enabling a reminder
-// slot at its default time never double-fires with an alarm at the same minute.
 const DEFAULT_REMINDERS: ReminderTuple = [
   { ...DEFAULT_SMART_REMINDER, hour: 9, ampm: "AM" },
   { ...DEFAULT_SMART_REMINDER, hour: 1, ampm: "PM" },
@@ -152,24 +267,32 @@ export function useNotifications() {
   const [hasPermission, setHasPermission] = useState(false);
   const [scanAlarms, setScanAlarms] = useState<AlarmTuple>(DEFAULT_ALARMS);
   const [smartReminders, setSmartReminders] = useState<ReminderTuple>(DEFAULT_REMINDERS);
+  const [streakProtection, setStreakProtection] = useState<StreakProtection>(DEFAULT_STREAK_PROTECTION);
+  const [quietHours, setQuietHours] = useState<QuietHours>(DEFAULT_QUIET_HOURS);
+  const [reminderTone, setReminderToneState] = useState<ReminderTone>("gentle");
 
   // Refs so callbacks always see latest state without stale closures.
-  // Critical for parallel calls (e.g. doSchedule calling all 3 reminder
-  // slots simultaneously) — each read from the ref sees the committed value,
-  // not a snapshot captured at callback-creation time.
   const scanAlarmsRef = useRef(scanAlarms);
   const smartRemindersRef = useRef(smartReminders);
+  const streakProtectionRef = useRef(streakProtection);
+  const quietHoursRef = useRef(quietHours);
   useEffect(() => { scanAlarmsRef.current = scanAlarms; }, [scanAlarms]);
   useEffect(() => { smartRemindersRef.current = smartReminders; }, [smartReminders]);
+  useEffect(() => { streakProtectionRef.current = streakProtection; }, [streakProtection]);
+  useEffect(() => { quietHoursRef.current = quietHours; }, [quietHours]);
 
+  // ── Load from storage and reschedule on mount ──────────────────────────────
   useEffect(() => {
     if (Platform.OS === "web") return;
     (async () => {
-      const [permResult, alarmsRaw, remindersRaw] = await Promise.all([
+      const [permResult, alarmsRaw, remindersRaw, spRaw, qhRaw, toneRaw] = await Promise.all([
         Notifications.getPermissionsAsync(),
         AsyncStorage.getItem(SCAN_ALARMS_KEY),
         AsyncStorage.getItem(SMART_REMINDERS_KEY),
-      ]).catch(() => [null, null, null] as const);
+        AsyncStorage.getItem(STREAK_PROTECTION_KEY),
+        AsyncStorage.getItem(QUIET_HOURS_KEY),
+        AsyncStorage.getItem(REMINDER_TONE_KEY),
+      ]).catch(() => [null, null, null, null, null, null] as const);
 
       const loadedAlarms: AlarmTuple = alarmsRaw
         ? (JSON.parse(alarmsRaw) as AlarmTuple)
@@ -177,13 +300,19 @@ export function useNotifications() {
       const loadedReminders: ReminderTuple = remindersRaw
         ? (JSON.parse(remindersRaw) as ReminderTuple)
         : DEFAULT_REMINDERS;
+      const loadedSP: StreakProtection = spRaw
+        ? (JSON.parse(spRaw) as StreakProtection)
+        : DEFAULT_STREAK_PROTECTION;
+      const loadedQH: QuietHours = qhRaw
+        ? (JSON.parse(qhRaw) as QuietHours)
+        : DEFAULT_QUIET_HOURS;
+      const loadedTone: ReminderTone = toneRaw
+        ? (toneRaw as ReminderTone)
+        : "gentle";
 
       // Cancel ALL scheduled notifications before rescheduling.
-      // This clears any stale notifications from old builds that used
-      // different identifiers — the only safe way to remove them.
       await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
 
-      // Reschedule only from current saved state.
       const [updatedAlarms, updatedReminders] = await Promise.all([
         Promise.all(
           loadedAlarms.map(async (alarm, i) => ({
@@ -197,6 +326,7 @@ export function useNotifications() {
             notifId: await scheduleSmartReminder(reminder, i),
           }))
         ),
+        scheduleStreakProtectionNotif(loadedSP),
       ]);
 
       if (permResult && "status" in permResult) {
@@ -206,9 +336,15 @@ export function useNotifications() {
       scanAlarmsRef.current = updatedAlarms as AlarmTuple;
       setSmartReminders(updatedReminders as ReminderTuple);
       smartRemindersRef.current = updatedReminders as ReminderTuple;
+      setStreakProtection(loadedSP);
+      streakProtectionRef.current = loadedSP;
+      setQuietHours(loadedQH);
+      quietHoursRef.current = loadedQH;
+      setReminderToneState(loadedTone);
     })();
   }, []);
 
+  // ── Permission ─────────────────────────────────────────────────────────────
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === "web") return false;
     const { status } = await Notifications.requestPermissionsAsync({
@@ -224,9 +360,9 @@ export function useNotifications() {
     return granted;
   }, []);
 
+  // ── Scan alarms ────────────────────────────────────────────────────────────
   const updateScanAlarm = useCallback(
     async (index: 0 | 1 | 2, partial: Partial<ScanAlarm>) => {
-      // Read from ref so parallel calls each see the current committed state.
       const updated = [...scanAlarmsRef.current] as AlarmTuple;
       const next = { ...updated[index], ...partial };
       next.notifId = await scheduleScanAlarm(next, index);
@@ -235,9 +371,10 @@ export function useNotifications() {
       scanAlarmsRef.current = updated;
       await AsyncStorage.setItem(SCAN_ALARMS_KEY, JSON.stringify(updated)).catch(() => {});
     },
-    [] // no state deps — reads via ref
+    []
   );
 
+  // ── Smart reminders ────────────────────────────────────────────────────────
   const updateSmartReminder = useCallback(
     async (index: 0 | 1 | 2, partial: Partial<SmartReminder>) => {
       const updated = [...smartRemindersRef.current] as ReminderTuple;
@@ -248,15 +385,70 @@ export function useNotifications() {
       smartRemindersRef.current = updated;
       await AsyncStorage.setItem(SMART_REMINDERS_KEY, JSON.stringify(updated)).catch(() => {});
     },
-    [] // no state deps — reads via ref
+    []
   );
 
+  // ── Streak protection ──────────────────────────────────────────────────────
+  const updateStreakProtection = useCallback(
+    async (partial: Partial<StreakProtection>) => {
+      const next = { ...streakProtectionRef.current, ...partial };
+      await scheduleStreakProtectionNotif(next);
+      setStreakProtection(next);
+      streakProtectionRef.current = next;
+      await AsyncStorage.setItem(STREAK_PROTECTION_KEY, JSON.stringify(next)).catch(() => {});
+    },
+    []
+  );
+
+  const cancelStreakProtection = useCallback(async () => {
+    await Notifications.cancelScheduledNotificationAsync(STREAK_PROTECT_ID).catch(() => {});
+  }, []);
+
+  // ── Quiet hours ────────────────────────────────────────────────────────────
+  const updateQuietHours = useCallback(
+    async (partial: Partial<QuietHours>) => {
+      const next = { ...quietHoursRef.current, ...partial };
+      setQuietHours(next);
+      quietHoursRef.current = next;
+      await AsyncStorage.setItem(QUIET_HOURS_KEY, JSON.stringify(next)).catch(() => {});
+    },
+    []
+  );
+
+  // ── Reminder tone + template apply ────────────────────────────────────────
+  const setReminderTone = useCallback(async (tone: ReminderTone) => {
+    setReminderToneState(tone);
+    await AsyncStorage.setItem(REMINDER_TONE_KEY, tone).catch(() => {});
+  }, []);
+
+  const applyToneToReminders = useCallback(
+    async (tone: ReminderTone) => {
+      await AsyncStorage.setItem(REMINDER_TONE_KEY, tone).catch(() => {});
+      setReminderToneState(tone);
+      const templates = REMINDER_TEMPLATES[tone];
+      const updated = smartRemindersRef.current.map((r, i) => ({
+        ...r,
+        message: templates[i as 0 | 1 | 2],
+      })) as ReminderTuple;
+      // Reschedule all slots with new messages
+      const rescheduled = await Promise.all(
+        updated.map(async (r, i) => ({
+          ...r,
+          notifId: await scheduleSmartReminder(r, i),
+        }))
+      ) as ReminderTuple;
+      setSmartReminders(rescheduled);
+      smartRemindersRef.current = rescheduled;
+      await AsyncStorage.setItem(SMART_REMINDERS_KEY, JSON.stringify(rescheduled)).catch(() => {});
+    },
+    []
+  );
+
+  // ── Scan result notification ───────────────────────────────────────────────
   const sendScanResultNotification = useCallback(
     async (score: number, hr: number | null, label: string) => {
       if (!hasPermission || Platform.OS === "web") return;
       const hrPart = hr ? ` · HR ${hr} BPM` : "";
-      // Use a deterministic ID so a new result always replaces the previous
-      // one — tapping the notification navigates to History.
       await Notifications.scheduleNotificationAsync({
         identifier: SCAN_RESULT_ID,
         content: {
@@ -272,6 +464,35 @@ export function useNotifications() {
     [hasPermission]
   );
 
+  // ── Follow-up nudge (post low-score scan) ────────────────────────────────
+  // Fires 90 minutes after a score ≤ 2 scan. Skipped if the fire time falls
+  // inside the user's quiet-hours window.
+  const scheduleFollowUpNudge = useCallback(
+    async (score: 1 | 2) => {
+      if (!hasPermission || Platform.OS === "web") return;
+      const fireAt = new Date(Date.now() + 90 * 60 * 1000);
+      if (isInQuietHours(fireAt.getHours(), fireAt.getMinutes(), quietHoursRef.current)) return;
+      await Notifications.cancelScheduledNotificationAsync(FOLLOW_UP_NUDGE_ID).catch(() => {});
+      await Notifications.scheduleNotificationAsync({
+        identifier: FOLLOW_UP_NUDGE_ID,
+        content: {
+          title: "Hydration Check-in",
+          body: FOLLOW_UP_MESSAGES[score],
+          sound: "default",
+          interruptionLevel: "timeSensitive",
+          data: { type: "follow-up-nudge" },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 90 * 60,
+          repeats: false,
+        },
+      }).catch(() => {});
+    },
+    [hasPermission]
+  );
+
+  // ── Cancel all ────────────────────────────────────────────────────────────
   const cancelAll = useCallback(async () => {
     await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
   }, []);
@@ -280,10 +501,19 @@ export function useNotifications() {
     hasPermission,
     scanAlarms,
     smartReminders,
+    streakProtection,
+    quietHours,
+    reminderTone,
     requestPermission,
     updateScanAlarm,
     updateSmartReminder,
+    updateStreakProtection,
+    cancelStreakProtection,
+    updateQuietHours,
+    setReminderTone,
+    applyToneToReminders,
     sendScanResultNotification,
+    scheduleFollowUpNudge,
     cancelAll,
   };
 }

@@ -7,9 +7,12 @@ import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { HealthSnapshot, useHealthKit } from "@/hooks/useHealthKit";
 import {
   AlarmTuple,
+  QuietHours,
+  ReminderTone,
   ReminderTuple,
   ScanAlarm,
   SmartReminder,
+  StreakProtection,
   useNotifications,
 } from "@/hooks/useNotifications";
 import {
@@ -75,6 +78,19 @@ interface HealthContextType {
   scanAlarms: AlarmTuple;
   smartReminders: ReminderTuple;
   alertThreshold: AlertThreshold;
+  // Streak protection
+  streakProtection: StreakProtection;
+  updateStreakProtection: (partial: Partial<StreakProtection>) => Promise<void>;
+  cancelStreakProtection: () => Promise<void>;
+  // Quiet hours
+  quietHours: QuietHours;
+  updateQuietHours: (partial: Partial<QuietHours>) => Promise<void>;
+  // Reminder tone
+  reminderTone: ReminderTone;
+  setReminderTone: (tone: ReminderTone) => Promise<void>;
+  applyToneToReminders: (tone: ReminderTone) => Promise<void>;
+  // Follow-up nudge
+  scheduleFollowUpNudge: (score: 1 | 2) => Promise<void>;
   // Smart nudge (gap detection + goal awareness)
   nudgeEnabled: boolean;
   nudgeWindowStart: number;
@@ -245,6 +261,19 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         scanAlarms: notif.scanAlarms,
         smartReminders: notif.smartReminders,
         alertThreshold: monitor.alertThreshold,
+        // Streak protection
+        streakProtection: notif.streakProtection,
+        updateStreakProtection: notif.updateStreakProtection,
+        cancelStreakProtection: notif.cancelStreakProtection,
+        // Quiet hours
+        quietHours: notif.quietHours,
+        updateQuietHours: notif.updateQuietHours,
+        // Reminder tone
+        reminderTone: notif.reminderTone,
+        setReminderTone: notif.setReminderTone,
+        applyToneToReminders: notif.applyToneToReminders,
+        // Follow-up nudge
+        scheduleFollowUpNudge: notif.scheduleFollowUpNudge,
         // Smart nudge
         nudgeEnabled: nudge.nudgeEnabled,
         nudgeWindowStart: nudge.nudgeWindowStart,

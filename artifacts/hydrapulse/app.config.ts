@@ -330,7 +330,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     newArchEnabled: true,
 
     splash: {
-      image: "./assets/images/icon.png",
+      image: "./assets/images/splash-icon.png",
       resizeMode: "contain",
       backgroundColor: "#070D1A",
     },
@@ -360,6 +360,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
     android: {
       package: "com.hydrapulse.app",
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#070D1A",
+      },
       permissions: [
         "android.permission.CAMERA",
         // FLASHLIGHT is automatically granted when CAMERA is granted on Android,

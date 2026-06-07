@@ -4,7 +4,7 @@ uploads = []
 id = "rTkSM_Y1jvkL-1H3b2sDa"
 uri = "file://artifacts/hydrapulse/assets/images/icon.png"
 type = "image"
-title = "generated_image"
+title = "hydrapulse app icon"
 
 [[generated]]
 id = "rd8EaOG8VIdle5U1qLbVw"
@@ -17,6 +17,18 @@ id = "_EUtptsuv2Ji0vRO9L1yh"
 uri = "file://artifacts/mockup-sandbox/public/images/drinking-water.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "-QryfOnD8rnDQ-sSMjycs"
+uri = "file://artifacts/hydrapulse/assets/images/adaptive-icon.png"
+type = "image"
+title = "hydrapulse adaptive icon"
+
+[[generated]]
+id = "kVi4GGQGyaqXntollOmaW"
+uri = "file://artifacts/hydrapulse/assets/images/splash-icon.png"
+type = "image"
+title = "hydrapulse splash screen clean"
 
 [[outputs]]
 id = "k4S_BXshPRmJhYieADyDO"

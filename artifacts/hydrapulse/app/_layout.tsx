@@ -150,7 +150,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      // Hold splash for 1.5 s so the brand mark is visible before the app appears
+      setTimeout(() => { SplashScreen.hideAsync().catch(() => {}); }, 1500);
     }
   }, [fontsLoaded, fontError]);
 

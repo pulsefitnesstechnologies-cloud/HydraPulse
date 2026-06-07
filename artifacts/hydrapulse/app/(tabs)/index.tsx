@@ -346,19 +346,6 @@ export default function HomeScreen() {
         ) : (
           <Animated.View style={{ opacity: fadeAnim, gap: 12 }}>
 
-          {/* ── Today banner: water rising + streak ────────────────────── */}
-          <TodayBanner
-            todayScans={todayScans}
-            currentStreak={currentStreak}
-            bestStreak={bestStreak}
-            todayTotalOz={todayTotalOz}
-            dailyGoalOz={dailyGoalOz}
-            onLogWater={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              setShowWaterLog(true);
-            }}
-          />
-
           {/* Main hydration score card */}
           <View
             style={[
@@ -422,77 +409,80 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Two scan buttons: Camera + Watch */}
-            <View style={styles.scanBtnsRow}>
-              {/* Camera Scan */}
+            {/* Primary CTA: Camera Scan — full width */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.scanBtnPrimary,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+              onPress={() => handleScan("camera")}
+            >
+              <View style={[styles.scanBtnPrimaryIcon, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
+                <Ionicons name="scan-outline" size={22} color={colors.primaryForeground} />
+              </View>
+              <View style={styles.scanBtnPrimaryText}>
+                <Text style={[styles.scanBtnPrimaryTitle, { color: colors.primaryForeground }]}>Scan Now</Text>
+                <Text style={[styles.scanBtnPrimarySub, { color: colors.primaryForeground + "cc" }]}>Camera PPG · 12 seconds</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.primaryForeground + "99"} />
+            </Pressable>
+
+            {/* Secondary: Watch Scan — compact row */}
+            {Platform.OS === "ios" ? (
               <Pressable
                 style={({ pressed }) => [
-                  styles.scanBtnHalf,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                  styles.watchRowBtn,
+                  {
+                    backgroundColor: healthKitEnabled ? colors.primary + "10" : colors.background,
+                    borderColor: healthKitEnabled ? colors.primary + "40" : colors.border,
+                    opacity: pressed ? 0.75 : 1,
+                  },
                 ]}
-                onPress={() => handleScan("camera")}
+                onPress={handleWatchScan}
               >
-                <Ionicons name="scan-outline" size={20} color={colors.primaryForeground} />
-                <Text style={[styles.scanBtnHalfTitle, { color: colors.primaryForeground }]}>
-                  Camera Scan
+                <Ionicons
+                  name={healthKitEnabled ? "watch-outline" : "link-outline"}
+                  size={16}
+                  color={healthKitEnabled ? colors.primary : colors.mutedForeground}
+                />
+                <Text style={[styles.watchRowBtnText, { color: healthKitEnabled ? colors.primary : colors.mutedForeground }]}>
+                  {healthKitEnabled ? "Scan with Watch" : "Connect Apple Watch"}
                 </Text>
-                <Text style={[styles.scanBtnHalfSub, { color: colors.primaryForeground + "bb" }]}>
-                  Live PPG reading
-                </Text>
-              </Pressable>
-
-              {/* Watch Scan */}
-              {Platform.OS === "ios" ? (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.scanBtnHalf,
-                    {
-                      backgroundColor: colors.card,
-                      borderWidth: 1,
-                      borderColor: healthKitEnabled ? colors.primary + "50" : colors.border,
-                      opacity: pressed ? 0.8 : 1,
-                    },
-                  ]}
-                  onPress={handleWatchScan}
-                >
-                  <Ionicons
-                    name={healthKitEnabled ? "watch-outline" : "link-outline"}
-                    size={20}
-                    color={healthKitEnabled ? colors.primary : colors.mutedForeground}
-                  />
-                  <Text style={[styles.scanBtnHalfTitle, { color: healthKitEnabled ? colors.foreground : colors.mutedForeground }]}>
-                    {healthKitEnabled ? "Watch Scan" : "Connect Watch"}
+                {healthKitEnabled && hasHealthData && !healthLoading && (
+                  <Text style={[styles.watchRowBtnSub, { color: colors.mutedForeground }]}>
+                    {[
+                      healthSnapshot.heartRate ? `${healthSnapshot.heartRate} RHR` : null,
+                      healthSnapshot.hrv ? `${healthSnapshot.hrv}ms HRV` : null,
+                    ].filter(Boolean).join(" · ")}
                   </Text>
-                  {healthKitEnabled ? (
-                    healthLoading ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : hasHealthData ? (
-                      <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
-                        {[
-                          healthSnapshot.heartRate ? `${healthSnapshot.heartRate} RHR` : null,
-                          healthSnapshot.hrv ? `${healthSnapshot.hrv}ms HRV` : null,
-                        ].filter(Boolean).join(" · ")}
-                      </Text>
-                    ) : (
-                      <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
-                        Resting baseline
-                      </Text>
-                    )
-                  ) : (
-                    <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>
-                      Apple Health
-                    </Text>
-                  )}
-                </Pressable>
-              ) : (
-                <View style={[styles.scanBtnHalf, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, opacity: 0.45 }]}>
-                  <Ionicons name="watch-outline" size={20} color={colors.mutedForeground} />
-                  <Text style={[styles.scanBtnHalfTitle, { color: colors.mutedForeground }]}>Watch Scan</Text>
-                  <Text style={[styles.scanBtnHalfSub, { color: colors.mutedForeground }]}>iOS only</Text>
-                </View>
-              )}
-            </View>
+                )}
+                {healthLoading
+                  ? <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: "auto" }} />
+                  : <Ionicons name="chevron-forward" size={14} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
+                }
+              </Pressable>
+            ) : (
+              <View style={[styles.watchRowBtn, { backgroundColor: colors.background, borderColor: colors.border, opacity: 0.4 }]}>
+                <Ionicons name="watch-outline" size={16} color={colors.mutedForeground} />
+                <Text style={[styles.watchRowBtnText, { color: colors.mutedForeground }]}>Watch Scan</Text>
+                <Text style={[styles.watchRowBtnSub, { color: colors.mutedForeground }]}>iOS only</Text>
+                <Ionicons name="lock-closed-outline" size={12} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
+              </View>
+            )}
           </View>
+
+          {/* ── Today banner: water rising + streak ────────────────────── */}
+          <TodayBanner
+            todayScans={todayScans}
+            currentStreak={currentStreak}
+            bestStreak={bestStreak}
+            todayTotalOz={todayTotalOz}
+            dailyGoalOz={dailyGoalOz}
+            onLogWater={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setShowWaterLog(true);
+            }}
+          />
 
           {/* Score Comparison card — only shown when both scan types have data */}
           {(() => {
@@ -797,19 +787,35 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   scanBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
-  scanBtnsRow: { flexDirection: "row" as const, gap: 10 },
-  scanBtnHalf: {
-    flex: 1,
+  scanBtnPrimary: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  scanBtnPrimaryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    gap: 4,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: 14,
-    minHeight: 80,
   },
-  scanBtnHalfTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const, textAlign: "center" as const },
-  scanBtnHalfSub: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center" as const, lineHeight: 15 },
+  scanBtnPrimaryText: { flex: 1, gap: 2 },
+  scanBtnPrimaryTitle: { fontSize: 17, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  scanBtnPrimarySub: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  watchRowBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  watchRowBtnText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  watchRowBtnSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginLeft: 4 },
   cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   connectedBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },

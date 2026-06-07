@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { DailyFactModal } from "@/components/DailyFactModal";
+import { EmptyState } from "@/components/EmptyState";
 import { TodayBanner } from "@/components/TodayBanner";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { SkeletonBlock } from "@/components/SkeletonBlock";
@@ -435,7 +436,8 @@ export default function HomeScreen() {
                   {
                     backgroundColor: healthKitEnabled ? colors.primary + "10" : colors.background,
                     borderColor: healthKitEnabled ? colors.primary + "40" : colors.border,
-                    opacity: pressed ? 0.75 : 1,
+                    opacity: pressed ? 0.78 : 1,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
                   },
                 ]}
                 onPress={handleWatchScan}
@@ -593,13 +595,12 @@ export default function HomeScreen() {
           )}
 
           {history.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="water-outline" size={48} color={colors.border} />
-              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-                Run a camera scan or tap "Scan with Watch" to see your hydration score and trends here.
-              </Text>
-            </View>
+            <EmptyState
+              icon="analytics-outline"
+              title="No history yet"
+              subtitle="Your 7-day trend and recent scans will appear here once you've completed your first scan."
+              compact
+            />
           )}
           </Animated.View>
         )}
@@ -803,15 +804,15 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   scanBtnPrimaryText: { flex: 1, gap: 2 },
-  scanBtnPrimaryTitle: { fontSize: 17, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  scanBtnPrimaryTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   scanBtnPrimarySub: { fontSize: 13, fontFamily: "Inter_400Regular" },
   watchRowBtn: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 8,
-    paddingVertical: 11,
+    paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   watchRowBtnText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
@@ -826,7 +827,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   connectBtnText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },

@@ -17,6 +17,7 @@ import {
 import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/EmptyState";
 import { TimePicker, TimeValue, formatTime } from "@/components/TimePicker";
 import { TrendChart } from "@/components/TrendChart";
 import {
@@ -456,25 +457,12 @@ function ScansTab() {
   );
 
   const ListEmpty = () => (
-    <View style={styles.empty}>
-      <View style={[styles.emptyIconWrap, { backgroundColor: colors.primary + "15" }]}>
-        <Ionicons name="water-outline" size={40} color={colors.primary} />
-      </View>
-      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-        Place your fingertip over the rear camera and run a 12-second PPG scan. Your history will build up here automatically.
-      </Text>
-      <Pressable
-        style={({ pressed }) => [
-          styles.scanNowBtn,
-          { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
-        ]}
-        onPress={() => router.push("/scan")}
-      >
-        <Ionicons name="scan-outline" size={16} color={colors.primaryForeground} />
-        <Text style={[styles.scanNowText, { color: colors.primaryForeground }]}>Start First Scan</Text>
-      </Pressable>
-    </View>
+    <EmptyState
+      icon="scan-outline"
+      title="No scans yet"
+      subtitle="Place your fingertip over the rear camera and run a 12-second PPG scan. Your history builds up here automatically."
+      action={{ label: "Start First Scan", icon: "scan-outline", onPress: () => router.push("/scan") }}
+    />
   );
 
   if (!isLoaded) {
@@ -678,17 +666,22 @@ function WaterTab() {
   );
 
   const ListEmpty = () => (
-    <View style={styles.empty}>
-      <Ionicons name="water-outline" size={48} color={colors.border} />
-      <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-        No entries for {formatNavDate(selectedDate).toLowerCase()}
-      </Text>
-      <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-        {isToday
-          ? "Tap Log Water Intake to start tracking today's hydration."
-          : "No water was logged on this day."}
-      </Text>
-    </View>
+    <EmptyState
+      icon={isToday ? "water-outline" : "calendar-outline"}
+      iconColor={isToday ? "#0EA5E9" : undefined}
+      title={isToday ? "Nothing logged today" : `Nothing logged on ${formatNavDate(selectedDate)}`}
+      subtitle={
+        isToday
+          ? "Tap the button above to record your first drink of the day."
+          : "No water intake was recorded on this day."
+      }
+      action={
+        isToday
+          ? { label: "Log Water", icon: "add", onPress: () => setShowLogModal(true) }
+          : undefined
+      }
+      compact
+    />
   );
 
   return (

@@ -1,6 +1,7 @@
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/EmptyState";
 import { useHydration } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
 import { getTodaysFact } from "@/data/waterFacts";
@@ -147,6 +149,7 @@ function TipRow({
 export default function CoachScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { history } = useHydration();
   const { waterLog } = useWaterIntake();
   const { todaysTip, tipHistory, progress, isLoading } = useCoach({ history, waterLog });
@@ -239,11 +242,13 @@ export default function CoachScreen() {
           />
         ) : (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="scan-outline" size={28} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No data yet</Text>
-            <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
-              Complete a scan or log some water to get your first personalized insight.
-            </Text>
+            <EmptyState
+              icon="scan-outline"
+              title="No insights yet"
+              subtitle="Complete your first scan to unlock personalized hydration coaching and daily tips."
+              action={{ label: "Run a Scan", icon: "scan-outline", onPress: () => router.push("/scan") }}
+              compact
+            />
           </View>
         )}
 

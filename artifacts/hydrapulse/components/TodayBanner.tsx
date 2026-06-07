@@ -349,7 +349,7 @@ export function TodayBanner({
         <Pressable
           style={({ pressed }) => [
             styles.logBtn,
-            { backgroundColor: waterColor, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: waterColor, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
           ]}
           onPress={onLogWater}
         >

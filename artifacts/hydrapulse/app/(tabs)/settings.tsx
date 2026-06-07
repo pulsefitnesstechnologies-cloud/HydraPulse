@@ -92,7 +92,12 @@ function SettingsRow({
     <Pressable
       style={({ pressed }) => [
         styles.settingsRow,
-        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed && onPress ? 0.75 : 1 },
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          opacity: pressed && onPress ? 0.78 : 1,
+          transform: [{ scale: pressed && onPress ? 0.985 : 1 }],
+        },
       ]}
       onPress={onPress}
       disabled={!onPress && !right}
@@ -150,7 +155,10 @@ function TimePickerModal({
           <TimePicker value={draft} onChange={setDraft} />
         </View>
         <Pressable
-          style={[styles.doneBtn, { backgroundColor: colors.primary }]}
+          style={({ pressed }) => [
+            styles.doneBtn,
+            { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+          ]}
           onPress={() => { onSave(draft); onClose(); }}
         >
           <Text style={[styles.doneBtnText, { color: colors.primaryForeground }]}>Done</Text>
@@ -1024,7 +1032,7 @@ const styles = StyleSheet.create({
   rowLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   rowRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   rowValue: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  sectionBox: { borderRadius: 18, borderWidth: 1, padding: 16, gap: 14 },
+  sectionBox: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 14 },
   boxTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
   boxSub: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 19 },
   infoRow: {
@@ -1041,13 +1049,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   reminderCard: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingTop: 12,

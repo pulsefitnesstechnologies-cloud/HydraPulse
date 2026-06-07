@@ -411,6 +411,7 @@ export default function SettingsScreen() {
     updateQuietHours,
     setReminderTone,
     applyToneToReminders,
+    shuffleToneToReminders,
     nudgeEnabled,
     nudgeWindowStart,
     nudgeWindowEnd,
@@ -905,13 +906,36 @@ export default function SettingsScreen() {
                   { color: toneApplied ? colors.primary : "#fff" },
                 ]}
               >
-                {toneApplied ? "Applied to all slots" : "Apply to reminder slots"}
+                {toneApplied ? "Applied" : "Apply in order"}
               </Text>
             </Pressable>
+
+            {/* Shuffle button — picks 3 random messages from the tone pool */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.applyToneBtn,
+                {
+                  borderWidth: 1.5,
+                  borderColor: colors.primary,
+                  backgroundColor: "transparent",
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
+              onPress={async () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                await shuffleToneToReminders(reminderTone);
+                setToneApplied(false);
+              }}
+            >
+              <Ionicons name="shuffle-outline" size={14} color={colors.primary} />
+              <Text style={[styles.applyToneBtnText, { color: colors.primary }]}>
+                Shuffle
+              </Text>
+            </Pressable>
+
             <Text style={[styles.autoScheduleSub, { color: colors.mutedForeground, width: "100%" }]}>
-              Pre-fills all 3 reminder message slots with{" "}
-              {REMINDER_TONE_LABELS[reminderTone].toLowerCase()} templates. You can still edit
-              each slot individually.
+              "Apply in order" fills slots with the first 3 {REMINDER_TONE_LABELS[reminderTone].toLowerCase()} messages.
+              "Shuffle" picks 3 at random from a pool of {7}. You can still edit each slot individually.
             </Text>
           </View>
 

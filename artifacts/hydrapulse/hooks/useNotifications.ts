@@ -42,24 +42,37 @@ export type AlarmTuple = [ScanAlarm, ScanAlarm, ScanAlarm];
 export type ReminderTuple = [SmartReminder, SmartReminder, SmartReminder];
 
 // ─── Message template library ─────────────────────────────────────────────────
-// Three tones × three slots — one entry per reminder slot so each fires a
-// different message. Users pick a tone; the app pre-fills all three slots.
+// Each tone has a pool of messages to draw from.
+// "Apply in order" fills slots with the first three; "Shuffle" picks three at
+// random so no two reminder slots feel repetitive over time.
 
-export const REMINDER_TEMPLATES: Record<ReminderTone, [string, string, string]> = {
+export const REMINDER_TEMPLATES: Record<ReminderTone, string[]> = {
   gentle: [
-    "Your body will thank you — time for a glass of water.",
+    "Your body could use a drink right now.",
+    "No water in a while — time for a quick sip?",
+    "Let's keep the hydration flowing.",
     "A gentle nudge: have you had water recently?",
     "Small sip, big difference. Time to hydrate.",
+    "Your body will thank you for a glass of water.",
+    "Hydration check-in: How are you feeling?",
   ],
   motivational: [
     "Champions stay hydrated. Don't let dehydration slow you down.",
+    "Keep your streak alive — drink up!",
+    "Don't break the chain — drink up!",
+    "Strong work lately. Let's keep it going.",
+    "You're crushing your hydration — keep it up!",
     "Hydration fuels performance — time to drink up!",
-    "You're crushing your goals. Stay hydrated and keep pushing.",
+    "Great job staying on top of it today.",
   ],
   "data-driven": [
     "HydraPulse tip: consistent hydration improves your HRV score.",
+    "It's been over 3 hours — time for some water?",
     "Optimal hydration is 2-3 L daily. How are you tracking?",
     "Blood volume peaks when you are well hydrated — it shows in your scans.",
+    "Your last scan showed room for improvement — drink now.",
+    "Almost there! One good drink gets you closer to your goal.",
+    "You're a bit behind today's goal — you got this.",
   ],
 };
 
@@ -68,6 +81,17 @@ export const REMINDER_TONE_LABELS: Record<ReminderTone, string> = {
   motivational: "Motivational",
   "data-driven": "Data-driven",
 };
+
+/** Returns `count` unique messages picked at random from the given pool. */
+function pickRandom(pool: string[], count: number): string[] {
+  const copy = [...pool];
+  const result: string[] = [];
+  while (result.length < count && copy.length > 0) {
+    const idx = Math.floor(Math.random() * copy.length);
+    result.push(copy.splice(idx, 1)[0]);
+  }
+  return result;
+}
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -421,16 +445,39 @@ export function useNotifications() {
     await AsyncStorage.setItem(REMINDER_TONE_KEY, tone).catch(() => {});
   }, []);
 
+  /** Fills the 3 reminder slots with the first 3 messages from the tone pool, in order. */
   const applyToneToReminders = useCallback(
     async (tone: ReminderTone) => {
       await AsyncStorage.setItem(REMINDER_TONE_KEY, tone).catch(() => {});
       setReminderToneState(tone);
-      const templates = REMINDER_TEMPLATES[tone];
+      const pool = REMINDER_TEMPLATES[tone];
       const updated = smartRemindersRef.current.map((r, i) => ({
         ...r,
-        message: templates[i as 0 | 1 | 2],
+        message: pool[i] ?? pool[0],
       })) as ReminderTuple;
-      // Reschedule all slots with new messages
+      const rescheduled = await Promise.all(
+        updated.map(async (r, i) => ({
+          ...r,
+          notifId: await scheduleSmartReminder(r, i),
+        }))
+      ) as ReminderTuple;
+      setSmartReminders(rescheduled);
+      smartRemindersRef.current = rescheduled;
+      await AsyncStorage.setItem(SMART_REMINDERS_KEY, JSON.stringify(rescheduled)).catch(() => {});
+    },
+    []
+  );
+
+  /** Fills the 3 reminder slots with 3 randomly chosen messages from the tone pool. */
+  const shuffleToneToReminders = useCallback(
+    async (tone: ReminderTone) => {
+      await AsyncStorage.setItem(REMINDER_TONE_KEY, tone).catch(() => {});
+      setReminderToneState(tone);
+      const messages = pickRandom(REMINDER_TEMPLATES[tone], 3);
+      const updated = smartRemindersRef.current.map((r, i) => ({
+        ...r,
+        message: messages[i] ?? messages[0],
+      })) as ReminderTuple;
       const rescheduled = await Promise.all(
         updated.map(async (r, i) => ({
           ...r,
@@ -512,6 +559,7 @@ export function useNotifications() {
     updateQuietHours,
     setReminderTone,
     applyToneToReminders,
+    shuffleToneToReminders,
     sendScanResultNotification,
     scheduleFollowUpNudge,
     cancelAll,

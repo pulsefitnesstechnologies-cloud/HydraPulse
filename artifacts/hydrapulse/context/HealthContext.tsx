@@ -89,6 +89,7 @@ interface HealthContextType {
   reminderTone: ReminderTone;
   setReminderTone: (tone: ReminderTone) => Promise<void>;
   applyToneToReminders: (tone: ReminderTone) => Promise<void>;
+  shuffleToneToReminders: (tone: ReminderTone) => Promise<void>;
   // Follow-up nudge
   scheduleFollowUpNudge: (score: 1 | 2) => Promise<void>;
   // Smart nudge (gap detection + goal awareness)
@@ -272,6 +273,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         reminderTone: notif.reminderTone,
         setReminderTone: notif.setReminderTone,
         applyToneToReminders: notif.applyToneToReminders,
+        shuffleToneToReminders: notif.shuffleToneToReminders,
         // Follow-up nudge
         scheduleFollowUpNudge: notif.scheduleFollowUpNudge,
         // Smart nudge

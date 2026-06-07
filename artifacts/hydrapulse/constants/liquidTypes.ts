@@ -16,6 +16,7 @@ export const LIQUID_TYPES: LiquidType[] = [
   { id: "coffee",  label: "Coffee",       factor: 0.7,  icon: "cafe-outline",      color: "#92400E" },
   { id: "juice",   label: "Juice",        factor: 0.85, icon: "nutrition-outline", color: "#F59E0B" },
   { id: "sports",  label: "Sports Drink", factor: 0.9,  icon: "flash-outline",     color: "#8B5CF6" },
+  { id: "soda",    label: "Soda",         factor: 0.8,  icon: "beer-outline",      color: "#6366F1" },
   { id: "alcohol", label: "Alcohol",      factor: 0.0,  icon: "wine-outline",      color: "#EF4444" },
 ];
 

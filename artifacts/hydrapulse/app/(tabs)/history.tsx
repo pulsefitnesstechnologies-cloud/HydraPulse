@@ -55,6 +55,7 @@ import { WorkoutRecord, useWorkout } from "@/context/WorkoutContext";
 export { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { SkeletonBlock } from "@/components/SkeletonBlock";
+import { LIQUID_TYPES, LiquidType, effectiveOz, getLiquidType } from "@/constants/liquidTypes";
 import { useColors } from "@/hooks/useColors";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -218,24 +219,29 @@ function WaterLogModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onLog: (oz: number, time: string) => void;
+  onLog: (oz: number, time: string, liquidType: string) => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [amountText, setAmountText] = useState("");
   const [timeVal, setTimeVal] = useState<TimeValue>(nowTimeValue());
+  const [liquidTypeId, setLiquidTypeId] = useState("water");
 
   // Reset to current time every time the modal opens
   useEffect(() => {
     if (visible) {
       setAmountText("");
       setTimeVal(nowTimeValue());
+      setLiquidTypeId("water");
     }
   }, [visible]);
 
+  const selectedLiquid = getLiquidType(liquidTypeId);
+  const rawOz = parseFloat(amountText);
+  const effOz = !isNaN(rawOz) && rawOz > 0 ? effectiveOz(rawOz, liquidTypeId) : null;
+
   const handleLog = () => {
-    const oz = parseFloat(amountText);
-    if (isNaN(oz) || oz <= 0) {
+    if (isNaN(rawOz) || rawOz <= 0) {
       Alert.alert("Invalid Amount", "Please enter a valid amount in fluid ounces.");
       return;
     }
@@ -246,9 +252,10 @@ function WaterLogModal({
     else if (timeVal.ampm === "PM" && h !== 12) h += 12;
     now.setHours(h, timeVal.minute, 0, 0);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    onLog(oz, now.toISOString());
+    onLog(rawOz, now.toISOString(), liquidTypeId);
     setAmountText("");
     setTimeVal(nowTimeValue());
+    setLiquidTypeId("water");
     onClose();
   };
 
@@ -262,10 +269,46 @@ function WaterLogModal({
         ]}
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
-        <Text style={[styles.logTitle, { color: colors.foreground }]}>Log Water Intake</Text>
+        <Text style={[styles.logTitle, { color: colors.foreground }]}>Log Drink</Text>
 
+        {/* Liquid type chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.liquidChips}
+        >
+          {LIQUID_TYPES.map((liquid) => {
+            const selected = liquidTypeId === liquid.id;
+            return (
+              <Pressable
+                key={liquid.id}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  setLiquidTypeId(liquid.id);
+                }}
+                style={[
+                  styles.liquidChip,
+                  {
+                    backgroundColor: selected ? liquid.color + "20" : colors.background,
+                    borderColor: selected ? liquid.color : colors.border,
+                  },
+                ]}
+              >
+                <Ionicons name={liquid.icon as never} size={14} color={selected ? liquid.color : colors.mutedForeground} />
+                <Text style={[styles.liquidChipLabel, { color: selected ? liquid.color : colors.mutedForeground }]}>
+                  {liquid.label}
+                </Text>
+                <Text style={[styles.liquidChipPct, { color: selected ? liquid.color : colors.mutedForeground }]}>
+                  {Math.round(liquid.factor * 100)}%
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* Amount input */}
         <View style={styles.logRow}>
-          <View style={[styles.logInputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
+          <View style={[styles.logInputWrap, { borderColor: selectedLiquid.color + "60", backgroundColor: colors.background }]}>
             <TextInput
               style={[styles.logInput, { color: colors.foreground }]}
               placeholder="0"
@@ -278,6 +321,28 @@ function WaterLogModal({
             <Text style={[styles.logUnit, { color: colors.mutedForeground }]}>fl oz</Text>
           </View>
         </View>
+
+        {/* Effective hydration hint */}
+        {effOz !== null && selectedLiquid.factor < 1 && selectedLiquid.factor > 0 && (
+          <View style={[styles.effRow, { backgroundColor: selectedLiquid.color + "12", borderColor: selectedLiquid.color + "30" }]}>
+            <Ionicons name="analytics-outline" size={13} color={selectedLiquid.color} />
+            <Text style={[styles.effText, { color: colors.mutedForeground }]}>
+              Counts as{" "}
+              <Text style={{ color: selectedLiquid.color, fontFamily: "Inter_600SemiBold" }}>
+                {effOz % 1 === 0 ? effOz : effOz.toFixed(1)} fl oz
+              </Text>{" "}
+              toward your goal ({Math.round(selectedLiquid.factor * 100)}% hydrating)
+            </Text>
+          </View>
+        )}
+        {effOz !== null && selectedLiquid.factor === 0 && (
+          <View style={[styles.effRow, { backgroundColor: "#EF444412", borderColor: "#EF444430" }]}>
+            <Ionicons name="warning-outline" size={13} color="#EF4444" />
+            <Text style={[styles.effText, { color: colors.mutedForeground }]}>
+              Alcohol does not count toward hydration
+            </Text>
+          </View>
+        )}
 
         <Text style={[styles.logTimeLabel, { color: colors.mutedForeground }]}>Time Finished Drinking</Text>
         <View style={[styles.pickerWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -292,11 +357,11 @@ function WaterLogModal({
             <Text style={[styles.detailCloseBtnText, { color: colors.foreground }]}>Cancel</Text>
           </Pressable>
           <Pressable
-            style={[styles.logBtn, { backgroundColor: colors.primary }]}
+            style={[styles.logBtn, { backgroundColor: selectedLiquid.color }]}
             onPress={handleLog}
           >
-            <Ionicons name="water" size={16} color={colors.primaryForeground} />
-            <Text style={[styles.logBtnText, { color: colors.primaryForeground }]}>Log</Text>
+            <Ionicons name={selectedLiquid.icon as never} size={16} color="#fff" />
+            <Text style={[styles.logBtnText, { color: "#fff" }]}>Log</Text>
           </Pressable>
         </View>
       </View>
@@ -563,14 +628,15 @@ function WaterTab() {
     const t = new Date(e.time);
     return t >= dayStart && t <= dayEnd;
   });
-  const dayTotalOz = dayLogs.reduce((s, e) => s + e.amountOz, 0);
+  // Use effectiveOz so non-water liquids count proportionally toward totals
+  const dayTotalOz = dayLogs.reduce((s, e) => s + effectiveOz(e.amountOz, e.liquidType), 0);
 
   // All-time stats
-  const allTotalOz = waterLog.reduce((s, e) => s + e.amountOz, 0);
+  const allTotalOz = waterLog.reduce((s, e) => s + effectiveOz(e.amountOz, e.liquidType), 0);
   const avgPerEntry = waterLog.length > 0 ? allTotalOz / waterLog.length : 0;
 
-  const handleLog = async (oz: number, time: string) => {
-    await addWaterLog({ amountOz: oz, time });
+  const handleLog = async (oz: number, time: string, liquidType: string) => {
+    await addWaterLog({ amountOz: oz, liquidType, time });
   };
 
   const renderRightActions = (item: WaterLog) => (
@@ -586,23 +652,39 @@ function WaterTab() {
     </Pressable>
   );
 
-  const renderItem = ({ item }: { item: WaterLog }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item)} friction={2} overshootRight={false}>
-      <View style={[styles.waterRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={[styles.waterIcon, { backgroundColor: "#0EA5E9" + "20" }]}>
-          <Ionicons name="water" size={18} color="#0EA5E9" />
+  const renderItem = ({ item }: { item: WaterLog }) => {
+    const liquid: LiquidType = getLiquidType(item.liquidType);
+    const eff = effectiveOz(item.amountOz, item.liquidType);
+    const showEff = liquid.factor < 1;
+    const rawLabel = item.amountOz % 1 === 0 ? String(item.amountOz) : item.amountOz.toFixed(1);
+    const effLabel = eff % 1 === 0 ? String(eff) : eff.toFixed(1);
+    return (
+      <Swipeable renderRightActions={() => renderRightActions(item)} friction={2} overshootRight={false}>
+        <View style={[styles.waterRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.waterIcon, { backgroundColor: liquid.color + "20" }]}>
+            <Ionicons name={liquid.icon as never} size={18} color={liquid.color} />
+          </View>
+          <View style={styles.waterInfo}>
+            <View style={styles.waterAmountRow}>
+              <Text style={[styles.waterAmount, { color: colors.foreground }]}>
+                {rawLabel} fl oz
+              </Text>
+              {showEff && (
+                <View style={[styles.liquidBadge, { backgroundColor: liquid.color + "18", borderColor: liquid.color + "40" }]}>
+                  <Text style={[styles.liquidBadgeText, { color: liquid.color }]}>
+                    {liquid.label} · {effLabel} oz effective
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.waterTime, { color: colors.mutedForeground }]}>
+              {liquid.factor === 1 ? liquid.label + " · " : ""}{formatTimeOnly(item.time)}
+            </Text>
+          </View>
         </View>
-        <View style={styles.waterInfo}>
-          <Text style={[styles.waterAmount, { color: colors.foreground }]}>
-            {item.amountOz % 1 === 0 ? item.amountOz : item.amountOz.toFixed(1)} fl oz
-          </Text>
-          <Text style={[styles.waterTime, { color: colors.mutedForeground }]}>
-            {formatTimeOnly(item.time)}
-          </Text>
-        </View>
-      </View>
-    </Swipeable>
-  );
+      </Swipeable>
+    );
+  };
 
   const ListHeader = () => (
     <View style={styles.listHeader}>
@@ -1118,4 +1200,37 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   logBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  liquidChips: { flexDirection: "row" as const, gap: 8, paddingHorizontal: 20, paddingVertical: 6 },
+  liquidChip: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  liquidChipLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  liquidChipPct: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  effRow: {
+    flexDirection: "row" as const,
+    alignItems: "flex-start" as const,
+    gap: 6,
+    marginHorizontal: 20,
+    marginTop: 4,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  effText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  waterAmountRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 8, flexWrap: "wrap" as const },
+  liquidBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  liquidBadgeText: { fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 });

@@ -36,6 +36,7 @@ import {
   useHydration,
 } from "@/context/HydrationContext";
 import { useWaterIntake } from "@/context/WaterIntakeContext";
+import { LIQUID_TYPES, effectiveOz, getLiquidType } from "@/constants/liquidTypes";
 import { useColors } from "@/hooks/useColors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -75,24 +76,31 @@ function WaterLogModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onLog: (oz: number, time: string) => void;
+  onLog: (oz: number, time: string, liquidType: string) => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [amountText, setAmountText] = useState("");
   const [timeVal, setTimeVal] = useState<TimeValue>(nowTimeValue());
+  const [liquidTypeId, setLiquidTypeId] = useState("water");
 
-  // Reset to current time every time the modal opens
+  // Reset every time the modal opens
   useEffect(() => {
     if (visible) {
       setAmountText("");
       setTimeVal(nowTimeValue());
+      setLiquidTypeId("water");
     }
   }, [visible]);
 
+  const selectedLiquid = getLiquidType(liquidTypeId);
+  const rawOz = parseFloat(amountText);
+  const effOz = !isNaN(rawOz) && rawOz > 0
+    ? effectiveOz(rawOz, liquidTypeId)
+    : null;
+
   const handleLog = () => {
-    const oz = parseFloat(amountText);
-    if (isNaN(oz) || oz <= 0) {
+    if (isNaN(rawOz) || rawOz <= 0) {
       Alert.alert("Invalid Amount", "Please enter a valid amount in fluid ounces.");
       return;
     }
@@ -102,9 +110,10 @@ function WaterLogModal({
     else if (timeVal.ampm === "PM" && h !== 12) h += 12;
     now.setHours(h, timeVal.minute, 0, 0);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    onLog(oz, now.toISOString());
+    onLog(rawOz, now.toISOString(), liquidTypeId);
     setAmountText("");
     setTimeVal(nowTimeValue());
+    setLiquidTypeId("water");
     onClose();
   };
 
@@ -118,9 +127,45 @@ function WaterLogModal({
         ]}
       >
         <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-        <Text style={[styles.modalTitle, { color: colors.foreground }]}>Log Water Intake</Text>
+        <Text style={[styles.modalTitle, { color: colors.foreground }]}>Log Drink</Text>
 
-        <View style={[styles.amountRow, { borderColor: colors.border, backgroundColor: colors.background }]}>
+        {/* Liquid type chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.liquidChips}
+        >
+          {LIQUID_TYPES.map((liquid) => {
+            const selected = liquidTypeId === liquid.id;
+            return (
+              <Pressable
+                key={liquid.id}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  setLiquidTypeId(liquid.id);
+                }}
+                style={[
+                  styles.liquidChip,
+                  {
+                    backgroundColor: selected ? liquid.color + "20" : colors.background,
+                    borderColor: selected ? liquid.color : colors.border,
+                  },
+                ]}
+              >
+                <Ionicons name={liquid.icon as never} size={14} color={selected ? liquid.color : colors.mutedForeground} />
+                <Text style={[styles.liquidChipLabel, { color: selected ? liquid.color : colors.mutedForeground }]}>
+                  {liquid.label}
+                </Text>
+                <Text style={[styles.liquidChipPct, { color: selected ? liquid.color : colors.mutedForeground }]}>
+                  {Math.round(liquid.factor * 100)}%
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* Amount input */}
+        <View style={[styles.amountRow, { borderColor: selectedLiquid.color + "60", backgroundColor: colors.background }]}>
           <TextInput
             style={[styles.amountInput, { color: colors.foreground }]}
             placeholder="0"
@@ -134,6 +179,28 @@ function WaterLogModal({
           <Text style={[styles.amountUnit, { color: colors.mutedForeground }]}>fl oz</Text>
         </View>
 
+        {/* Effective hydration hint */}
+        {effOz !== null && selectedLiquid.factor < 1 && (
+          <View style={[styles.effRow, { backgroundColor: selectedLiquid.color + "12", borderColor: selectedLiquid.color + "30" }]}>
+            <Ionicons name="analytics-outline" size={13} color={selectedLiquid.color} />
+            <Text style={[styles.effText, { color: colors.mutedForeground }]}>
+              Counts as{" "}
+              <Text style={{ color: selectedLiquid.color, fontFamily: "Inter_600SemiBold" }}>
+                {effOz % 1 === 0 ? effOz : effOz.toFixed(1)} fl oz
+              </Text>{" "}
+              toward your goal ({Math.round(selectedLiquid.factor * 100)}% hydrating)
+            </Text>
+          </View>
+        )}
+        {effOz !== null && selectedLiquid.factor === 0 && (
+          <View style={[styles.effRow, { backgroundColor: "#EF444412", borderColor: "#EF444430" }]}>
+            <Ionicons name="warning-outline" size={13} color="#EF4444" />
+            <Text style={[styles.effText, { color: colors.mutedForeground }]}>
+              Alcohol does not count toward hydration
+            </Text>
+          </View>
+        )}
+
         <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>Time Finished Drinking</Text>
         <View style={[styles.timePickerWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <TimePicker value={timeVal} onChange={setTimeVal} />
@@ -143,8 +210,8 @@ function WaterLogModal({
           <Pressable style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
             <Text style={[styles.cancelBtnText, { color: colors.foreground }]}>Cancel</Text>
           </Pressable>
-          <Pressable style={[styles.logBtn, { backgroundColor: "#0EA5E9" }]} onPress={handleLog}>
-            <Ionicons name="water" size={16} color="#fff" />
+          <Pressable style={[styles.logBtn, { backgroundColor: selectedLiquid.color }]} onPress={handleLog}>
+            <Ionicons name={selectedLiquid.icon as never} size={16} color="#fff" />
             <Text style={styles.logBtnText}>Log</Text>
           </Pressable>
         </View>
@@ -609,8 +676,8 @@ export default function HomeScreen() {
       <WaterLogModal
         visible={showWaterLog}
         onClose={() => setShowWaterLog(false)}
-        onLog={(oz, time) => {
-          addWaterLog({ amountOz: oz, time }).catch(() => {});
+        onLog={(oz, time, liquidType) => {
+          addWaterLog({ amountOz: oz, liquidType, time }).catch(() => {});
           writeWaterLog(oz, time).catch(() => {});
         }}
       />
@@ -957,6 +1024,29 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   logBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" as const },
+  liquidChips: { flexDirection: "row" as const, gap: 8, paddingHorizontal: 20, paddingVertical: 6 },
+  liquidChip: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  liquidChipLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  liquidChipPct: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  effRow: {
+    flexDirection: "row" as const,
+    alignItems: "flex-start" as const,
+    gap: 6,
+    marginHorizontal: 20,
+    marginTop: 4,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  effText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
   // Watch scan overlay
   watchOverlay: {
     flex: 1,
